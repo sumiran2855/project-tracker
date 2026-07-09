@@ -5,8 +5,6 @@ import { cookies } from 'next/headers';
 import type { SessionPayload } from '@/types/auth.types';
 import { AUTH_COOKIE_NAME } from '@/constants/routes';
 
-const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
-
 if (!process.env.SESSION_SECRET) {
   throw new Error('SESSION_SECRET environment variable is not set.');
 }
@@ -14,10 +12,11 @@ if (!process.env.SESSION_SECRET) {
 const encodedKey = new TextEncoder().encode(process.env.SESSION_SECRET);
 
 export async function encrypt(payload: SessionPayload): Promise<string> {
+  const expSeconds = Math.floor(new Date(payload.expiresAt).getTime() / 1000);
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('7d')
+    .setExpirationTime(expSeconds)
     .sign(encodedKey);
 }
 
@@ -37,8 +36,11 @@ export async function decrypt(
   }
 }
 
-export async function createSession(userId: string): Promise<void> {
-  const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
+export async function createSession(userId: string, rememberMe = false): Promise<void> {
+  // If rememberMe is checked, session lasts 30 days. Otherwise, it lasts 1 day (or standard session)
+  const durationMs = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+  const expiresAt = new Date(Date.now() + durationMs);
+  
   const token = await encrypt({ userId, expiresAt });
   const cookieStore = await cookies();
 
@@ -46,7 +48,7 @@ export async function createSession(userId: string): Promise<void> {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    expires: expiresAt,
+    expires: rememberMe ? expiresAt : undefined, // Omit expires for session cookie (expires on close)
     path: '/',
   });
 }

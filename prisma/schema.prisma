@@ -13,10 +13,12 @@ datasource db {
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String?
+  id                 String    @id @default(cuid())
+  email              String    @unique
+  passwordHash       String
+  name               String?
+  resetToken         String?   @unique
+  resetTokenExpires  DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

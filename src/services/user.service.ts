@@ -1,7 +1,7 @@
 import 'server-only';
 
 import bcrypt from 'bcryptjs';
-import { findUserByEmail } from '@/repositories/user.repository';
+import { findUserByEmail, createUser } from '@/repositories/user.repository';
 import type { SafeUser } from '@/types/auth.types';
 
 export async function authenticateUser(
@@ -26,4 +26,20 @@ export async function authenticateUser(
     email: user.email,
     name: user.name,
   };
+}
+
+export async function registerUser(
+  fullName: string,
+  email: string,
+  password: string
+): Promise<SafeUser | { error: string }> {
+  const existing = await findUserByEmail(email);
+  if (existing) {
+    return { error: 'An account with this email already exists.' };
+  }
+
+  const passwordHash = await bcrypt.hash(password, 12);
+  const user = await createUser({ email, name: fullName, passwordHash });
+
+  return { id: user.id, email: user.email, name: user.name };
 }

@@ -6,11 +6,19 @@
 export const ROUTES = {
   home: '/',
   login: '/login',
+  signup: '/signup',
   dashboard: '/dashboard',
+  forgotPassword: '/forgot-password',
+  resetPassword: '/reset-password',
 } as const;
 
 /** Routes that do not require authentication */
-export const PUBLIC_ROUTES: string[] = [ROUTES.login];
+export const PUBLIC_ROUTES: string[] = [
+  ROUTES.login,
+  ROUTES.signup,
+  ROUTES.forgotPassword,
+  ROUTES.resetPassword,
+];
 
 /** Where to send unauthenticated users */
 export const LOGIN_ROUTE = ROUTES.login;
