@@ -5,11 +5,13 @@ import { cookies } from 'next/headers';
 import type { SessionPayload } from '@/types/auth.types';
 import { AUTH_COOKIE_NAME } from '@/constants/routes';
 
-if (!process.env.SESSION_SECRET) {
-  throw new Error('SESSION_SECRET environment variable is not set.');
+function getEncodedKey(): Uint8Array {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    throw new Error('SESSION_SECRET environment variable is not set.');
+  }
+  return new TextEncoder().encode(secret);
 }
-
-const encodedKey = new TextEncoder().encode(process.env.SESSION_SECRET);
 
 export async function encrypt(payload: SessionPayload): Promise<string> {
   const expSeconds = Math.floor(new Date(payload.expiresAt).getTime() / 1000);
@@ -17,7 +19,7 @@ export async function encrypt(payload: SessionPayload): Promise<string> {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(expSeconds)
-    .sign(encodedKey);
+    .sign(getEncodedKey());
 }
 
 export async function decrypt(
@@ -26,7 +28,7 @@ export async function decrypt(
   if (!token) return undefined;
 
   try {
-    const { payload } = await jwtVerify(token, encodedKey, {
+    const { payload } = await jwtVerify(token, getEncodedKey(), {
       algorithms: ['HS256'],
     });
 
