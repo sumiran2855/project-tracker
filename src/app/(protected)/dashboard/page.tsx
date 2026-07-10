@@ -1,10 +1,6 @@
 import type { Metadata } from 'next';
 import { getCurrentUser } from '@/lib/auth/dal';
 import {
-  Folder,
-  CheckCircle2,
-  AlertTriangle,
-  Clock,
   ArrowUpRight,
   TrendingUp,
   Plus,
@@ -12,7 +8,10 @@ import {
   Bug,
   MoreHorizontal,
   CalendarDays,
+  Calendar,
 } from 'lucide-react';
+import { ProjectCard } from '@/components/dashboard/ProjectCard';
+import { StatCard } from '@/components/dashboard/StatCard';
 
 export const metadata: Metadata = {
   title: 'Dashboard — Project Tracker',
@@ -20,11 +19,12 @@ export const metadata: Metadata = {
 };
 
 const stats = [
-  { label: 'Active Projects', value: '12', change: '+2', icon: Folder, tint: '#6366f1' },
-  { label: 'Open Tasks', value: '48', change: '-5', icon: CheckCircle2, tint: '#3b82f6' },
-  { label: 'Open Bugs', value: '7', change: '+3', icon: AlertTriangle, tint: '#ef4444' },
-  { label: 'Hours Logged', value: '134h', change: '+18h', icon: Clock, tint: '#ec4899' },
+  { label: 'Active Projects', value: '12',   change: '+2',   iconName: 'Folder',       tint: '#6366f1', positive: true  },
+  { label: 'Open Tasks',      value: '48',   change: '-5',   iconName: 'CheckCircle2', tint: '#3b82f6', positive: true  },
+  { label: 'Open Bugs',       value: '7',    change: '+3',   iconName: 'AlertTriangle',tint: '#ef4444', positive: false },
+  { label: 'Hours Logged',    value: '134h', change: '+18h', iconName: 'Clock',        tint: '#ec4899', positive: true  },
 ];
+
 
 const weeklyHours = [
   { day: 'Mon', hours: 6.5 },
@@ -38,18 +38,67 @@ const weeklyHours = [
 const maxHours = Math.max(...weeklyHours.map((d) => d.hours));
 
 const recentProjects = [
-  { name: 'E-Commerce Platform', status: 'In Progress', progress: 68, due: 'Jul 20', bar: '#6366f1' },
-  { name: 'Mobile App Redesign', status: 'Review', progress: 90, due: 'Jul 12', bar: '#8b5cf6' },
-  { name: 'API Gateway v2', status: 'Planning', progress: 25, due: 'Aug 1', bar: '#06b6d4' },
-  { name: 'Analytics Dashboard', status: 'Done', progress: 100, due: '—', bar: '#10b981' },
+  {
+    name: 'E-Commerce Platform',
+    category: 'Web Application',
+    status: 'In Progress',
+    progress: 68,
+    due: 'Jul 20',
+    bar: '#6366f1',
+    tasks: { completed: 24, total: 35 },
+    team: [
+      { initials: 'AC', name: 'Ava Chen', bg: 'bg-indigo-100 text-indigo-700' },
+      { initials: 'MD', name: 'Marco Diaz', bg: 'bg-emerald-100 text-emerald-700' },
+      { initials: 'SO', name: 'Sam Okafor', bg: 'bg-orange-100 text-orange-700' },
+    ],
+    updatedAt: '2h ago',
+  },
+  {
+    name: 'Mobile App Redesign',
+    category: 'UI/UX Design',
+    status: 'Review',
+    progress: 90,
+    due: 'Jul 12',
+    bar: '#8b5cf6',
+    tasks: { completed: 45, total: 50 },
+    team: [
+      { initials: 'SO', name: 'Sam Okafor', bg: 'bg-orange-100 text-orange-700' },
+      { initials: 'AC', name: 'Ava Chen', bg: 'bg-indigo-100 text-indigo-700' },
+    ],
+    updatedAt: '10m ago',
+  },
+  {
+    name: 'API Gateway v2',
+    category: 'Backend Services',
+    status: 'Planning',
+    progress: 25,
+    due: 'Aug 1',
+    bar: '#06b6d4',
+    tasks: { completed: 5, total: 20 },
+    team: [
+      { initials: 'MD', name: 'Marco Diaz', bg: 'bg-emerald-100 text-emerald-700' },
+      { initials: 'PR', name: 'Priya Rao', bg: 'bg-rose-100 text-rose-700' },
+    ],
+    updatedAt: '1d ago',
+  },
+  {
+    name: 'Analytics Dashboard',
+    category: 'Data Analytics',
+    status: 'Done',
+    progress: 100,
+    due: 'Completed',
+    bar: '#10b981',
+    tasks: { completed: 30, total: 30 },
+    team: [
+      { initials: 'PR', name: 'Priya Rao', bg: 'bg-rose-100 text-rose-700' },
+      { initials: 'AC', name: 'Ava Chen', bg: 'bg-indigo-100 text-indigo-700' },
+      { initials: 'SO', name: 'Sam Okafor', bg: 'bg-orange-100 text-orange-700' },
+    ],
+    updatedAt: '3h ago',
+  },
 ];
 
-const statusStyles: Record<string, string> = {
-  'In Progress': 'bg-indigo-50 text-indigo-750 border border-indigo-100/50',
-  Review: 'bg-purple-50 text-purple-750 border border-purple-100/50',
-  Planning: 'bg-slate-100 text-slate-600 border border-slate-200/50',
-  Done: 'bg-emerald-50 text-emerald-750 border border-emerald-100/50',
-};
+
 
 const recentActivity = [
   { text: 'Bug #142 resolved in E-Commerce Platform', time: '2m ago', dot: 'bg-emerald-500' },
@@ -97,21 +146,17 @@ export default async function DashboardPage() {
 
       {/* Stats row */}
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {stats.map((s) => {
-          const Icon = s.icon;
-          return (
-            <div key={s.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
-              <div className="flex items-center justify-between">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: `${s.tint}14` }}>
-                  <Icon className="h-4 w-4" style={{ color: s.tint }} />
-                </div>
-                <span className="text-[10px] font-bold text-slate-400">{s.change}</span>
-              </div>
-              <p className="mt-3 text-2xl font-black text-slate-800">{s.value}</p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-450 mt-0.5">{s.label}</p>
-            </div>
-          );
-        })}
+        {stats.map((s) => (
+          <StatCard
+            key={s.label}
+            label={s.label}
+            value={s.value}
+            change={s.change}
+            iconName={s.iconName}
+            tint={s.tint}
+            positive={s.positive}
+          />
+        ))}
       </div>
 
       {/* Bento grid */}
@@ -174,38 +219,19 @@ export default async function DashboardPage() {
         </div>
 
         {/* Recent projects — spans 2 */}
-        <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs">
+        <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs flex flex-col">
           <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
             <div>
               <h2 className="text-base font-bold text-slate-800">Recent Projects</h2>
               <p className="text-xs text-slate-400 mt-0.5">Your most active development tracks</p>
             </div>
-            <a href="#" className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-indigo-650 hover:bg-slate-50 transition-all shadow-xs">
-              View all <ArrowUpRight className="h-3 w-3" />
+            <a href="#" className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-indigo-650 hover:bg-slate-50 transition-all shadow-xs whitespace-nowrap shrink-0">
+              View all
             </a>
           </div>
-          <div className="divide-y divide-slate-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 bg-slate-50/30 flex-1">
             {recentProjects.map((p) => (
-              <div key={p.name} className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50/50 transition-colors">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${p.bar}14` }}>
-                  <Folder className="h-5 w-5" style={{ color: p.bar }} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="truncate text-sm font-bold text-slate-800">{p.name}</p>
-                    <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${statusStyles[p.status]}`}>
-                      {p.status}
-                    </span>
-                  </div>
-                  <div className="mt-2.5 flex items-center gap-3">
-                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
-                      <div className="h-full rounded-full" style={{ width: `${p.progress}%`, backgroundColor: p.bar }} />
-                    </div>
-                    <span className="shrink-0 text-xs font-bold text-slate-600">{p.progress}%</span>
-                    <span className="shrink-0 text-[11px] text-slate-400 border-l border-slate-200 pl-3">Due {p.due}</span>
-                  </div>
-                </div>
-              </div>
+              <ProjectCard key={p.name} p={p} />
             ))}
           </div>
         </div>

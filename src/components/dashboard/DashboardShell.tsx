@@ -34,7 +34,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
         {/* Content Wrapper */}
         <div
           className={cn(
-            'flex flex-1 flex-col transition-all duration-300 ease-in-out',
+            'flex flex-1 flex-col min-w-0 transition-all duration-300 ease-in-out',
             isCollapsed ? 'md:pl-20' : 'md:pl-64'
           )}
         >
@@ -42,7 +42,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
           <Navbar userName={user?.name} userEmail={user?.email} />
 
           {/* Page body */}
-          <main className="flex-1 bg-slate-50">
+          <main className="flex-1 bg-slate-50 min-w-0">
             {children}
           </main>
         </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Menu, Search, Bell, Plus, User, Settings, LogOut, Command } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
@@ -23,6 +23,7 @@ export function Navbar({ userName, userEmail }: NavbarProps) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const pathname = usePathname();
+  const router = useRouter();
 
   const handleLogout = () => {
     startTransition(() => {
@@ -141,12 +142,18 @@ export function Navbar({ userName, userEmail }: NavbarProps) {
               </div>
               <DropdownMenuSeparator className="-mx-1 my-1 h-px bg-slate-100" />
 
-              <DropdownMenuItem className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-950 cursor-pointer">
+              <DropdownMenuItem
+                onClick={() => router.push('/profile')}
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-950 cursor-pointer"
+              >
                 <User className="h-4 w-4 text-slate-400" />
                 <span>My Profile</span>
               </DropdownMenuItem>
 
-              <DropdownMenuItem className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-950 cursor-pointer">
+              <DropdownMenuItem
+                onClick={() => router.push('/settings')}
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-indigo-50/50 hover:text-indigo-950 cursor-pointer"
+              >
                 <Settings className="h-4 w-4 text-slate-400" />
                 <span>Account Settings</span>
               </DropdownMenuItem>

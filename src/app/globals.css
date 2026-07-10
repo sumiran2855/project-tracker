@@ -14,6 +14,26 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
+  /* Custom Indigo Shades */
+  --color-indigo-650: #4f46e5;
+  --color-indigo-750: #3d34b6;
+  --color-indigo-755: #3730a3;
+
+  /* Custom Slate Shades */
+  --color-slate-150: #e2e8f0;
+  --color-slate-250: #cbd5e1;
+  --color-slate-350: #94a3b8;
+  --color-slate-450: #64748b;
+  --color-slate-650: #475569;
+  --color-slate-850: #1e293b;
+  --color-slate-855: #0f172a;
+
+  /* Custom Emerald & Amber (for gradients / board statuses) */
+  --color-emerald-450: #10b981;
+  --color-emerald-550: #059669;
+  --color-amber-450: #f59e0b;
+  --color-amber-550: #d97706;
+
   /* Custom animations */
   --animate-fadeUp: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

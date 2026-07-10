@@ -16,7 +16,8 @@ import {
   FolderOpen,
   CheckCircle2,
   Clock,
-  AlertCircle
+  AlertCircle,
+  ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -281,7 +282,8 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="animate-fadeUp p-4 sm:p-6 lg:p-8 max-w-8xl mx-auto space-y-8">
+    <>
+      <div className="animate-fadeUp p-4 sm:p-6 lg:p-8 max-w-8xl mx-auto space-y-8">
       
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -314,26 +316,69 @@ export default function ProjectsPage() {
       {/* Statistics Section */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
-          { label: 'Total Tracks', value: totalProjects, icon: FolderOpen, color: 'text-slate-600 bg-slate-100/80 border-slate-200' },
-          { label: 'In Progress', value: inProgressCount, icon: Clock, color: 'text-indigo-600 bg-indigo-50/50 border-indigo-100/50' },
-          { label: 'In Review', value: inReviewCount, icon: TrendingUp, color: 'text-amber-600 bg-amber-50/50 border-amber-100/50' },
-          { label: 'Planning', value: planningCount, icon: AlertCircle, color: 'text-blue-600 bg-blue-50/50 border-blue-100/50' },
-          { label: 'Completed', value: completedCount, icon: CheckCircle2, color: 'text-emerald-600 bg-emerald-50/50 border-emerald-100/50' },
+          { label: 'Total Tracks', value: totalProjects,    icon: FolderOpen,   tint: '#64748b' },
+          { label: 'In Progress',  value: inProgressCount, icon: Clock,         tint: '#6366f1' },
+          { label: 'In Review',    value: inReviewCount,   icon: TrendingUp,    tint: '#f59e0b' },
+          { label: 'Planning',     value: planningCount,   icon: AlertCircle,   tint: '#3b82f6' },
+          { label: 'Completed',    value: completedCount,  icon: CheckCircle2,  tint: '#10b981' },
         ].map((stat, idx) => {
           const Icon = stat.icon;
           return (
-            <div key={idx} className={cn("flex flex-col justify-between p-4 bg-white border rounded-2xl shadow-xs transition-transform hover:-translate-y-0.5 duration-200", stat.color.split(' ')[2])}>
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{stat.label}</span>
-                <div className={cn("p-1.5 rounded-lg border", stat.color.split(' ')[0], stat.color.split(' ')[1])}>
-                  <Icon className="h-4 w-4" />
+            <div
+              key={idx}
+              className={cn(
+                "group relative flex flex-col justify-between overflow-hidden rounded-2xl bg-white border border-slate-100 p-5 cursor-default transition-all duration-300 hover:-translate-y-px",
+                idx === 4 && "col-span-2 lg:col-span-1"
+              )}
+              style={{ boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)' }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLDivElement).style.boxShadow =
+                  `0 6px 16px -4px ${stat.tint}18, 0 2px 6px -2px ${stat.tint}10`;
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 3px 0 rgba(0,0,0,0.05)';
+              }}
+            >
+              {/* Radial tint wash on hover */}
+              <div
+                className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{ background: `radial-gradient(ellipse at top right, ${stat.tint}09 0%, transparent 70%)` }}
+              />
+
+              {/* Icon */}
+              <div className="relative">
+                <div
+                  className="flex h-11 w-11 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110"
+                  style={{
+                    background: `linear-gradient(135deg, ${stat.tint}20, ${stat.tint}0d)`,
+                    border: `1px solid ${stat.tint}28`,
+                  }}
+                >
+                  <Icon className="h-5 w-5" style={{ color: stat.tint }} />
                 </div>
               </div>
-              <p className="text-2xl font-black text-slate-800 mt-4">{stat.value}</p>
+
+              {/* Value + label + accent */}
+              <div className="relative mt-5">
+                <p
+                  className="text-[28px] font-black leading-none tracking-tight text-slate-800"
+                  style={{ fontVariantNumeric: 'tabular-nums' }}
+                >
+                  {stat.value}
+                </p>
+                <p className="mt-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  {stat.label}
+                </p>
+                <div
+                  className="mt-3 h-0.5 w-8 rounded-full opacity-40 group-hover:w-11 transition-all duration-500"
+                  style={{ backgroundColor: stat.tint }}
+                />
+              </div>
             </div>
           );
         })}
       </div>
+
 
       {/* Filter and Sorting Row */}
       <div className="flex flex-col sm:flex-row items-center gap-3 bg-white border border-slate-200 p-3 rounded-2xl shadow-xs">
@@ -357,7 +402,7 @@ export default function ProjectsPage() {
         </div>
 
         <div className="flex gap-2 w-full sm:w-auto shrink-0">
-          <div className="flex-1 sm:flex-none inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-500">
+          <div className="hidden sm:inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-500">
             <Filter className="h-3.5 w-3.5" />
             <span>Filter Status:</span>
           </div>
@@ -509,97 +554,102 @@ export default function ProjectsPage() {
         </div>
       )}
 
+      </div>
+
       {/* Modal - New Project Form */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn">
-          <div className="relative w-full max-w-lg bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6 animate-scaleIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md animate-fadeIn">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl border border-slate-100 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.12)] p-6 sm:p-8 space-y-6 animate-scaleIn">
             
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-650">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-650 border border-indigo-100/30">
                   <Folder className="h-4.5 w-4.5" />
                 </div>
-                <h3 className="text-base font-black text-slate-800">Add New Initiative</h3>
+                <h3 className="text-base font-black text-slate-800 tracking-tight">Add New Initiative</h3>
               </div>
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="h-7 w-7 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-150 flex items-center justify-center text-slate-500 cursor-pointer"
+                className="h-7 w-7 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 cursor-pointer transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             {/* Modal Form */}
-            <form onSubmit={handleCreateProject} className="space-y-4">
+            <form onSubmit={handleCreateProject} className="space-y-5">
               
               {/* Project Name */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-450">Project Name</label>
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Project Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Stripe Integration V2"
                   value={newProjName}
                   onChange={(e) => setNewProjName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-250 bg-white px-3.5 py-2.5 text-xs text-slate-850 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all"
                 />
               </div>
 
               {/* Description */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-450">Description</label>
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Description</label>
                 <textarea
                   rows={3}
                   placeholder="Describe the main milestones and goals..."
                   value={newProjDesc}
                   onChange={(e) => setNewProjDesc(e.target.value)}
-                  className="w-full rounded-xl border border-slate-250 bg-white px-3.5 py-2.5 text-xs text-slate-850 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all resize-none"
                 />
               </div>
 
               {/* Status & Due Date */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-450">Initial Status</label>
-                  <select
-                    value={newProjStatus}
-                    onChange={(e) => setNewProjStatus(e.target.value as Project['status'])}
-                    className="w-full rounded-xl border border-slate-250 bg-white px-3.5 py-2.5 text-xs text-slate-850 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 cursor-pointer"
-                  >
-                    <option value="Planning">Planning</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="In Review">In Review</option>
-                    <option value="Completed">Completed</option>
-                  </select>
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Initial Status</label>
+                  <div className="relative">
+                    <select
+                      value={newProjStatus}
+                      onChange={(e) => setNewProjStatus(e.target.value as Project['status'])}
+                      className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
+                    >
+                      <option value="Planning">Planning</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="In Review">In Review</option>
+                      <option value="Completed">Completed</option>
+                    </select>
+                    <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-450">Due Date</label>
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Due Date</label>
                   <input
                     type="date"
                     value={newProjDueDate}
                     onChange={(e) => setNewProjDueDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-250 bg-white px-3.5 py-2.5 text-xs text-slate-850 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer"
                   />
                 </div>
               </div>
 
               {/* Tags */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-450">Tags (comma separated)</label>
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tags (comma separated)</label>
                 <input
                   type="text"
                   placeholder="e.g. Frontend, Billing, Design"
                   value={newProjTags}
                   onChange={(e) => setNewProjTags(e.target.value)}
-                  className="w-full rounded-xl border border-slate-250 bg-white px-3.5 py-2.5 text-xs text-slate-850 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all"
                 />
               </div>
 
               {/* Members selection */}
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-450">Assign Team Members</label>
+              <div className="space-y-2.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Assign Team Members</label>
                 <div className="flex flex-wrap gap-2.5">
                   {availableMembers.map((member) => {
                     const isSelected = newProjMembers.includes(member.name);
@@ -615,13 +665,13 @@ export default function ProjectsPage() {
                           }
                         }}
                         className={cn(
-                          "flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[10px] font-bold transition-all cursor-pointer",
+                          "flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border text-[11px] font-bold transition-all duration-200 cursor-pointer",
                           isSelected 
-                            ? "bg-indigo-50 border-indigo-200 text-indigo-700" 
-                            : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100"
+                            ? "bg-indigo-50/80 border-indigo-200 text-indigo-700 shadow-3xs ring-1 ring-indigo-200/50" 
+                            : "bg-white border-slate-200 text-slate-650 hover:bg-slate-50 hover:border-slate-300 shadow-3xs"
                         )}
                       >
-                        <div className={cn("h-4 w-4 rounded-md flex items-center justify-center text-[7px] text-white", member.bg)}>
+                        <div className={cn("h-5.5 w-5.5 rounded-full flex items-center justify-center text-[8px] text-white font-black shadow-3xs shrink-0", member.bg)}>
                           {member.initials}
                         </div>
                         <span>{member.name}</span>
@@ -636,13 +686,13 @@ export default function ProjectsPage() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4.5 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-xs font-bold transition-all cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-xs font-bold transition-all cursor-pointer active:scale-98"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4.5 py-2.5 rounded-xl bg-indigo-650 hover:bg-indigo-750 text-white text-xs font-bold shadow-md shadow-indigo-650/10 transition-all cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl bg-indigo-650 hover:bg-indigo-750 text-white text-xs font-bold shadow-md shadow-indigo-650/10 transition-all cursor-pointer active:scale-98"
                 >
                   Create Project
                 </button>
@@ -653,6 +703,6 @@ export default function ProjectsPage() {
         </div>
       )}
 
-    </div>
+    </>
   );
 }

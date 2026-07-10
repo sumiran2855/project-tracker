@@ -18,7 +18,8 @@ import {
   Rocket,
   Search,
   FileText,
-  Settings
+  Settings,
+  AlertCircle
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -47,25 +48,16 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
     {
       title: 'Planning',
       items: [
-        { label: 'Roadmap', href: '#roadmap', icon: Map, active: pathname === '/roadmap' },
-        { label: 'Backlog', href: '#backlog', icon: ListTodo, active: pathname === '/backlog' },
+        { label: 'Roadmap', href: '/roadmap', icon: Map, active: pathname === '/roadmap' },
         { label: 'Board', href: '/tasks', icon: CheckSquare, active: pathname === '/tasks', badge: '48' },
-      ],
-    },
-    {
-      title: 'Development',
-      items: [
-        { label: 'Code', href: '#code', icon: Code, active: pathname === '/code' },
-        { label: 'Releases', href: '#releases', icon: Rocket, active: pathname === '/releases' },
       ],
     },
     {
       title: 'Operations',
       items: [
-        { label: 'Issues', href: '#issues', icon: Search, active: pathname === '/issues' },
-        { label: 'Pages', href: '#pages', icon: FileText, active: pathname === '/pages' },
+        { label: 'Issues', href: '/issues', icon: AlertCircle, active: pathname === '/issues' },
         { label: 'Reports', href: '/reports', icon: BarChart3, active: pathname === '/reports' },
-        { label: 'Settings', href: '#settings', icon: Settings, active: pathname === '/settings' },
+        { label: 'Settings', href: '/settings', icon: Settings, active: pathname === '/settings' },
       ],
     },
   ];
