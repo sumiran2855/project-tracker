@@ -22,10 +22,16 @@ import {
   PlusCircle,
   X,
   CheckCircle2,
-  CalendarDays
+  CalendarDays,
+  Link2,
+  Terminal,
+  Hash,
+  Coins,
+  ShieldAlert
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, usePermission } from '@/contexts/UserContext';
+import { getProjectByIdAction, updateProjectAction } from '@/actions/projects';
 
 // Types
 interface Member {
@@ -47,6 +53,13 @@ interface Project {
   attachmentsCount: number;
   dueDate: string;
   members: Member[];
+  techStack?: string[];
+  priority?: 'Low' | 'Medium' | 'High' | 'Critical';
+  budget?: string;
+  repositoryUrl?: string;
+  slackChannel?: string;
+  startDate?: string;
+  targetQuarter?: 'Q2 2026' | 'Q3 2026' | 'Q4 2026' | 'Future';
 }
 
 interface Subtask {
@@ -69,8 +82,8 @@ interface Task {
   description: string;
   status: 'To Do' | 'In Progress' | 'In Review' | 'Done';
   priority: 'Low' | 'Medium' | 'High' | 'Urgent';
-  startDate: string; // e.g. "2026-07-01"
-  dueDate: string; // e.g. "2026-07-15"
+  startDate: string;
+  dueDate: string;
   assignees: Member[];
   subtasks: Subtask[];
   comments: Comment[];
@@ -91,6 +104,13 @@ const defaultProjects: Project[] = [
     commentsCount: 24,
     attachmentsCount: 4,
     dueDate: '2026-07-25',
+    startDate: '2026-07-01',
+    priority: 'High',
+    techStack: ['React', 'Figma', 'Mixpanel', 'Tailwind'],
+    budget: '$15,000',
+    repositoryUrl: 'https://github.com/my-org/saas-onboarding',
+    slackChannel: '#proj-onboarding',
+    targetQuarter: 'Q3 2026',
     members: [
       { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
       { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
@@ -109,6 +129,13 @@ const defaultProjects: Project[] = [
     commentsCount: 18,
     attachmentsCount: 6,
     dueDate: '2026-07-18',
+    startDate: '2026-07-05',
+    priority: 'Critical',
+    techStack: ['Node.js', 'Redis', 'JWT', 'PostgreSQL'],
+    budget: '$25,000',
+    repositoryUrl: 'https://github.com/my-org/auth-v2',
+    slackChannel: '#sec-auth',
+    targetQuarter: 'Q3 2026',
     members: [
       { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
       { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
@@ -299,39 +326,45 @@ export default function ProjectDetailPage() {
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [newCommentText, setNewCommentText] = useState('');
 
-  // Initial Load from LocalStorage
+  // Initial Load from Backend/LocalStorage
   useEffect(() => {
-    // 1. Load project info
-    const storedProjects = localStorage.getItem('pwt_projects');
-    let currentProj: Project | null = null;
-    
-    if (storedProjects) {
-      try {
-        const list: Project[] = JSON.parse(storedProjects);
-        currentProj = list.find(p => p.id === projectId) || null;
-      } catch (e) {
-        console.error(e);
+    async function loadProject() {
+      const res = await getProjectByIdAction(projectId);
+      if (res.success && res.data) {
+        setProject(res.data as any);
+      } else {
+        const storedProjects = localStorage.getItem('pwt_projects');
+        let currentProj: Project | null = null;
+        
+        if (storedProjects) {
+          try {
+            const list: Project[] = JSON.parse(storedProjects);
+            currentProj = list.find(p => p.id === projectId) || null;
+          } catch (e) {
+            console.error(e);
+          }
+        }
+
+        if (!currentProj) {
+          currentProj = defaultProjects.find(p => p.id === projectId) || {
+            id: projectId,
+            name: `Project Workspace #${projectId}`,
+            description: 'No detailed description found. Start organizing your team tasks.',
+            status: 'Planning',
+            progress: 0,
+            tags: ['Initiative'],
+            tasksCount: 0,
+            completedTasks: 0,
+            commentsCount: 0,
+            attachmentsCount: 0,
+            dueDate: 'No Due Date',
+            members: [defaultMembers[0]],
+          };
+        }
+        setProject(currentProj);
       }
     }
-
-    if (!currentProj) {
-      // Find in fallback
-      currentProj = defaultProjects.find(p => p.id === projectId) || {
-        id: projectId,
-        name: `Project Workspace #${projectId}`,
-        description: 'No detailed description found. Start organizing your team tasks.',
-        status: 'Planning',
-        progress: 0,
-        tags: ['Initiative'],
-        tasksCount: 0,
-        completedTasks: 0,
-        commentsCount: 0,
-        attachmentsCount: 0,
-        dueDate: 'No Due Date',
-        members: [defaultMembers[0]],
-      };
-    }
-    setProject(currentProj);
+    loadProject();
 
     // 2. Load project tasks
     const storedTasks = localStorage.getItem(`pwt_tasks_project_${projectId}`);
@@ -342,7 +375,6 @@ export default function ProjectDetailPage() {
         console.error(e);
       }
     } else {
-      // Seed default tasks for this project
       const seed = initialTasksData[projectId] || [];
       setTasks(seed);
       localStorage.setItem(`pwt_tasks_project_${projectId}`, JSON.stringify(seed));
@@ -350,11 +382,18 @@ export default function ProjectDetailPage() {
   }, [projectId]);
 
   // Sync state helpers
+  const updateProjectOnBackend = async (updatedProj: Project) => {
+    const res = await updateProjectAction(projectId, updatedProj);
+    if (!res.success) {
+      console.error('Failed to update project on backend:', res.error);
+    }
+  };
+
   const saveTasks = (updatedTasks: Task[]) => {
     setTasks(updatedTasks);
     localStorage.setItem(`pwt_tasks_project_${projectId}`, JSON.stringify(updatedTasks));
 
-    // Update main project progress and count in 'pwt_projects'
+    // Update main project progress and count
     const total = updatedTasks.length;
     const completed = updatedTasks.filter(t => t.status === 'Done').length;
     const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -367,6 +406,7 @@ export default function ProjectDetailPage() {
         progress: progressPercent
       };
       setProject(updatedProj);
+      updateProjectOnBackend(updatedProj);
 
       const storedProjects = localStorage.getItem('pwt_projects');
       if (storedProjects) {
@@ -386,10 +426,11 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const handleUpdateProjectStatus = (newStatus: Project['status']) => {
+  const handleUpdateProjectStatus = async (newStatus: Project['status']) => {
     if (!project) return;
     const updatedProj: Project = { ...project, status: newStatus };
     setProject(updatedProj);
+    updateProjectOnBackend(updatedProj);
 
     const storedProjects = localStorage.getItem('pwt_projects');
     if (storedProjects) {
@@ -561,14 +602,17 @@ export default function ProjectDetailPage() {
     setNewCommentText('');
   };
 
-  const getPriorityColor = (prio: Task['priority']) => {
+  const getPriorityColor = (prio: Task['priority'] | Project['priority'] | undefined) => {
+    if (!prio) return 'bg-slate-50 text-slate-600 border-slate-200/50';
     switch (prio) {
       case 'Urgent':
+      case 'Critical':
         return 'bg-red-50 text-red-700 border-red-200/50';
       case 'High':
         return 'bg-orange-50 text-orange-700 border-orange-200/50';
       case 'Medium':
         return 'bg-indigo-50 text-indigo-700 border-indigo-200/50';
+      case 'Low':
       default:
         return 'bg-slate-50 text-slate-600 border-slate-200/50';
     }
@@ -608,89 +652,186 @@ export default function ProjectDetailPage() {
         {/* Decorative corner */}
         <span className="absolute -right-24 -top-24 h-48 w-48 rounded-full bg-indigo-500/3 pointer-events-none" />
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+        <div className="flex flex-col gap-6 relative z-10">
           
-          <div className="space-y-3 flex-1">
-            {/* Back Button */}
-            <button 
-              onClick={() => router.push('/projects')}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-indigo-650 transition-colors cursor-pointer"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Back to Hub</span>
-            </button>
-
-            {/* Title & Status */}
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">{project.name}</h1>
-              
-              <div className="relative group shrink-0">
-                <select 
-                  value={project.status}
-                  onChange={(e) => handleUpdateProjectStatus(e.target.value as Project['status'])}
-                  className={cn("text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/25 appearance-none pr-7 border shadow-xs transition-all", getProjectStatusBadge(project.status))}
-                >
-                  <option value="Planning">Planning</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="In Review">In Review</option>
-                  <option value="Completed">Completed</option>
-                </select>
-                <ChevronDown className="h-3 w-3 absolute right-2 top-1.5 text-slate-400 pointer-events-none" />
-              </div>
-            </div>
-
-            <p className="text-xs text-slate-500 font-medium leading-relaxed max-w-2xl">{project.description}</p>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             
-            {/* Tags & Due date */}
-            <div className="flex flex-wrap items-center gap-4 pt-1">
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-bold border-r border-slate-100 pr-4">
-                <Calendar className="h-4 w-4 text-indigo-500" />
-                <span>Due Date:</span>
-                <span className="text-slate-600">{project.dueDate}</span>
+            <div className="space-y-3 flex-1">
+              {/* Back Button */}
+              <button 
+                onClick={() => router.push('/projects')}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-indigo-650 transition-colors cursor-pointer"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to Hub</span>
+              </button>
+
+              {/* Title & Status */}
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">{project.name}</h1>
+                
+                <div className="relative group shrink-0">
+                  <select 
+                    value={project.status}
+                    onChange={(e) => handleUpdateProjectStatus(e.target.value as Project['status'])}
+                    className={cn("text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/25 appearance-none pr-7 border shadow-xs transition-all", getProjectStatusBadge(project.status))}
+                  >
+                    <option value="Planning">Planning</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="In Review">In Review</option>
+                    <option value="Completed">Completed</option>
+                  </select>
+                  <ChevronDown className="h-3 w-3 absolute right-2 top-1.5 text-slate-400 pointer-events-none" />
+                </div>
               </div>
 
-              <div className="flex flex-wrap gap-1.5">
-                {project.tags.map(tag => (
-                  <span key={tag} className="rounded-lg bg-slate-50 border border-slate-200/50 text-slate-500 px-2 py-0.5 text-[9px] font-bold">
-                    {tag}
-                  </span>
-                ))}
+              <p className="text-xs text-slate-500 font-medium leading-relaxed max-w-2xl">{project.description}</p>
+              
+              {/* Tags & Due date */}
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-1 text-slate-650">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400">
+                  <Calendar className="h-4 w-4 text-indigo-500" />
+                  <span>Due Date:</span>
+                  <span className="text-slate-700">{project.dueDate}</span>
+                </div>
+
+                {project.tags && project.tags.length > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tags:</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {project.tags.map(tag => (
+                        <span key={tag} className="rounded-lg bg-slate-50 border border-slate-200/50 text-slate-500 px-2 py-0.5 text-[9px] font-bold">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {project.techStack && project.techStack.length > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tech Stack:</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {project.techStack.map(tech => (
+                        <span key={tech} className="rounded-lg bg-indigo-50/50 border border-indigo-150/30 text-indigo-750 px-2 py-0.5 text-[9px] font-bold">
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
+
+            {/* Progress Circular Gauge */}
+            <div className="flex items-center gap-5 border-l border-slate-100 pl-0 md:pl-6 shrink-0 w-full md:w-auto">
+              <div className="relative flex h-16 w-16 items-center justify-center bg-indigo-50/20 rounded-2xl border border-slate-100">
+                <svg className="h-14 w-14 -rotate-90" viewBox="0 0 48 48">
+                  <circle cx="24" cy="24" r="18" fill="none" stroke="#f1f5f9" strokeWidth="4.5" />
+                  <circle
+                    cx="24"
+                    cy="24"
+                    r="18"
+                    fill="none"
+                    stroke="#4f46e5"
+                    strokeWidth="4.5"
+                    strokeLinecap="round"
+                    strokeDasharray={2 * Math.PI * 18}
+                    strokeDashoffset={2 * Math.PI * 18 - (project.progress / 100) * 2 * Math.PI * 18}
+                  />
+                </svg>
+                <span className="absolute text-xs font-black text-indigo-750">{project.progress}%</span>
+              </div>
+              
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sprint Health</p>
+                <p className="text-sm font-black text-slate-800 mt-0.5">{project.completedTasks} / {project.tasksCount} Tasks Done</p>
+                
+                <div className="flex -space-x-1.5 mt-2">
+                  {project.members.map((member, i) => (
+                    <div key={i} className={cn("h-6 w-6 rounded-lg text-[8px] font-extrabold text-white flex items-center justify-center ring-2 ring-white", member.bg)} title={member.name}>
+                      {member.initials}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
           </div>
 
-          {/* Progress Circular Gauge */}
-          <div className="flex items-center gap-5 border-l border-slate-100 pl-0 md:pl-6 shrink-0 w-full md:w-auto">
-            <div className="relative flex h-16 w-16 items-center justify-center bg-indigo-50/20 rounded-2xl border border-slate-100">
-              <svg className="h-14 w-14 -rotate-90" viewBox="0 0 48 48">
-                <circle cx="24" cy="24" r="18" fill="none" stroke="#f1f5f9" strokeWidth="4.5" />
-                <circle
-                  cx="24"
-                  cy="24"
-                  r="18"
-                  fill="none"
-                  stroke="#4f46e5"
-                  strokeWidth="4.5"
-                  strokeLinecap="round"
-                  strokeDasharray={2 * Math.PI * 18}
-                  strokeDashoffset={2 * Math.PI * 18 - (project.progress / 100) * 2 * Math.PI * 18}
-                />
-              </svg>
-              <span className="absolute text-xs font-black text-indigo-750">{project.progress}%</span>
-            </div>
-            
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sprint Health</p>
-              <p className="text-sm font-black text-slate-800 mt-0.5">{project.completedTasks} / {project.tasksCount} Tasks Done</p>
-              
-              <div className="flex -space-x-1.5 mt-2">
-                {project.members.map((member, i) => (
-                  <div key={i} className={cn("h-6 w-6 rounded-lg text-[8px] font-extrabold text-white flex items-center justify-center ring-2 ring-white", member.bg)} title={member.name}>
-                    {member.initials}
-                  </div>
-                ))}
+          {/* Metadata Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 pt-4 border-t border-slate-100">
+            {/* Start Date */}
+            {project.startDate && (
+              <div className="bg-slate-50 border border-slate-200/50 rounded-2xl p-3 space-y-1">
+                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block">Start Date</span>
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-750">
+                  <Calendar className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                  <span>{project.startDate}</span>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Target Quarter */}
+            {project.targetQuarter && (
+              <div className="bg-slate-50 border border-slate-200/50 rounded-2xl p-3 space-y-1">
+                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block">Release Quarter</span>
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-750">
+                  <Sparkles className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                  <span>{project.targetQuarter}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Priority */}
+            {project.priority && (
+              <div className="bg-slate-50 border border-slate-200/50 rounded-2xl p-3 space-y-1">
+                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block">Priority</span>
+                <div className="flex items-center gap-1.5 text-xs font-black">
+                  <span className={cn("rounded-lg px-2 py-0.5 text-[9px] font-black uppercase tracking-wider border", getPriorityColor(project.priority))}>
+                    {project.priority}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Budget */}
+            {project.budget && (
+              <div className="bg-slate-50 border border-slate-200/50 rounded-2xl p-3 space-y-1">
+                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block">Budget / Est. Hours</span>
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-750">
+                  <Coins className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                  <span>{project.budget}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Slack Channel */}
+            {project.slackChannel && (
+              <div className="bg-slate-50 border border-slate-200/50 rounded-2xl p-3 space-y-1">
+                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block">Slack Channel</span>
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-755">
+                  <Hash className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                  <span className="truncate" title={project.slackChannel}>{project.slackChannel}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Repository */}
+            {project.repositoryUrl && (
+              <div className="bg-slate-50 border border-slate-200/50 rounded-2xl p-3 space-y-1">
+                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block">Repository</span>
+                <a 
+                  href={project.repositoryUrl} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 text-xs font-bold text-indigo-650 hover:text-indigo-850 hover:underline transition-all"
+                >
+                  <Link2 className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                  <span className="truncate">View Code</span>
+                </a>
+              </div>
+            )}
           </div>
 
         </div>

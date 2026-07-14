@@ -21,6 +21,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getProjectsAction, createProjectAction, deleteProjectAction, getEmployeesAction, type Employee } from '@/actions/projects';
 
 interface Member {
   name: string;
@@ -41,6 +42,13 @@ interface Project {
   attachmentsCount: number;
   dueDate: string;
   members: Member[];
+  techStack?: string[];
+  priority?: 'Low' | 'Medium' | 'High' | 'Critical';
+  budget?: string;
+  repositoryUrl?: string;
+  slackChannel?: string;
+  startDate?: string;
+  targetQuarter?: 'Q2 2026' | 'Q3 2026' | 'Q4 2026' | 'Future';
 }
 
 const defaultProjects: Project[] = [
@@ -56,6 +64,13 @@ const defaultProjects: Project[] = [
     commentsCount: 24,
     attachmentsCount: 4,
     dueDate: '2026-07-25',
+    startDate: '2026-07-01',
+    priority: 'High',
+    techStack: ['React', 'Figma', 'Mixpanel', 'Tailwind'],
+    budget: '$15,000',
+    repositoryUrl: 'https://github.com/my-org/saas-onboarding',
+    slackChannel: '#proj-onboarding',
+    targetQuarter: 'Q3 2026',
     members: [
       { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
       { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
@@ -74,6 +89,13 @@ const defaultProjects: Project[] = [
     commentsCount: 18,
     attachmentsCount: 6,
     dueDate: '2026-07-18',
+    startDate: '2026-07-05',
+    priority: 'Critical',
+    techStack: ['Node.js', 'Redis', 'JWT', 'PostgreSQL'],
+    budget: '$25,000',
+    repositoryUrl: 'https://github.com/my-org/auth-v2',
+    slackChannel: '#sec-auth',
+    targetQuarter: 'Q3 2026',
     members: [
       { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
       { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
@@ -91,6 +113,13 @@ const defaultProjects: Project[] = [
     commentsCount: 8,
     attachmentsCount: 2,
     dueDate: '2026-08-05',
+    startDate: '2026-07-10',
+    priority: 'Medium',
+    techStack: ['Next.js', 'TailwindCSS', 'Framer Motion'],
+    budget: '$8,000',
+    repositoryUrl: 'https://github.com/my-org/marketing-site',
+    slackChannel: '#marketing-web',
+    targetQuarter: 'Q3 2026',
     members: [
       { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
       { name: 'Emma Watson', initials: 'EW', bg: 'bg-rose-500' },
@@ -108,6 +137,11 @@ const defaultProjects: Project[] = [
     commentsCount: 32,
     attachmentsCount: 12,
     dueDate: '2026-06-30',
+    startDate: '2026-06-01',
+    priority: 'Low',
+    techStack: ['Figma', 'React Native'],
+    budget: '$5,000',
+    targetQuarter: 'Q2 2026',
     members: [
       { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
       { name: 'Emma Watson', initials: 'EW', bg: 'bg-rose-500' },
@@ -126,6 +160,13 @@ const defaultProjects: Project[] = [
     commentsCount: 2,
     attachmentsCount: 1,
     dueDate: '2026-08-20',
+    startDate: '2026-08-01',
+    priority: 'High',
+    techStack: ['React', 'Node.js', 'Stripe', 'PostgreSQL'],
+    budget: '$20,000',
+    repositoryUrl: 'https://github.com/my-org/stripe-billing',
+    slackChannel: '#fin-stripe',
+    targetQuarter: 'Q3 2026',
     members: [
       { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
       { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
@@ -143,13 +184,20 @@ const defaultProjects: Project[] = [
     commentsCount: 0,
     attachmentsCount: 0,
     dueDate: '2026-09-10',
+    startDate: '2026-09-01',
+    priority: 'Medium',
+    techStack: ['TimescaleDB', 'GraphQL', 'React', 'D3.js'],
+    budget: '$18,000',
+    repositoryUrl: 'https://github.com/my-org/analytics-dash',
+    slackChannel: '#analytics-dev',
+    targetQuarter: 'Q4 2026',
     members: [
       { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
     ],
   },
 ];
 
-const availableMembers: Member[] = [
+const staticAvailableMembers: Member[] = [
   { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
   { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
   { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
@@ -161,10 +209,12 @@ export default function ProjectsPage() {
   const canCreateProject = usePermission('project:create');
   const canDeleteProject = usePermission('project:delete');
 
-  const [projects, setProjects] = useState<Project[]>(defaultProjects);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [availableMembers, setAvailableMembers] = useState<Employee[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [sortBy, setSortBy] = useState('name');
+  const [loading, setLoading] = useState(true);
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -174,17 +224,54 @@ export default function ProjectsPage() {
   const [newProjTags, setNewProjTags] = useState('');
   const [newProjDueDate, setNewProjDueDate] = useState('');
   const [newProjMembers, setNewProjMembers] = useState<string[]>([]);
+  
+  // Upgraded Metadata State
+  const [newProjTechStack, setNewProjTechStack] = useState('');
+  const [newProjPriority, setNewProjPriority] = useState<Project['priority']>('Medium');
+  const [newProjBudget, setNewProjBudget] = useState('');
+  const [newProjRepositoryUrl, setNewProjRepositoryUrl] = useState('');
+  const [newProjSlackChannel, setNewProjSlackChannel] = useState('');
+  const [newProjStartDate, setNewProjStartDate] = useState('');
+  const [newProjQuarter, setNewProjQuarter] = useState<Project['targetQuarter']>('Q3 2026');
 
-  // Load from localStorage
+  // Load from backend API
   useEffect(() => {
-    const stored = localStorage.getItem('pwt_projects');
-    if (stored) {
-      try {
-        setProjects(JSON.parse(stored));
-      } catch (e) {
-        console.error('Failed to parse projects from localStorage', e);
+    async function loadData() {
+      setLoading(true);
+      const projRes = await getProjectsAction();
+      if (projRes.success && projRes.data) {
+        setProjects(projRes.data as any[]);
+      } else {
+        const stored = localStorage.getItem('pwt_projects');
+        if (stored) {
+          try {
+            setProjects(JSON.parse(stored));
+          } catch (e) {
+            console.error('Failed to parse projects from localStorage', e);
+          }
+        } else {
+          setProjects(defaultProjects);
+        }
       }
+
+      const empRes = await getEmployeesAction();
+      if (empRes.success && empRes.data) {
+        setAvailableMembers(empRes.data);
+      } else {
+        setAvailableMembers(
+          staticAvailableMembers.map((m, i) => ({
+            id: String(i + 1),
+            name: m.name,
+            initials: m.initials,
+            bg: m.bg,
+            email: '',
+            role: 'Employee'
+          }))
+        );
+      }
+      setLoading(false);
     }
+    loadData();
   }, []);
 
   const saveProjects = (updatedProjects: Project[]) => {
@@ -199,29 +286,60 @@ export default function ProjectsPage() {
   const inReviewCount = projects.filter(p => p.status === 'In Review').length;
   const planningCount = projects.filter(p => p.status === 'Planning').length;
 
-  const handleCreateProject = (e: React.FormEvent) => {
+  const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProjName.trim()) return;
 
-    const selectedMembers = availableMembers.filter(m => newProjMembers.includes(m.name));
+    const selectedMembers = availableMembers
+      .filter(m => newProjMembers.includes(m.name))
+      .map(m => ({ userId: m.id, name: m.name, initials: m.initials, bg: m.bg }));
 
-    const newProject: Project = {
-      id: String(Date.now()),
+    const newProjectData: Partial<Project> = {
       name: newProjName,
       description: newProjDesc,
       status: newProjStatus,
       progress: newProjStatus === 'Completed' ? 100 : newProjStatus === 'Planning' ? 0 : 10,
       tags: newProjTags.split(',').map(t => t.trim()).filter(Boolean),
-      tasksCount: 0,
-      completedTasks: 0,
-      commentsCount: 0,
-      attachmentsCount: 0,
       dueDate: newProjDueDate || 'No Due Date',
-      members: selectedMembers.length > 0 ? selectedMembers : [availableMembers[0]],
+      members: selectedMembers,
+      techStack: newProjTechStack.split(',').map(t => t.trim()).filter(Boolean),
+      priority: newProjPriority,
+      budget: newProjBudget || undefined,
+      repositoryUrl: newProjRepositoryUrl || undefined,
+      slackChannel: newProjSlackChannel || undefined,
+      startDate: newProjStartDate || undefined,
+      targetQuarter: newProjQuarter || undefined,
     };
 
-    const updated = [newProject, ...projects];
-    saveProjects(updated);
+    const res = await createProjectAction(newProjectData);
+    if (res.success && res.data) {
+      setProjects(prev => [res.data as any, ...prev]);
+    } else {
+      console.error('Failed to create project on backend:', res.error);
+      const fallbackProject: Project = {
+        id: String(Date.now()),
+        name: newProjName,
+        description: newProjDesc,
+        status: newProjStatus,
+        progress: newProjStatus === 'Completed' ? 100 : newProjStatus === 'Planning' ? 0 : 10,
+        tags: newProjTags.split(',').map(t => t.trim()).filter(Boolean),
+        tasksCount: 0,
+        completedTasks: 0,
+        commentsCount: 0,
+        attachmentsCount: 0,
+        dueDate: newProjDueDate || 'No Due Date',
+        members: selectedMembers.length > 0 ? selectedMembers as any : [{ name: 'Default User', initials: 'DU', bg: 'bg-slate-500' }],
+        techStack: newProjTechStack.split(',').map(t => t.trim()).filter(Boolean),
+        priority: newProjPriority,
+        budget: newProjBudget || undefined,
+        repositoryUrl: newProjRepositoryUrl || undefined,
+        slackChannel: newProjSlackChannel || undefined,
+        startDate: newProjStartDate || undefined,
+        targetQuarter: newProjQuarter || undefined,
+      };
+      const updated = [fallbackProject, ...projects];
+      saveProjects(updated);
+    }
 
     // Reset Form & Close Modal
     setNewProjName('');
@@ -230,15 +348,28 @@ export default function ProjectsPage() {
     setNewProjTags('');
     setNewProjDueDate('');
     setNewProjMembers([]);
+    setNewProjTechStack('');
+    setNewProjPriority('Medium');
+    setNewProjBudget('');
+    setNewProjRepositoryUrl('');
+    setNewProjSlackChannel('');
+    setNewProjStartDate('');
+    setNewProjQuarter('Q3 2026');
     setIsModalOpen(false);
   };
 
-  const handleDeleteProject = (id: string, e: React.MouseEvent) => {
+  const handleDeleteProject = async (id: string, e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigating to detail page when clicking delete
     e.stopPropagation();
     if (confirm('Are you sure you want to delete this project?')) {
-      const updated = projects.filter(p => p.id !== id);
-      saveProjects(updated);
+      const res = await deleteProjectAction(id);
+      if (res.success) {
+        setProjects(prev => prev.filter(p => p.id !== id));
+      } else {
+        console.error('Failed to delete project on backend, reverting to local:', res.error);
+        const updated = projects.filter(p => p.id !== id);
+        saveProjects(updated);
+      }
     }
   };
 
@@ -272,6 +403,21 @@ export default function ProjectsPage() {
         return 'bg-blue-50 text-blue-700 border-blue-200/50';
       default:
         return 'bg-indigo-50 text-indigo-700 border-indigo-200/50';
+    }
+  };
+
+  const getPriorityStyles = (priority?: Project['priority']) => {
+    switch (priority) {
+      case 'Critical':
+        return 'bg-red-50 text-red-700 border-red-200/50';
+      case 'High':
+        return 'bg-orange-50 text-orange-700 border-orange-200/50';
+      case 'Medium':
+        return 'bg-indigo-50 text-indigo-700 border-indigo-200/50';
+      case 'Low':
+        return 'bg-slate-50 text-slate-500 border-slate-200/50';
+      default:
+        return 'hidden';
     }
   };
 
@@ -461,9 +607,16 @@ export default function ProjectsPage() {
               <div>
                 {/* Header Row */}
                 <div className="flex items-center justify-between gap-2 mb-4">
-                  <span className={cn("rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider border", getStatusStyles(project.status))}>
-                    {project.status}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className={cn("rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider border", getStatusStyles(project.status))}>
+                      {project.status}
+                    </span>
+                    {project.priority && (
+                      <span className={cn("rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider border", getPriorityStyles(project.priority))}>
+                        {project.priority}
+                      </span>
+                    )}
+                  </div>
                   
                   <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-bold">
                     <Calendar className="h-3.5 w-3.5" />
@@ -472,7 +625,7 @@ export default function ProjectsPage() {
                 </div>
 
                 {/* Title & Description */}
-                <h3 className="text-base font-black text-slate-800 tracking-tight group-hover:text-indigo-600 transition-colors">
+                <h3 className="text-base font-black text-slate-800 tracking-tight group-hover:text-indigo-650 transition-colors">
                   {project.name}
                 </h3>
                 <p className="text-xs text-slate-450 font-medium leading-relaxed mt-2 mb-4 line-clamp-2">
@@ -480,7 +633,7 @@ export default function ProjectsPage() {
                 </p>
 
                 {/* Tags */}
-                <div className="flex flex-wrap gap-1.5 mb-5">
+                <div className="flex flex-wrap gap-1.5 mb-2">
                   {project.tags.map((tag) => (
                     <span
                       key={tag}
@@ -490,6 +643,20 @@ export default function ProjectsPage() {
                     </span>
                   ))}
                 </div>
+
+                {/* Tech Stack */}
+                {project.techStack && project.techStack.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-5">
+                    {project.techStack.map((tech) => (
+                      <span
+                        key={tech}
+                        className="rounded-lg bg-indigo-50/50 text-indigo-700 border border-indigo-150/30 px-2 py-0.5 text-[9px] font-bold"
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Progress & Footer Section */}
@@ -567,10 +734,10 @@ export default function ProjectsPage() {
       {/* Modal - New Project Form */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md animate-fadeIn">
-          <div className="relative w-full max-w-lg bg-white rounded-3xl border border-slate-100 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.12)] p-6 sm:p-8 space-y-6 animate-scaleIn">
+          <div className="relative w-full max-w-2xl bg-white rounded-3xl border border-slate-100 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.12)] p-6 sm:p-8 space-y-6 animate-scaleIn max-h-[90vh] flex flex-col">
             
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4 shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-650 border border-indigo-100/30">
                   <Folder className="h-4.5 w-4.5" />
@@ -586,111 +753,232 @@ export default function ProjectsPage() {
             </div>
 
             {/* Modal Form */}
-            <form onSubmit={handleCreateProject} className="space-y-5">
-              
-              {/* Project Name */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Project Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Stripe Integration V2"
-                  value={newProjName}
-                  onChange={(e) => setNewProjName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all"
-                />
-              </div>
+            <form onSubmit={handleCreateProject} className="flex-1 flex flex-col min-h-0">
+              {/* Scrollable Form Body */}
+              <div className="flex-1 overflow-y-auto space-y-5 pr-2 -mr-2 min-h-0">
+                
+                {/* Section 1: General Info */}
+                <div className="space-y-4">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1 flex items-center gap-1.5">
+                    <span>01. General Information</span>
+                  </h4>
+                  
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Project Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Stripe Integration V2"
+                      value={newProjName}
+                      onChange={(e) => setNewProjName(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all"
+                    />
+                  </div>
 
-              {/* Description */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Description</label>
-                <textarea
-                  rows={3}
-                  placeholder="Describe the main milestones and goals..."
-                  value={newProjDesc}
-                  onChange={(e) => setNewProjDesc(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all resize-none"
-                />
-              </div>
-
-              {/* Status & Due Date */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Initial Status</label>
-                  <div className="relative">
-                    <select
-                      value={newProjStatus}
-                      onChange={(e) => setNewProjStatus(e.target.value as Project['status'])}
-                      className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
-                    >
-                      <option value="Planning">Planning</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="In Review">In Review</option>
-                      <option value="Completed">Completed</option>
-                    </select>
-                    <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Description / Goals</label>
+                    <textarea
+                      rows={3}
+                      placeholder="Describe the main milestones, goals, and what this project is about..."
+                      value={newProjDesc}
+                      onChange={(e) => setNewProjDesc(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all resize-none"
+                    />
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Due Date</label>
-                  <input
-                    type="date"
-                    value={newProjDueDate}
-                    onChange={(e) => setNewProjDueDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer"
-                  />
-                </div>
-              </div>
+                {/* Section 2: Timeline & Status */}
+                <div className="space-y-4 pt-2">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1">
+                    <span>02. Timeline & Planning</span>
+                  </h4>
 
-              {/* Tags */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tags (comma separated)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Frontend, Billing, Design"
-                  value={newProjTags}
-                  onChange={(e) => setNewProjTags(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all"
-                />
-              </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Initial Status</label>
+                      <div className="relative">
+                        <select
+                          value={newProjStatus}
+                          onChange={(e) => setNewProjStatus(e.target.value as Project['status'])}
+                          className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
+                        >
+                          <option value="Planning">Planning</option>
+                          <option value="In Progress">In Progress</option>
+                          <option value="In Review">In Review</option>
+                          <option value="Completed">Completed</option>
+                        </select>
+                        <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                      </div>
+                    </div>
 
-              {/* Members selection */}
-              <div className="space-y-2.5">
-                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Assign Team Members</label>
-                <div className="flex flex-wrap gap-2.5">
-                  {availableMembers.map((member) => {
-                    const isSelected = newProjMembers.includes(member.name);
-                    return (
-                      <button
-                        key={member.name}
-                        type="button"
-                        onClick={() => {
-                          if (isSelected) {
-                            setNewProjMembers(newProjMembers.filter(m => m !== member.name));
-                          } else {
-                            setNewProjMembers([...newProjMembers, member.name]);
-                          }
-                        }}
-                        className={cn(
-                          "flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border text-[11px] font-bold transition-all duration-200 cursor-pointer",
-                          isSelected 
-                            ? "bg-indigo-50/80 border-indigo-200 text-indigo-700 shadow-3xs ring-1 ring-indigo-200/50" 
-                            : "bg-white border-slate-200 text-slate-650 hover:bg-slate-50 hover:border-slate-300 shadow-3xs"
-                        )}
-                      >
-                        <div className={cn("h-5.5 w-5.5 rounded-full flex items-center justify-center text-[8px] text-white font-black shadow-3xs shrink-0", member.bg)}>
-                          {member.initials}
-                        </div>
-                        <span>{member.name}</span>
-                      </button>
-                    );
-                  })}
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Target Quarter</label>
+                      <div className="relative">
+                        <select
+                          value={newProjQuarter}
+                          onChange={(e) => setNewProjQuarter(e.target.value as Project['targetQuarter'])}
+                          className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
+                        >
+                          <option value="Q2 2026">Q2 2026</option>
+                          <option value="Q3 2026">Q3 2026</option>
+                          <option value="Q4 2026">Q4 2026</option>
+                          <option value="Future">Future</option>
+                        </select>
+                        <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Start Date</label>
+                      <input
+                        type="date"
+                        value={newProjStartDate}
+                        onChange={(e) => setNewProjStartDate(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Due Date</label>
+                      <input
+                        type="date"
+                        value={newProjDueDate}
+                        onChange={(e) => setNewProjDueDate(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer"
+                      />
+                    </div>
+                  </div>
                 </div>
+
+                {/* Section 3: Technical & Operational Metadata */}
+                <div className="space-y-4 pt-2">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1">
+                    <span>03. Tech Stack & Operations</span>
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tech Stack (comma separated)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Next.js, Node.js, Stripe"
+                        value={newProjTechStack}
+                        onChange={(e) => setNewProjTechStack(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Priority</label>
+                      <div className="relative">
+                        <select
+                          value={newProjPriority}
+                          onChange={(e) => setNewProjPriority(e.target.value as Project['priority'])}
+                          className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
+                        >
+                          <option value="Low">Low</option>
+                          <option value="Medium">Medium</option>
+                          <option value="High">High</option>
+                          <option value="Critical">Critical</option>
+                        </select>
+                        <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Budget / Est. Hours</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. $10,000"
+                        value={newProjBudget}
+                        onChange={(e) => setNewProjBudget(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Slack / Discord</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. #initiative-auth"
+                        value={newProjSlackChannel}
+                        onChange={(e) => setNewProjSlackChannel(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Repository Link</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. https://github.com/..."
+                        value={newProjRepositoryUrl}
+                        onChange={(e) => setNewProjRepositoryUrl(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tags (comma separated)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Frontend, Billing, Design"
+                      value={newProjTags}
+                      onChange={(e) => setNewProjTags(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Section 4: Members selection */}
+                <div className="space-y-4 pt-2">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1">
+                    <span>04. Team Allocation</span>
+                  </h4>
+                  
+                  <div className="space-y-2.5">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Assign Team Members</label>
+                    <div className="flex flex-wrap gap-2.5">
+                      {availableMembers.map((member) => {
+                        const isSelected = newProjMembers.includes(member.name);
+                        return (
+                          <button
+                            key={member.name}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
+                                setNewProjMembers(newProjMembers.filter(m => m !== member.name));
+                              } else {
+                                setNewProjMembers([...newProjMembers, member.name]);
+                              }
+                            }}
+                            className={cn(
+                              "flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border text-[11px] font-bold transition-all duration-200 cursor-pointer",
+                              isSelected 
+                                ? "bg-indigo-50/80 border-indigo-200 text-indigo-700 shadow-3xs ring-1 ring-indigo-200/50" 
+                                : "bg-white border-slate-200 text-slate-650 hover:bg-slate-50 hover:border-slate-300 shadow-3xs"
+                            )}
+                          >
+                            <div className={cn("h-5.5 w-5.5 rounded-full flex items-center justify-center text-[8px] text-white font-black shadow-3xs shrink-0", member.bg)}>
+                              {member.initials}
+                            </div>
+                            <span>{member.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
               </div>
 
               {/* Form Buttons */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 shrink-0 mt-4">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}

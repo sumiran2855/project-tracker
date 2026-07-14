@@ -14,6 +14,7 @@ import { ProjectCard } from '@/components/dashboard/ProjectCard';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { cn } from '@/lib/utils';
 import { hasPermission } from '@/lib/auth/permissions';
+import { getProjectsAction } from '@/actions/projects';
 
 export const metadata: Metadata = {
   title: 'Dashboard — Project Tracker',
@@ -41,6 +42,7 @@ const maxHours = Math.max(...weeklyHours.map((d) => d.hours));
 
 const recentProjects = [
   {
+    id: '1',
     name: 'E-Commerce Platform',
     category: 'Web Application',
     status: 'In Progress',
@@ -56,6 +58,7 @@ const recentProjects = [
     updatedAt: '2h ago',
   },
   {
+    id: '2',
     name: 'Mobile App Redesign',
     category: 'UI/UX Design',
     status: 'Review',
@@ -70,6 +73,7 @@ const recentProjects = [
     updatedAt: '10m ago',
   },
   {
+    id: '3',
     name: 'API Gateway v2',
     category: 'Backend Services',
     status: 'Planning',
@@ -84,6 +88,7 @@ const recentProjects = [
     updatedAt: '1d ago',
   },
   {
+    id: '4',
     name: 'Analytics Dashboard',
     category: 'Data Analytics',
     status: 'Done',
@@ -127,6 +132,49 @@ export default async function DashboardPage() {
   const canViewWorkload = hasPermission(user?.role, 'dashboard:view-team-workload');
   const canViewQuickActions = hasPermission(user?.role, 'dashboard:view-quick-actions');
 
+  let activeProjects: any[] = [];
+  const dynamicStats = [
+    { label: 'Active Projects', value: '0',   change: '+2',   iconName: 'Folder',       tint: '#6366f1', positive: true  },
+    { label: 'Open Tasks',      value: '48',   change: '-5',   iconName: 'CheckCircle2', tint: '#3b82f6', positive: true  },
+    { label: 'Open Bugs',       value: '7',    change: '+3',   iconName: 'AlertTriangle',tint: '#ef4444', positive: false },
+    { label: 'Hours Logged',    value: '134h', change: '+18h', iconName: 'Clock',        tint: '#ec4899', positive: true  },
+  ];
+
+  try {
+    const res = await getProjectsAction();
+    if (res.success && res.data) {
+      activeProjects = res.data;
+      dynamicStats[0].value = String(activeProjects.length);
+    }
+  } catch (error) {
+    console.error('Failed to load projects in dashboard:', error);
+  }
+
+  const projectsToRender = activeProjects.length > 0 ? activeProjects.slice(0, 4).map(p => {
+    const barColors: Record<string, string> = {
+      'Planning': '#06b6d4',
+      'In Progress': '#6366f1',
+      'In Review': '#8b5cf6',
+      'Completed': '#10b981',
+    };
+    return {
+      id: p.id,
+      name: p.name,
+      category: p.techStack && p.techStack.length > 0 ? p.techStack.slice(0, 2).join(', ') : 'General Workspace',
+      status: p.status,
+      progress: p.progress,
+      due: p.dueDate || 'No Due Date',
+      bar: barColors[p.status] || '#6366f1',
+      tasks: { completed: p.completedTasks || 0, total: p.tasksCount || 0 },
+      team: p.members.map((m: any) => ({
+        initials: m.initials,
+        name: m.name,
+        bg: m.bg
+      })),
+      updatedAt: 'Just now',
+    };
+  }) : recentProjects;
+
   return (
     <div className="min-h-full bg-slate-50 p-6 md:p-8 lg:p-10">
       {/* Hero banner */}
@@ -150,7 +198,7 @@ export default async function DashboardPage() {
 
       {/* Stats row */}
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {stats.map((s) => (
+        {dynamicStats.map((s) => (
           <StatCard
             key={s.label}
             label={s.label}
@@ -236,7 +284,7 @@ export default async function DashboardPage() {
             </a>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 bg-slate-50/30 flex-1">
-            {recentProjects.map((p) => (
+            {projectsToRender.map((p) => (
               <ProjectCard key={p.name} p={p} />
             ))}
           </div>

@@ -49,6 +49,11 @@ interface Project {
   startDate?: string; // Timeline support
   targetQuarter?: 'Q2 2026' | 'Q3 2026' | 'Q4 2026' | 'Future'; // Board support
   members: Member[];
+  techStack?: string[];
+  priority?: 'Low' | 'Medium' | 'High' | 'Critical';
+  budget?: string;
+  repositoryUrl?: string;
+  slackChannel?: string;
 }
 
 interface MilestoneItem {
@@ -77,6 +82,11 @@ const defaultProjectsSeed: Project[] = [
     dueDate: '2026-07-25',
     startDate: '2026-06-15',
     targetQuarter: 'Q3 2026',
+    priority: 'High',
+    techStack: ['React', 'Figma', 'Mixpanel', 'Tailwind'],
+    budget: '$15,000',
+    repositoryUrl: 'https://github.com/my-org/saas-onboarding',
+    slackChannel: '#proj-onboarding',
     members: [
       { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
       { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
@@ -97,6 +107,11 @@ const defaultProjectsSeed: Project[] = [
     dueDate: '2026-07-18',
     startDate: '2026-06-01',
     targetQuarter: 'Q3 2026',
+    priority: 'Critical',
+    techStack: ['Node.js', 'Redis', 'JWT', 'PostgreSQL'],
+    budget: '$25,000',
+    repositoryUrl: 'https://github.com/my-org/auth-v2',
+    slackChannel: '#sec-auth',
     members: [
       { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
       { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
@@ -116,6 +131,11 @@ const defaultProjectsSeed: Project[] = [
     dueDate: '2026-08-05',
     startDate: '2026-07-01',
     targetQuarter: 'Q3 2026',
+    priority: 'Medium',
+    techStack: ['Next.js', 'TailwindCSS', 'Framer Motion'],
+    budget: '$8,000',
+    repositoryUrl: 'https://github.com/my-org/marketing-site',
+    slackChannel: '#marketing-web',
     members: [
       { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
       { name: 'Emma Watson', initials: 'EW', bg: 'bg-rose-500' },
@@ -135,6 +155,9 @@ const defaultProjectsSeed: Project[] = [
     dueDate: '2026-06-30',
     startDate: '2026-05-15',
     targetQuarter: 'Q2 2026',
+    priority: 'Low',
+    techStack: ['Figma', 'React Native'],
+    budget: '$5,000',
     members: [
       { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
       { name: 'Emma Watson', initials: 'EW', bg: 'bg-rose-500' },
@@ -155,6 +178,11 @@ const defaultProjectsSeed: Project[] = [
     dueDate: '2026-10-20',
     startDate: '2026-09-01',
     targetQuarter: 'Q4 2026',
+    priority: 'High',
+    techStack: ['React', 'Node.js', 'Stripe', 'PostgreSQL'],
+    budget: '$20,000',
+    repositoryUrl: 'https://github.com/my-org/stripe-billing',
+    slackChannel: '#fin-stripe',
     members: [
       { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
       { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
@@ -174,6 +202,11 @@ const defaultProjectsSeed: Project[] = [
     dueDate: '2026-11-10',
     startDate: '2026-10-01',
     targetQuarter: 'Q4 2026',
+    priority: 'Medium',
+    techStack: ['TimescaleDB', 'GraphQL', 'React', 'D3.js'],
+    budget: '$18,000',
+    repositoryUrl: 'https://github.com/my-org/analytics-dash',
+    slackChannel: '#analytics-dev',
     members: [
       { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
     ],

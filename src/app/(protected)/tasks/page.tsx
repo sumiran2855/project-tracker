@@ -46,6 +46,13 @@ interface Project {
   attachmentsCount: number;
   dueDate: string;
   members: Member[];
+  techStack?: string[];
+  priority?: 'Low' | 'Medium' | 'High' | 'Critical';
+  budget?: string;
+  repositoryUrl?: string;
+  slackChannel?: string;
+  startDate?: string;
+  targetQuarter?: 'Q2 2026' | 'Q3 2026' | 'Q4 2026' | 'Future';
 }
 
 interface Subtask {
@@ -95,6 +102,13 @@ const defaultProjects: Project[] = [
     commentsCount: 24,
     attachmentsCount: 4,
     dueDate: '2026-07-25',
+    startDate: '2026-07-01',
+    priority: 'High',
+    techStack: ['React', 'Figma', 'Mixpanel', 'Tailwind'],
+    budget: '$15,000',
+    repositoryUrl: 'https://github.com/my-org/saas-onboarding',
+    slackChannel: '#proj-onboarding',
+    targetQuarter: 'Q3 2026',
     members: [
       { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
       { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
@@ -113,6 +127,13 @@ const defaultProjects: Project[] = [
     commentsCount: 18,
     attachmentsCount: 6,
     dueDate: '2026-07-18',
+    startDate: '2026-07-05',
+    priority: 'Critical',
+    techStack: ['Node.js', 'Redis', 'JWT', 'PostgreSQL'],
+    budget: '$25,000',
+    repositoryUrl: 'https://github.com/my-org/auth-v2',
+    slackChannel: '#sec-auth',
+    targetQuarter: 'Q3 2026',
     members: [
       { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
       { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },

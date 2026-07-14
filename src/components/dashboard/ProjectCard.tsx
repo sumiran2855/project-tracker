@@ -1,6 +1,7 @@
 'use client';
 
 import { Folder, Calendar } from 'lucide-react';
+import Link from 'next/link';
 
 interface TeamMember {
   initials: string;
@@ -9,6 +10,7 @@ interface TeamMember {
 }
 
 interface Project {
+  id?: string;
   name: string;
   category: string;
   status: string;
@@ -28,9 +30,9 @@ const statusStyles: Record<string, string> = {
 };
 
 export function ProjectCard({ p }: { p: Project }) {
-  return (
+  const cardContent = (
     <div
-      className="group relative flex flex-col rounded-2xl bg-white border border-slate-100 overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1.5"
+      className="group relative flex flex-col rounded-2xl bg-white border border-slate-100 overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1.5 h-full"
       style={{
         boxShadow: '0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.04)',
       }}
@@ -65,7 +67,7 @@ export function ProjectCard({ p }: { p: Project }) {
             </div>
           </div>
           <span
-            className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-bold ${statusStyles[p.status]}`}
+            className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-bold ${statusStyles[p.status] || statusStyles['Planning']}`}
           >
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
             {p.status}
@@ -136,7 +138,7 @@ export function ProjectCard({ p }: { p: Project }) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-3.5 border-t border-slate-100">
+        <div className="flex items-center justify-between pt-3.5 border-t border-slate-100 mt-auto">
           {/* Avatar Stack */}
           <div className="flex -space-x-2">
             {p.team.map((member) => (
@@ -169,4 +171,14 @@ export function ProjectCard({ p }: { p: Project }) {
       </div>
     </div>
   );
+
+  if (p.id) {
+    return (
+      <Link href={`/projects/${p.id}`} className="block h-full">
+        {cardContent}
+      </Link>
+    );
+  }
+
+  return cardContent;
 }
