@@ -25,6 +25,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUser, usePermission } from '@/contexts/UserContext';
 
 // Interfaces
 interface Member {
@@ -57,6 +58,7 @@ interface MilestoneItem {
   dueDate: string;
   projectId: string;
   completed: boolean;
+  assignedTo?: string;
 }
 
 // Fallback seed projects if none found
@@ -228,6 +230,10 @@ const TIMELINE_END = new Date('2026-11-30');
 const TOTAL_TIMELINE_DAYS = 183; // Approx days in 6 months (Jun-Nov)
 
 export default function RoadmapPage() {
+  const { user } = useUser();
+  const canManageRoadmap = usePermission('roadmap:manage');
+  const isEmployee = user?.role === 'Employee';
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [milestones, setMilestones] = useState<MilestoneItem[]>([]);
   const [activeTab, setActiveTab] = useState<'timeline' | 'board' | 'milestones'>('timeline');
@@ -236,6 +242,10 @@ export default function RoadmapPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [projectFilter, setProjectFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [employeeFilter, setEmployeeFilter] = useState('All');
+
+  // Add Milestone Form States
+  const [newMilestoneAssignee, setNewMilestoneAssignee] = useState('');
 
   // Modal States
   const [isMilestoneModalOpen, setIsMilestoneModalOpen] = useState(false);
@@ -381,6 +391,7 @@ export default function RoadmapPage() {
       dueDate: newMilestoneDueDate || new Date().toISOString().split('T')[0],
       projectId: newMilestoneProject,
       completed: false,
+      assignedTo: newMilestoneAssignee || undefined,
     };
 
     saveMilestones([newMilestone, ...milestones]);
@@ -390,6 +401,7 @@ export default function RoadmapPage() {
     setNewMilestoneDesc('');
     setNewMilestoneDueDate('');
     setNewMilestoneProject('');
+    setNewMilestoneAssignee('');
     setIsMilestoneModalOpen(false);
   };
 
@@ -437,8 +449,13 @@ export default function RoadmapPage() {
     setEditingProject(null);
   };
 
+  // Scoped projects based on user role and filters
+  const scopedProjects = isEmployee
+    ? projects.filter(proj => proj.members.some(m => m.name === user?.name))
+    : projects.filter(proj => employeeFilter === 'All' || proj.members.some(m => m.name === employeeFilter));
+
   // Filter calculations
-  const filteredProjects = projects.filter(proj => {
+  const filteredProjects = scopedProjects.filter(proj => {
     const matchesSearch = proj.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       proj.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'All' || proj.status === statusFilter;
@@ -449,15 +466,18 @@ export default function RoadmapPage() {
     const matchesProject = projectFilter === 'All' || m.projectId === projectFilter;
     const matchesSearch = m.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesProject && matchesSearch;
+    const isProjectVisible = scopedProjects.some(p => p.id === m.projectId);
+    const matchesAssignee = !isEmployee || m.assignedTo === user?.name;
+
+    return matchesProject && matchesSearch && isProjectVisible && matchesAssignee;
   });
 
   // KPI Statistics
-  const totalInitiatives = projects.length;
-  const activeQuarters = Array.from(new Set(projects.map(p => p.targetQuarter).filter(Boolean))).length;
-  const completedMilestones = milestones.filter(m => m.completed).length;
-  const totalMilestones = milestones.length;
-  const onTrackInitiatives = projects.filter(p => p.progress >= 50 && p.status !== 'Completed').length;
+  const totalInitiatives = filteredProjects.length;
+  const activeQuarters = Array.from(new Set(filteredProjects.map(p => p.targetQuarter).filter(Boolean))).length;
+  const completedMilestones = filteredMilestones.filter(m => m.completed).length;
+  const totalMilestones = filteredMilestones.length;
+  const onTrackInitiatives = filteredProjects.filter(p => p.progress >= 50 && p.status !== 'Completed').length;
 
   const getStatusStyles = (status: Project['status']) => {
     switch (status) {
@@ -507,18 +527,20 @@ export default function RoadmapPage() {
           </div>
 
           {/* Action button */}
-          <button
-            onClick={() => {
-              if (projects.length > 0) {
-                setNewMilestoneProject(projects[0].id);
-              }
-              setIsMilestoneModalOpen(true);
-            }}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-4.5 py-2.5 text-xs font-bold shadow-md shadow-indigo-600/10 hover:shadow-indigo-600/20 active:scale-98 transition-all cursor-pointer w-full sm:w-auto"
-          >
-            <Plus className="h-4.5 w-4.5" />
-            <span>Add Milestone</span>
-          </button>
+          {canManageRoadmap && (
+            <button
+              onClick={() => {
+                if (projects.length > 0) {
+                  setNewMilestoneProject(projects[0].id);
+                }
+                setIsMilestoneModalOpen(true);
+              }}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-4.5 py-2.5 text-xs font-bold shadow-md shadow-indigo-600/10 hover:shadow-indigo-600/20 active:scale-98 transition-all cursor-pointer w-full sm:w-auto"
+            >
+              <Plus className="h-4.5 w-4.5" />
+              <span>Add Milestone</span>
+            </button>
+          )}
         </div>
 
         {/* KPI Stats Grid */}
@@ -668,6 +690,22 @@ export default function RoadmapPage() {
                   <option value="In Progress">In Progress</option>
                   <option value="In Review">In Review</option>
                   <option value="Completed">Completed</option>
+                </select>
+              </div>
+            )}
+
+            {!isEmployee && (
+              <div className="relative flex items-center justify-between sm:justify-start w-full sm:w-auto bg-white border border-slate-200 rounded-xl px-3 py-1 text-xs font-bold text-slate-500 shadow-2xs shrink-0">
+                <span className="shrink-0 mr-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Employee:</span>
+                <select
+                  value={employeeFilter}
+                  onChange={(e) => setEmployeeFilter(e.target.value)}
+                  className="flex-1 sm:flex-initial bg-transparent text-slate-700 outline-none pr-4 py-2 cursor-pointer font-bold text-right sm:text-left"
+                >
+                  <option value="All">All Employees</option>
+                  {Array.from(new Set(projects.flatMap(p => p.members.map(m => m.name)))).map(empName => (
+                    <option key={empName} value={empName}>{empName}</option>
+                  ))}
                 </select>
               </div>
             )}
@@ -1016,6 +1054,12 @@ export default function RoadmapPage() {
                                 </span>
                               )}
 
+                              {milestone.assignedTo && (
+                                <span className="text-emerald-700 bg-emerald-50/50 border border-emerald-150/50 rounded-md px-1.5 py-0.5 tracking-wider">
+                                  Assignee: {milestone.assignedTo}
+                                </span>
+                              )}
+
                               <span className="text-slate-400 flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
                                 Due: {new Date(milestone.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -1025,13 +1069,15 @@ export default function RoadmapPage() {
                         </div>
 
                         {/* Delete button */}
-                        <button
-                          onClick={() => handleDeleteMilestone(milestone.id)}
-                          className="text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-colors cursor-pointer ml-3"
-                          title="Delete Milestone"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        {canManageRoadmap && (
+                          <button
+                            onClick={() => handleDeleteMilestone(milestone.id)}
+                            className="text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-colors cursor-pointer ml-3"
+                            title="Delete Milestone"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                     );
                   })}
@@ -1119,6 +1165,24 @@ export default function RoadmapPage() {
                     onChange={(e) => setNewMilestoneDueDate(e.target.value)}
                     className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer"
                   />
+                </div>
+              </div>
+
+              {/* Assignee */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Assign Milestone To</label>
+                <div className="relative">
+                  <select
+                    value={newMilestoneAssignee}
+                    onChange={(e) => setNewMilestoneAssignee(e.target.value)}
+                    className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
+                  >
+                    <option value="">Unassigned</option>
+                    {(projects.find(p => p.id === newMilestoneProject)?.members || []).map(member => (
+                      <option key={member.name} value={member.name}>{member.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                 </div>
               </div>
 

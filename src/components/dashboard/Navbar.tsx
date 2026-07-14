@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, Search, Bell, Plus, User, Settings, LogOut, Command } from 'lucide-react';
+import { Menu, Search, Bell, User, Settings, LogOut, Command } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -107,13 +107,7 @@ export function Navbar({ userName, userEmail }: NavbarProps) {
 
           <div className="hidden lg:block h-5 w-px bg-slate-100 mx-0.5" />
 
-          <button
-            type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-indigo-600 hover:bg-indigo-50/50 transition-colors cursor-pointer"
-            aria-label="New task"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
+
 
           <button
             type="button"

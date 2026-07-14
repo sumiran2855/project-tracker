@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUser, usePermission } from '@/contexts/UserContext';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -104,6 +106,16 @@ const defaultHours = [
 ];
 
 export default function ReportsPage() {
+  const { user } = useUser();
+  const router = useRouter();
+  const canViewReports = usePermission('report:view');
+
+  useEffect(() => {
+    if (user && !canViewReports) {
+      router.push('/dashboard');
+    }
+  }, [user, canViewReports, router]);
+
   const [projectsCount, setProjectsCount] = useState(0);
   const [tasksCount, setTasksCount] = useState(0);
   const [completedTasksCount, setCompletedTasksCount] = useState(0);
@@ -240,6 +252,14 @@ export default function ReportsPage() {
 
   // Donut chart stroke dashes calculations
   let accumulatedPercent = 0;
+
+  if (!user || !canViewReports) {
+    return (
+      <div className="flex h-[80vh] items-center justify-center bg-slate-50/20">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-650 border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fadeUp p-4 sm:p-6 lg:p-8 max-w-8xl mx-auto space-y-6">

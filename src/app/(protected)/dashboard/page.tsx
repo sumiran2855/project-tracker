@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { ProjectCard } from '@/components/dashboard/ProjectCard';
 import { StatCard } from '@/components/dashboard/StatCard';
+import { cn } from '@/lib/utils';
+import { hasPermission } from '@/lib/auth/permissions';
 
 export const metadata: Metadata = {
   title: 'Dashboard — Project Tracker',
@@ -122,6 +124,8 @@ const deadlines = [
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
+  const canViewWorkload = hasPermission(user?.role, 'dashboard:view-team-workload');
+  const canViewQuickActions = hasPermission(user?.role, 'dashboard:view-quick-actions');
 
   return (
     <div className="min-h-full bg-slate-50 p-6 md:p-8 lg:p-10">
@@ -162,12 +166,12 @@ export default async function DashboardPage() {
       {/* Bento grid */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
 
-        {/* Weekly hours chart — spans 2 */}
-        <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+        {/* Weekly hours chart — spans 2 or 3 depending on workload visibility */}
+        <div className={cn("rounded-2xl border border-slate-200 bg-white p-6 shadow-xs", canViewWorkload ? "lg:col-span-2" : "lg:col-span-3")}>
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-base font-bold text-slate-800">Hours Logged This Week</h2>
-              <p className="text-xs text-slate-400 mt-0.5">38.5h total · avg 5.5h/day</p>
+              <p className="text-xs text-slate-450 mt-0.5">38.5h total · avg 5.5h/day</p>
             </div>
             <button className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-50 cursor-pointer transition-colors">
               <MoreHorizontal className="h-4 w-4" />
@@ -189,43 +193,45 @@ export default async function DashboardPage() {
         </div>
 
         {/* Team workload */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
-          <h2 className="text-base font-bold text-slate-800 mb-1">Team Workload</h2>
-          <p className="text-xs text-slate-400 mb-5">Capacity this sprint</p>
-          <div className="space-y-4">
-            {team.map((t) => (
-              <div key={t.name} className="flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[10px] font-bold text-indigo-600 border border-indigo-100/50">
-                  {t.initials}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold text-slate-800 truncate">{t.name}</p>
-                    <span className="text-[10px] font-bold text-slate-400 shrink-0 ml-2">{t.load}%</span>
+        {canViewWorkload && (
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+            <h2 className="text-base font-bold text-slate-800 mb-1">Team Workload</h2>
+            <p className="text-xs text-slate-400 mb-5">Capacity this sprint</p>
+            <div className="space-y-4">
+              {team.map((t) => (
+                <div key={t.name} className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[10px] font-bold text-indigo-600 border border-indigo-100/50">
+                    {t.initials}
                   </div>
-                  <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${t.load}%`,
-                        backgroundColor: t.load > 85 ? '#ef4444' : t.load > 60 ? '#f59e0b' : '#10b981',
-                      }}
-                    />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold text-slate-800 truncate">{t.name}</p>
+                      <span className="text-[10px] font-bold text-slate-400 shrink-0 ml-2">{t.load}%</span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${t.load}%`,
+                          backgroundColor: t.load > 85 ? '#ef4444' : t.load > 60 ? '#f59e0b' : '#10b981',
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Recent projects — spans 2 */}
-        <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs flex flex-col">
+        {/* Recent projects — spans 2 or 3 */}
+        <div className={cn("rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs flex flex-col", canViewQuickActions ? "lg:col-span-2" : "lg:col-span-3")}>
           <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
             <div>
               <h2 className="text-base font-bold text-slate-800">Recent Projects</h2>
-              <p className="text-xs text-slate-400 mt-0.5">Your most active development tracks</p>
+              <p className="text-xs text-slate-450 mt-0.5">Your most active development tracks</p>
             </div>
-            <a href="#" className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-indigo-650 hover:bg-slate-50 transition-all shadow-xs whitespace-nowrap shrink-0">
+            <a href="/projects" className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-indigo-650 hover:bg-slate-50 transition-all shadow-xs whitespace-nowrap shrink-0">
               View all
             </a>
           </div>
@@ -237,7 +243,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Right rail: Deadlines + Activity + Quick actions */}
-        <div className="space-y-5">
+        <div className={cn("space-y-5", !canViewQuickActions && "lg:col-span-3 lg:grid lg:grid-cols-2 lg:gap-5 lg:space-y-0")}>
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
             <div className="flex items-center gap-2 mb-4">
               <CalendarDays className="h-4 w-4 text-indigo-600" />
@@ -246,7 +252,7 @@ export default async function DashboardPage() {
             <div className="space-y-3">
               {deadlines.map((d) => (
                 <div key={d.title} className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold text-slate-600 leading-snug">{d.title}</p>
+                  <p className="text-xs font-semibold text-slate-650 leading-snug">{d.title}</p>
                   <span
                     className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
                       d.urgent ? 'bg-red-50 text-red-650 border border-red-150/30' : 'bg-slate-100 text-slate-500'
@@ -272,29 +278,31 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
-            <h2 className="text-sm font-bold text-slate-800 mb-3">Quick Actions</h2>
-            <div className="flex flex-col gap-2">
-              {[
-                { label: 'New Project', icon: Plus, fg: '#4f46e5', bg: '#e0e7ff60' },
-                { label: 'Log Time', icon: Play, fg: '#10b981', bg: '#d1fae560' },
-                { label: 'File a Bug', icon: Bug, fg: '#ef4444', bg: '#fee2e260' },
-              ].map((qa) => {
-                const Icon = qa.icon;
-                return (
-                  <button
-                    key={qa.label}
-                    type="button"
-                    className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all hover:brightness-95 cursor-pointer shadow-xs"
-                    style={{ color: qa.fg, backgroundColor: qa.bg }}
-                  >
-                    <Icon className="h-4 w-4 shrink-0" />
-                    <span>{qa.label}</span>
-                  </button>
-                );
-              })}
+          {canViewQuickActions && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs lg:col-span-2">
+              <h2 className="text-sm font-bold text-slate-800 mb-3">Quick Actions</h2>
+              <div className="flex flex-col gap-2">
+                {[
+                  { label: 'New Project', icon: Plus, fg: '#4f46e5', bg: '#e0e7ff60' },
+                  { label: 'Log Time', icon: Play, fg: '#10b981', bg: '#d1fae560' },
+                  { label: 'File a Bug', icon: Bug, fg: '#ef4444', bg: '#fee2e260' },
+                ].map((qa) => {
+                  const Icon = qa.icon;
+                  return (
+                    <button
+                      key={qa.label}
+                      type="button"
+                      className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all hover:brightness-95 cursor-pointer shadow-xs"
+                      style={{ color: qa.fg, backgroundColor: qa.bg }}
+                    >
+                      <Icon className="h-4 w-4 shrink-0" />
+                      <span>{qa.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

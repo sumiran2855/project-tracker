@@ -20,6 +20,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUser, usePermission } from '@/contexts/UserContext';
 
 interface Member {
   name: string;
@@ -125,6 +126,9 @@ const availableMembers: Member[] = [
 ];
 
 export default function IssuesPage() {
+  const { user } = useUser();
+  const canDeleteIssue = usePermission('issue:delete');
+
   const [issues, setIssues] = useState<Issue[]>([]);
   const [projects, setProjects] = useState<Project[]>(defaultProjects);
   const [searchQuery, setSearchQuery] = useState('');
@@ -483,13 +487,15 @@ export default function IssuesPage() {
                           </p>
                         </div>
                       </div>
-                      <button
-                        onClick={e => handleDeleteIssue(issue.id, e)}
-                        className="text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-all cursor-pointer shrink-0"
-                        title="Delete Issue"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      {canDeleteIssue && (
+                        <button
+                          onClick={e => handleDeleteIssue(issue.id, e)}
+                          className="text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-all cursor-pointer shrink-0"
+                          title="Delete Issue"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
 
                     {/* Description */}
@@ -609,13 +615,15 @@ export default function IssuesPage() {
                     </div>
 
                     {/* Delete */}
-                    <button
-                      onClick={e => handleDeleteIssue(issue.id, e)}
-                      className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
-                      title="Delete Issue"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    {canDeleteIssue && (
+                      <button
+                        onClick={e => handleDeleteIssue(issue.id, e)}
+                        className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+                        title="Delete Issue"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               );

@@ -42,7 +42,7 @@ export async function createSession(userId: string, rememberMe = false): Promise
   // If rememberMe is checked, session lasts 30 days. Otherwise, it lasts 1 day (or standard session)
   const durationMs = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
   const expiresAt = new Date(Date.now() + durationMs);
-  
+
   const token = await encrypt({ userId, expiresAt });
   const cookieStore = await cookies();
 

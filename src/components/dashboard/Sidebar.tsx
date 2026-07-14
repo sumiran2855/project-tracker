@@ -23,10 +23,14 @@ import {
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
+import { useUser } from '@/contexts/UserContext';
+import { hasPermission } from '@/lib/auth/permissions';
+
 interface SidebarProps {
   user?: {
     name?: string | null;
     email?: string | null;
+    role?: string | null;
   } | null;
   onClose?: () => void;
   className?: string;
@@ -36,6 +40,7 @@ interface SidebarProps {
 
 export function Sidebar({ onClose, className, isCollapsed = false, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
+  const { user } = useUser();
 
   const navigationGroups = [
     {
@@ -56,11 +61,14 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
       title: 'Operations',
       items: [
         { label: 'Issues', href: '/issues', icon: AlertCircle, active: pathname === '/issues' },
-        { label: 'Reports', href: '/reports', icon: BarChart3, active: pathname === '/reports' },
+        { label: 'Reports', href: '/reports', icon: BarChart3, active: pathname === '/reports', permission: 'report:view' },
         { label: 'Settings', href: '/settings', icon: Settings, active: pathname === '/settings' },
       ],
     },
-  ];
+  ].map(group => ({
+    ...group,
+    items: group.items.filter((item: any) => !item.permission || hasPermission(user?.role, item.permission))
+  })).filter(group => group.items.length > 0);
 
   const progress = 84;
   const radius = 20;
@@ -112,7 +120,7 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
                 'rounded-2xl bg-white border border-slate-200 overflow-hidden',
                 isCollapsed && 'bg-transparent border-none'
               )}>
-                {group.items.map((item, idx) => {
+                {group.items.map((item: any, idx) => {
                   const Icon = item.icon;
                   const linkContent = (
                     <a

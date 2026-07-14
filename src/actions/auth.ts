@@ -155,3 +155,24 @@ export async function resetPasswordAction(
 
   redirect('/login?resetSuccess=true');
 }
+
+export async function updateUserRoleAction(role: string): Promise<{ success: boolean; error?: string }> {
+  const { getCurrentUser } = await import('@/lib/auth/dal');
+  const { prisma } = await import('@/lib/db/prisma');
+
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return { success: false, error: 'Unauthorized' };
+    }
+    
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { role },
+    });
+    
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error?.message || 'Database update failed' };
+  }
+}

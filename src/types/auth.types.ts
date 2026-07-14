@@ -22,12 +22,12 @@ export interface VerifiedSession {
  */
 export type LoginActionState =
   | {
-      errors?: {
-        email?: string[];
-        password?: string[];
-      };
-      message?: string;
-    }
+    errors?: {
+      email?: string[];
+      password?: string[];
+    };
+    message?: string;
+  }
   | undefined;
 
 /** Safe user DTO — never include passwordHash in this type */
@@ -35,6 +35,7 @@ export interface SafeUser {
   id: string;
   email: string;
   name: string | null;
+  role: string;
 }
 
 /**
@@ -42,36 +43,36 @@ export interface SafeUser {
  */
 export type SignupActionState =
   | {
-      errors?: {
-        fullName?: string[];
-        email?: string[];
-        password?: string[];
-      };
-      message?: string;
-    }
+    errors?: {
+      fullName?: string[];
+      email?: string[];
+      password?: string[];
+    };
+    message?: string;
+  }
   | undefined;
 
 /** Shape returned by forgot password Server Action via useActionState */
 export type ForgotPasswordActionState =
   | {
-      errors?: {
-        email?: string[];
-      };
-      message?: string;
-      successMessage?: string;
-      resetLink?: string; // For mock reset email delivery
-    }
+    errors?: {
+      email?: string[];
+    };
+    message?: string;
+    successMessage?: string;
+    resetLink?: string; // For mock reset email delivery
+  }
   | undefined;
 
 /** Shape returned by reset password Server Action via useActionState */
 export type ResetPasswordActionState =
   | {
-      errors?: {
-        password?: string[];
-        confirmPassword?: string[];
-        token?: string[];
-      };
-      message?: string;
-      successMessage?: string;
-    }
+    errors?: {
+      password?: string[];
+      confirmPassword?: string[];
+      token?: string[];
+    };
+    message?: string;
+    successMessage?: string;
+  }
   | undefined;

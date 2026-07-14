@@ -25,6 +25,7 @@ import {
   CalendarDays
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUser, usePermission } from '@/contexts/UserContext';
 
 // Types
 interface Member {
@@ -264,12 +265,23 @@ const defaultMembers: Member[] = [
 ];
 
 export default function ProjectDetailPage() {
+  const { user } = useUser();
+  const canCreateTask = usePermission('task:create');
+  const canAssignTask = usePermission('task:assign');
+  const canDeleteTask = usePermission('task:delete');
+
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
 
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
+  
+  const isEmployee = user?.role === 'Employee';
+  const displayTasks = isEmployee
+    ? tasks.filter(t => t.assignees.some(a => a.name === user?.name))
+    : tasks;
+
   const [activeTab, setActiveTab] = useState<'kanban' | 'list' | 'timeline'>('kanban');
 
   // Task Dialog States
@@ -715,13 +727,15 @@ export default function ProjectDetailPage() {
         </div>
 
         {/* Add Task Trigger */}
-        <button 
-          onClick={() => setIsTaskModalOpen(true)}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-750 text-white px-4 py-2.5 text-xs font-bold shadow-md shadow-indigo-600/10 transition-all cursor-pointer"
-        >
-          <Plus className="h-4.5 w-4.5" />
-          <span>Add Task</span>
-        </button>
+        {canCreateTask && (
+          <button 
+            onClick={() => setIsTaskModalOpen(true)}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-750 text-white px-4 py-2.5 text-xs font-bold shadow-md shadow-indigo-600/10 transition-all cursor-pointer"
+          >
+            <Plus className="h-4.5 w-4.5" />
+            <span>Add Task</span>
+          </button>
+        )}
       </div>
 
       {/* Main Views Container */}
@@ -731,7 +745,7 @@ export default function ProjectDetailPage() {
         {activeTab === 'kanban' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {(['To Do', 'In Progress', 'In Review', 'Done'] as Task['status'][]).map(status => {
-              const columnTasks = tasks.filter(t => t.status === status);
+              const columnTasks = displayTasks.filter(t => t.status === status);
               return (
                 <div 
                   key={status}
@@ -754,16 +768,18 @@ export default function ProjectDetailPage() {
                       </span>
                     </div>
 
-                    <button 
-                      onClick={() => {
-                        setNewTaskStatus(status);
-                        setIsTaskModalOpen(true);
-                      }}
-                      className="text-slate-400 hover:text-indigo-650 p-1 hover:bg-white rounded-lg transition-colors cursor-pointer"
-                      title="Add task to column"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </button>
+                    {canCreateTask && (
+                      <button 
+                        onClick={() => {
+                          setNewTaskStatus(status);
+                          setIsTaskModalOpen(true);
+                        }}
+                        className="text-slate-400 hover:text-indigo-650 p-1 hover:bg-white rounded-lg transition-colors cursor-pointer"
+                        title="Add task to column"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
 
                   {/* Task list inside column */}
@@ -870,14 +886,14 @@ export default function ProjectDetailPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-150">
-                  {tasks.length === 0 ? (
+                  {displayTasks.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-12 text-center text-xs font-bold text-slate-400">
                         No tasks created yet. Click "Add Task" to get started.
                       </td>
                     </tr>
                   ) : (
-                    tasks.map(task => {
+                    displayTasks.map(task => {
                       const totalSubs = task.subtasks.length;
                       const compSubs = task.subtasks.filter(s => s.completed).length;
                       return (
@@ -962,16 +978,18 @@ export default function ProjectDetailPage() {
 
                           {/* Actions */}
                           <td className="py-4 px-6 text-right">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteTask(task.id);
-                              }}
-                              className="text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-colors cursor-pointer inline-flex"
-                              title="Delete Task"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            {canDeleteTask && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteTask(task.id);
+                                }}
+                                className="text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-colors cursor-pointer inline-flex"
+                                title="Delete Task"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
                           </td>
                         </tr>
                       );
@@ -986,7 +1004,7 @@ export default function ProjectDetailPage() {
         {/* 3. TIMELINE / GANTT VIEW */}
         {activeTab === 'timeline' && (
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs overflow-hidden">
-            {tasks.length === 0 ? (
+            {displayTasks.length === 0 ? (
               <div className="py-12 text-center text-xs font-bold text-slate-400">
                 No tasks to display in timeline. Create tasks to render the Gantt chart.
               </div>
@@ -1007,7 +1025,7 @@ export default function ProjectDetailPage() {
 
                 {/* Timeline rows */}
                 <div className="space-y-4">
-                  {tasks.map(task => {
+                  {displayTasks.map(task => {
                     // Let us calculate start and end day within July 2026 (days 1 to 31)
                     let startDay = 1;
                     let endDay = 15;
@@ -1480,13 +1498,17 @@ export default function ProjectDetailPage() {
 
             {/* Footer options */}
             <div className="bg-slate-50 border-t border-slate-150 px-6 py-4.5 flex justify-between items-center">
-              <button
-                onClick={() => handleDeleteTask(selectedTask.id)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold transition-colors cursor-pointer"
-              >
-                <Trash2 className="h-4 w-4" />
-                <span>Delete Task</span>
-              </button>
+              {canDeleteTask ? (
+                <button
+                  onClick={() => handleDeleteTask(selectedTask.id)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold transition-colors cursor-pointer"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>Delete Task</span>
+                </button>
+              ) : (
+                <div />
+              )}
 
               <button
                 onClick={() => setSelectedTask(null)}

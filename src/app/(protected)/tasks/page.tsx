@@ -24,6 +24,7 @@ import {
   UserPlus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUser, usePermission } from '@/contexts/UserContext';
 
 // Types
 interface Member {
@@ -210,8 +211,18 @@ const defaultMembers: Member[] = [
 ];
 
 export default function GlobalTasksPage() {
+  const { user } = useUser();
+  const canCreateTask = usePermission('task:create');
+  const canDeleteTask = usePermission('task:delete');
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<GlobalTask[]>([]);
+
+  const isEmployee = user?.role === 'Employee';
+  const displayTasks = isEmployee
+    ? tasks.filter(t => t.assignees.some(a => a.name === user?.name))
+    : tasks;
+
   const [activeTab, setActiveTab] = useState<'board' | 'list' | 'calendar'>('board');
 
   // Filters
@@ -405,7 +416,7 @@ export default function GlobalTasksPage() {
   };
 
   // Filter Tasks
-  const filteredTasks = tasks.filter(task => {
+  const filteredTasks = displayTasks.filter(task => {
     const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           task.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesProject = projectFilter === 'All' || task.projectId === projectFilter;
@@ -537,18 +548,20 @@ export default function GlobalTasksPage() {
           </p>
         </div>
 
-        <button 
-          onClick={() => {
-            if (projects.length > 0) {
-              setNewTaskProject(projects[0].id);
-            }
-            setIsTaskModalOpen(true);
-          }}
-          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-750 text-white px-4.5 py-2.5 text-xs font-bold shadow-md shadow-indigo-600/10 transition-all cursor-pointer"
-        >
-          <Plus className="h-4.5 w-4.5" />
-          <span>Add Task</span>
-        </button>
+        {canCreateTask && (
+          <button 
+            onClick={() => {
+              if (projects.length > 0) {
+                setNewTaskProject(projects[0].id);
+              }
+              setIsTaskModalOpen(true);
+            }}
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-750 text-white px-4.5 py-2.5 text-xs font-bold shadow-md shadow-indigo-600/10 transition-all cursor-pointer"
+          >
+            <Plus className="h-4.5 w-4.5" />
+            <span>Add Task</span>
+          </button>
+        )}
       </div>
 
       {/* Stats Counter Row */}
@@ -708,15 +721,17 @@ export default function GlobalTasksPage() {
                       </span>
                     </div>
 
-                    <button 
-                      onClick={() => {
-                        setNewTaskStatus(status);
-                        setIsTaskModalOpen(true);
-                      }}
-                      className="text-slate-400 hover:text-indigo-650 p-1 hover:bg-white rounded-lg transition-colors cursor-pointer"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </button>
+                    {canCreateTask && (
+                      <button 
+                        onClick={() => {
+                          setNewTaskStatus(status);
+                          setIsTaskModalOpen(true);
+                        }}
+                        className="text-slate-400 hover:text-indigo-650 p-1 hover:bg-white rounded-lg transition-colors cursor-pointer"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
 
                   {/* Tasks List */}
@@ -882,16 +897,18 @@ export default function GlobalTasksPage() {
 
                         {/* Actions */}
                         <td className="py-4 px-6 text-right">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteTask(task.id);
-                            }}
-                            className="text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-colors cursor-pointer inline-flex"
-                            title="Delete Task"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          {canDeleteTask && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteTask(task.id);
+                              }}
+                              className="text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-colors cursor-pointer inline-flex"
+                              title="Delete Task"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -1330,13 +1347,17 @@ export default function GlobalTasksPage() {
 
             {/* Footer */}
             <div className="bg-slate-50 border-t border-slate-150 px-6 py-4.5 flex justify-between items-center">
-              <button
-                onClick={() => handleDeleteTask(selectedTask.id)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-650 text-xs font-bold transition-colors cursor-pointer"
-              >
-                <Trash2 className="h-4 w-4" />
-                <span>Delete Task</span>
-              </button>
+              {canDeleteTask ? (
+                <button
+                  onClick={() => handleDeleteTask(selectedTask.id)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-650 text-xs font-bold transition-colors cursor-pointer"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>Delete Task</span>
+                </button>
+              ) : (
+                <div />
+              )}
 
               <button
                 onClick={() => setSelectedTask(null)}

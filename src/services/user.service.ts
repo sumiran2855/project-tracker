@@ -25,6 +25,7 @@ export async function authenticateUser(
     id: user.id,
     email: user.email,
     name: user.name,
+    role: user.role,
   };
 }
 
@@ -41,5 +42,5 @@ export async function registerUser(
   const passwordHash = await bcrypt.hash(password, 12);
   const user = await createUser({ email, name: fullName, passwordHash });
 
-  return { id: user.id, email: user.email, name: user.name };
+  return { id: user.id, email: user.email, name: user.name, role: user.role };
 }

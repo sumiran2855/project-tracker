@@ -18,6 +18,8 @@ import {
   Palette
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useUser } from '@/contexts/UserContext';
+import { updateUserRoleAction } from '@/actions/auth';
 
 interface UserProfile {
   name: string;
@@ -64,7 +66,8 @@ const defaultWorkspace: WorkspacePrefs = {
 };
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'workspace' | 'data'>('profile');
+  const { user, setUser } = useUser();
+  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'workspace' | 'data' | 'testing'>('profile');
   const [profile, setProfile] = useState<UserProfile>(defaultProfile);
   const [notifications, setNotifications] = useState<NotificationPrefs>(defaultNotifications);
   const [workspace, setWorkspace] = useState<WorkspacePrefs>(defaultWorkspace);
@@ -138,6 +141,7 @@ export default function SettingsPage() {
             { id: 'notifications', label: 'Notifications', icon: Bell },
             { id: 'workspace', label: 'Preferences', icon: Sliders },
             { id: 'data', label: 'Data & Storage', icon: Database },
+            { id: 'testing', label: 'Testing Role Switcher', icon: RefreshCcw },
           ].map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -438,10 +442,77 @@ export default function SettingsPage() {
               </div>
             )}
 
+            {/* 5. Testing Role Switcher Section */}
+            {activeTab === 'testing' && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-black text-slate-800">Development Role Switcher</h3>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Dynamically switch between user roles to test Role-Based Access Control (RBAC) permissions.</p>
+                </div>
+
+                <div className="bg-indigo-50/50 border border-indigo-150/40 rounded-2xl p-4 sm:p-5 flex items-start gap-3">
+                  <Sparkles className="h-4.5 w-4.5 text-indigo-650 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-slate-800">Current Active Role: <span className="text-indigo-650 font-black">{user?.role}</span></p>
+                    <p className="text-[10px] text-slate-500 font-medium leading-relaxed">
+                      Changing your role will update your account in the database and active session context. Pages, sidebar options, and action triggers will immediately update to reflect your selected role's permissions.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {(['Employee', 'Admin', 'Manager', 'Team Lead', 'Client'] as const).map((r) => {
+                    const isCurrent = user?.role?.toLowerCase() === r.toLowerCase();
+                    return (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={async () => {
+                          if (isCurrent) return;
+                          const res = await updateUserRoleAction(r);
+                          if (res.success) {
+                            if (user) {
+                              setUser({ ...user, role: r });
+                            }
+                            setSaveSuccess(true);
+                            setTimeout(() => setSaveSuccess(false), 3000);
+                          } else {
+                            alert(res.error || 'Failed to update role');
+                          }
+                        }}
+                        className={cn(
+                          "flex flex-col items-start p-4 rounded-2xl border text-left transition-all cursor-pointer select-none",
+                          isCurrent
+                            ? "bg-white border-indigo-650 ring-2 ring-indigo-500/20 shadow-xs"
+                            : "bg-slate-50/50 border-slate-200 hover:border-slate-350 hover:bg-white"
+                        )}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <span className={cn("text-xs font-black", isCurrent ? "text-indigo-650 font-extrabold" : "text-slate-700")}>
+                            {r}
+                          </span>
+                          {isCurrent && (
+                            <Check className="h-4 w-4 text-indigo-600" />
+                          )}
+                        </div>
+                        <span className="text-[9px] text-slate-450 mt-1.5 font-medium leading-normal">
+                          {r === 'Admin' && 'Full system control, manages all entities and configurations.'}
+                          {r === 'Manager' && 'Manages projects, tasks, roadmaps, views reports and team workload.'}
+                          {r === 'Team Lead' && 'Oversees teams, manages projects/tasks/roadmaps, views workload.'}
+                          {r === 'Client' && 'Views/creates projects, views roadmaps and reports, manages client tasks.'}
+                          {r === 'Employee' && 'Default role. Accesses assigned projects, tasks, roadmaps. Restricted reports.'}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
           </div>
 
           {/* Footer bar */}
-          {activeTab !== 'data' && (
+          {activeTab !== 'data' && activeTab !== 'testing' && (
             <div className="bg-slate-50/50 border-t border-slate-100 px-6 py-4 flex items-center justify-between">
               <div>
                 {saveSuccess && (
