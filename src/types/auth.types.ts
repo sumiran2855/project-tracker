@@ -6,8 +6,12 @@
 /** JWT payload stored in the session cookie */
 export interface SessionPayload {
   userId: string;
+  email: string;
+  name: string | null;
+  role: string;
   expiresAt: Date;
 }
+
 
 /** Verified session data returned from the DAL */
 export interface VerifiedSession {

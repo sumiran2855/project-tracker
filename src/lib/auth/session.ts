@@ -38,12 +38,21 @@ export async function decrypt(
   }
 }
 
-export async function createSession(userId: string, rememberMe = false): Promise<void> {
+export async function createSession(
+  user: { id: string; email: string; name: string | null; role: string },
+  rememberMe = false
+): Promise<void> {
   // If rememberMe is checked, session lasts 30 days. Otherwise, it lasts 1 day (or standard session)
   const durationMs = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
   const expiresAt = new Date(Date.now() + durationMs);
 
-  const token = await encrypt({ userId, expiresAt });
+  const token = await encrypt({
+    userId: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    expiresAt,
+  });
   const cookieStore = await cookies();
 
   cookieStore.set(AUTH_COOKIE_NAME, token, {

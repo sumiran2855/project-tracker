@@ -1,13 +1,9 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import bcrypt from 'bcryptjs';
 import { LoginSchema, SignupSchema, ForgotPasswordSchema, ResetPasswordSchema } from '@/validations/auth.validation';
-import { authenticateUser, registerUser } from '@/services/user.service';
-import { findUserByEmail, updateUserResetToken, findUserByResetToken, updateUserPassword } from '@/repositories/user.repository';
 import { createSession, deleteSession } from '@/lib/auth/session';
 import { DEFAULT_LOGIN_REDIRECT, LOGIN_ROUTE } from '@/constants/routes';
-import { sendPasswordResetEmail } from '@/lib/mail/send';
 import type { 
   LoginActionState, 
   SignupActionState, 
@@ -33,15 +29,22 @@ export async function loginAction(
   const { email, password } = validatedFields.data;
   const remember = formData.get('remember') === 'on';
 
-  const user = await authenticateUser(email, password);
-
-  if (!user) {
+  // Seed user check
+  if (email === 'dev@projecttracker.local' && password !== 'password123') {
     return {
       message: 'Invalid email or password. Please try again.',
     };
   }
 
-  await createSession(user.id, remember);
+  // Generate mock user data
+  const user = {
+    id: email === 'dev@projecttracker.local' ? 'dev-user-id' : String(Date.now()),
+    email,
+    name: email === 'dev@projecttracker.local' ? 'Dev User' : email.split('@')[0],
+    role: email === 'dev@projecttracker.local' ? 'Admin' : 'Employee',
+  };
+
+  await createSession(user, remember);
 
   redirect(DEFAULT_LOGIN_REDIRECT);
 }
@@ -62,15 +65,17 @@ export async function signupAction(
     };
   }
 
-  const { fullName, email, password } = validatedFields.data;
+  const { fullName, email } = validatedFields.data;
 
-  const result = await registerUser(fullName, email, password);
+  // Immediately log in the signed-up user in mock mode
+  const user = {
+    id: String(Date.now()),
+    email,
+    name: fullName,
+    role: 'Employee',
+  };
 
-  if ('error' in result) {
-    return { message: result.error };
-  }
-
-  await createSession(result.id, false);
+  await createSession(user, false);
 
   redirect(DEFAULT_LOGIN_REDIRECT);
 }
@@ -81,7 +86,7 @@ export async function logoutAction(): Promise<never> {
 }
 
 /**
- * Action to handle requesting password reset
+ * Action to handle requesting password reset (Mock mode)
  */
 export async function forgotPasswordAction(
   _prevState: ForgotPasswordActionState,
@@ -98,24 +103,13 @@ export async function forgotPasswordAction(
   }
 
   const { email } = validatedFields.data;
-  const user = await findUserByEmail(email);
 
-  // For security, do not leak user existence. Return generic success message regardless of existence.
-  if (!user) {
-    return {
-      successMessage: 'If that email is registered, we have sent a link to reset your password.',
-    };
-  }
-
-  // Generate reset token and 1-hour expiration
+  // Generate reset token and 1-hour expiration for local developer visibility
   const token = crypto.randomUUID();
-  const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const fullLink = `${appUrl}/reset-password?token=${token}`;
 
-  await updateUserResetToken(email, token, expiresAt);
-
-  // Send email (falls back to console log if SMTP is not configured)
-  const resetLink = `/reset-password?token=${token}`;
-  await sendPasswordResetEmail(email, resetLink);
+  console.log(`\n🔑 [PASSWORD RESET LINK for ${email}]: ${fullLink}\n`);
 
   return {
     successMessage: 'If that email is registered, we have sent a link to reset your password.',
@@ -123,7 +117,7 @@ export async function forgotPasswordAction(
 }
 
 /**
- * Action to handle updating password with reset token
+ * Action to handle updating password with reset token (Mock mode)
  */
 export async function resetPasswordAction(
   _prevState: ResetPasswordActionState,
@@ -141,24 +135,11 @@ export async function resetPasswordAction(
     };
   }
 
-  const { token, password } = validatedFields.data;
-  const user = await findUserByResetToken(token);
-
-  if (!user) {
-    return {
-      message: 'Invalid or expired password reset link.',
-    };
-  }
-
-  const passwordHash = await bcrypt.hash(password, 12);
-  await updateUserPassword(user.id, passwordHash);
-
   redirect('/login?resetSuccess=true');
 }
 
 export async function updateUserRoleAction(role: string): Promise<{ success: boolean; error?: string }> {
   const { getCurrentUser } = await import('@/lib/auth/dal');
-  const { prisma } = await import('@/lib/db/prisma');
 
   try {
     const user = await getCurrentUser();
@@ -166,13 +147,16 @@ export async function updateUserRoleAction(role: string): Promise<{ success: boo
       return { success: false, error: 'Unauthorized' };
     }
     
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { role },
-    });
+    // Re-create the session cookie with the updated role
+    await createSession({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: role,
+    }, false);
     
     return { success: true };
   } catch (error: any) {
-    return { success: false, error: error?.message || 'Database update failed' };
+    return { success: false, error: error?.message || 'Failed to update user role session' };
   }
 }
