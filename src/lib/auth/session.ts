@@ -40,6 +40,7 @@ export async function decrypt(
 
 export async function createSession(
   user: { id: string; email: string; name: string | null; role: string },
+  backendToken?: string,
   rememberMe = false
 ): Promise<void> {
   // If rememberMe is checked, session lasts 30 days. Otherwise, it lasts 1 day (or standard session)
@@ -51,6 +52,7 @@ export async function createSession(
     email: user.email,
     name: user.name,
     role: user.role,
+    token: backendToken,
     expiresAt,
   });
   const cookieStore = await cookies();

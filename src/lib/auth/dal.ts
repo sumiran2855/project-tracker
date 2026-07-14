@@ -6,11 +6,16 @@ import { redirect } from 'next/navigation';
 import { decrypt } from '@/lib/auth/session';
 import type { SafeUser, VerifiedSession } from '@/types/auth.types';
 import { AUTH_COOKIE_NAME, LOGIN_ROUTE } from '@/constants/routes';
+import { apiClient } from '@/lib/api/apiClient';
 
-export const verifySession = cache(async (): Promise<VerifiedSession> => {
+export const getSession = cache(async () => {
   const cookieStore = await cookies();
   const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
-  const payload = await decrypt(token);
+  return decrypt(token);
+});
+
+export const verifySession = cache(async (): Promise<VerifiedSession> => {
+  const payload = await getSession();
 
   if (!payload?.userId) {
     redirect(LOGIN_ROUTE);
@@ -21,20 +26,18 @@ export const verifySession = cache(async (): Promise<VerifiedSession> => {
 
 export const getCurrentUser = cache(async (): Promise<SafeUser | null> => {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
-    const payload = await decrypt(token);
+    const payload = await getSession();
 
-    if (!payload?.userId) {
+    if (!payload?.userId || !payload.token) {
       return null;
     }
 
-    return {
-      id: payload.userId,
-      email: payload.email,
-      name: payload.name,
-      role: payload.role,
-    };
+    const res = await apiClient.get<{ success: boolean; data: { user: SafeUser } }>(
+      'auth/me',
+      { token: payload.token }
+    );
+
+    return res.data.user;
   } catch {
     return null;
   }

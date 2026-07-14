@@ -4,11 +4,13 @@ import { redirect } from 'next/navigation';
 import { LoginSchema, SignupSchema, ForgotPasswordSchema, ResetPasswordSchema } from '@/validations/auth.validation';
 import { createSession, deleteSession } from '@/lib/auth/session';
 import { DEFAULT_LOGIN_REDIRECT, LOGIN_ROUTE } from '@/constants/routes';
+import { apiClient, ApiError } from '@/lib/api/apiClient';
 import type { 
   LoginActionState, 
   SignupActionState, 
   ForgotPasswordActionState, 
-  ResetPasswordActionState 
+  ResetPasswordActionState,
+  SafeUser
 } from '@/types/auth.types';
 
 export async function loginAction(
@@ -29,22 +31,18 @@ export async function loginAction(
   const { email, password } = validatedFields.data;
   const remember = formData.get('remember') === 'on';
 
-  // Seed user check
-  if (email === 'dev@projecttracker.local' && password !== 'password123') {
-    return {
-      message: 'Invalid email or password. Please try again.',
-    };
+  try {
+    const res = await apiClient.post<{ success: boolean; data: { user: SafeUser; token: string } }>(
+      'auth/login',
+      { email, password }
+    );
+    await createSession(res.data.user, res.data.token, remember);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return { message: error.message };
+    }
+    return { message: 'Failed to connect to authentication server.' };
   }
-
-  // Generate mock user data
-  const user = {
-    id: email === 'dev@projecttracker.local' ? 'dev-user-id' : String(Date.now()),
-    email,
-    name: email === 'dev@projecttracker.local' ? 'Dev User' : email.split('@')[0],
-    role: email === 'dev@projecttracker.local' ? 'Admin' : 'Employee',
-  };
-
-  await createSession(user, remember);
 
   redirect(DEFAULT_LOGIN_REDIRECT);
 }
@@ -65,17 +63,20 @@ export async function signupAction(
     };
   }
 
-  const { fullName, email } = validatedFields.data;
+  const { fullName, email, password } = validatedFields.data;
 
-  // Immediately log in the signed-up user in mock mode
-  const user = {
-    id: String(Date.now()),
-    email,
-    name: fullName,
-    role: 'Employee',
-  };
-
-  await createSession(user, false);
+  try {
+    const res = await apiClient.post<{ success: boolean; data: { user: SafeUser; token: string } }>(
+      'auth/register',
+      { name: fullName, email, password }
+    );
+    await createSession(res.data.user, res.data.token, false);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return { message: error.message };
+    }
+    return { message: 'Failed to connect to authentication server.' };
+  }
 
   redirect(DEFAULT_LOGIN_REDIRECT);
 }
@@ -85,9 +86,6 @@ export async function logoutAction(): Promise<never> {
   redirect(LOGIN_ROUTE);
 }
 
-/**
- * Action to handle requesting password reset (Mock mode)
- */
 export async function forgotPasswordAction(
   _prevState: ForgotPasswordActionState,
   formData: FormData
@@ -104,21 +102,19 @@ export async function forgotPasswordAction(
 
   const { email } = validatedFields.data;
 
-  // Generate reset token and 1-hour expiration for local developer visibility
-  const token = crypto.randomUUID();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const fullLink = `${appUrl}/reset-password?token=${token}`;
-
-  console.log(`\n🔑 [PASSWORD RESET LINK for ${email}]: ${fullLink}\n`);
-
-  return {
-    successMessage: 'If that email is registered, we have sent a link to reset your password.',
-  };
+  try {
+    await apiClient.post('auth/forgot-password', { email });
+    return {
+      successMessage: 'If that email is registered, we have sent a link to reset your password.',
+    };
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return { message: error.message };
+    }
+    return { message: 'Failed to request password reset link.' };
+  }
 }
 
-/**
- * Action to handle updating password with reset token (Mock mode)
- */
 export async function resetPasswordAction(
   _prevState: ResetPasswordActionState,
   formData: FormData
@@ -135,28 +131,40 @@ export async function resetPasswordAction(
     };
   }
 
+  const { token, password } = validatedFields.data;
+
+  try {
+    await apiClient.post('auth/reset-password', { token, password });
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return { message: error.message };
+    }
+    return { message: 'Failed to reset password.' };
+  }
+
   redirect('/login?resetSuccess=true');
 }
 
 export async function updateUserRoleAction(role: string): Promise<{ success: boolean; error?: string }> {
-  const { getCurrentUser } = await import('@/lib/auth/dal');
+  const { getCurrentUser, getSession } = await import('@/lib/auth/dal');
 
   try {
     const user = await getCurrentUser();
-    if (!user) {
+    const session = await getSession();
+    if (!user || !session?.token) {
       return { success: false, error: 'Unauthorized' };
     }
     
-    // Re-create the session cookie with the updated role
-    await createSession({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: role,
-    }, false);
+    const res = await apiClient.put<{ success: boolean; data: { user: SafeUser } }>(
+      'auth/role',
+      { role },
+      { token: session.token }
+    );
+    
+    await createSession(res.data.user, session.token, false);
     
     return { success: true };
   } catch (error: any) {
-    return { success: false, error: error?.message || 'Failed to update user role session' };
+    return { success: false, error: error?.message || 'Failed to update user role' };
   }
 }

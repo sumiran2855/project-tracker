@@ -9,6 +9,7 @@ export interface SessionPayload {
   email: string;
   name: string | null;
   role: string;
+  token?: string;
   expiresAt: Date;
 }
 
