@@ -5,6 +5,7 @@ import { apiClient, ApiError } from '@/lib/api/apiClient';
 
 export interface Member {
   userId?: string;
+  id?: string;
   name: string;
   initials: string;
   bg: string;

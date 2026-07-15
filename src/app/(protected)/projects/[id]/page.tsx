@@ -31,10 +31,13 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, usePermission } from '@/contexts/UserContext';
-import { getProjectByIdAction, updateProjectAction } from '@/actions/projects';
+import { getProjectByIdAction, updateProjectAction, getEmployeesAction, type Employee } from '@/actions/projects';
+import { getTasksByProjectAction, createTaskAction, updateTaskAction, deleteTaskAction, type Task, type Subtask, type Comment } from '@/actions/tasks';
 
 // Types
-interface Member {
+export interface Member {
+  userId?: string;
+  id?: string;
   name: string;
   initials: string;
   bg: string;
@@ -62,33 +65,6 @@ interface Project {
   targetQuarter?: 'Q2 2026' | 'Q3 2026' | 'Q4 2026' | 'Future';
 }
 
-interface Subtask {
-  id: string;
-  title: string;
-  completed: boolean;
-}
-
-interface Comment {
-  id: string;
-  author: string;
-  initials: string;
-  text: string;
-  time: string;
-}
-
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  status: 'To Do' | 'In Progress' | 'In Review' | 'Done';
-  priority: 'Low' | 'Medium' | 'High' | 'Urgent';
-  startDate: string;
-  dueDate: string;
-  assignees: Member[];
-  subtasks: Subtask[];
-  comments: Comment[];
-  attachmentsCount: number;
-}
 
 // Fallbacks if not in local storage
 const defaultProjects: Project[] = [
@@ -303,6 +279,7 @@ export default function ProjectDetailPage() {
 
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [availableMembers, setAvailableMembers] = useState<Employee[]>([]);
   
   const isEmployee = user?.role === 'Employee';
   const displayTasks = isEmployee
@@ -320,6 +297,11 @@ export default function ProjectDetailPage() {
   const [newTaskStartDate, setNewTaskStartDate] = useState('');
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
   const [newTaskAssignees, setNewTaskAssignees] = useState<string[]>([]);
+
+  // Task spent hours modal states
+  const [hoursPromptOpen, setHoursPromptOpen] = useState(false);
+  const [promptTask, setPromptTask] = useState<{ taskId: string; targetStatus: Task['status'] } | null>(null);
+  const [promptValue, setPromptValue] = useState('0');
 
   // Task Drawer/Detail Drawer States
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -364,21 +346,47 @@ export default function ProjectDetailPage() {
         setProject(currentProj);
       }
     }
-    loadProject();
 
-    // 2. Load project tasks
-    const storedTasks = localStorage.getItem(`pwt_tasks_project_${projectId}`);
-    if (storedTasks) {
-      try {
-        setTasks(JSON.parse(storedTasks));
-      } catch (e) {
-        console.error(e);
+    async function loadTasks() {
+      const res = await getTasksByProjectAction(projectId);
+      if (res.success && res.data) {
+        setTasks(res.data as any);
+      } else {
+        const storedTasks = localStorage.getItem(`pwt_tasks_project_${projectId}`);
+        if (storedTasks) {
+          try {
+            setTasks(JSON.parse(storedTasks));
+          } catch (e) {
+            console.error(e);
+          }
+        } else {
+          const seed = initialTasksData[projectId] || [];
+          setTasks(seed);
+        }
       }
-    } else {
-      const seed = initialTasksData[projectId] || [];
-      setTasks(seed);
-      localStorage.setItem(`pwt_tasks_project_${projectId}`, JSON.stringify(seed));
     }
+
+    async function loadEmployees() {
+      const res = await getEmployeesAction();
+      if (res.success && res.data) {
+        setAvailableMembers(res.data);
+      } else {
+        setAvailableMembers(
+          defaultMembers.map((m, i) => ({
+            id: String(i + 1),
+            name: m.name,
+            initials: m.initials,
+            bg: m.bg,
+            email: '',
+            role: 'Employee'
+          }))
+        );
+      }
+    }
+
+    loadProject();
+    loadTasks();
+    loadEmployees();
   }, [projectId]);
 
   // Sync state helpers
@@ -456,51 +464,118 @@ export default function ProjectDetailPage() {
     e.preventDefault();
     const taskId = e.dataTransfer.getData('text/plain');
     if (!taskId) return;
-
-    const updated = tasks.map(t => {
-      if (t.id === taskId) {
-        return { ...t, status: targetStatus };
-      }
-      return t;
-    });
-    saveTasks(updated);
+    handleMoveTask(taskId, targetStatus);
   };
 
-  const handleMoveTask = (taskId: string, targetStatus: Task['status']) => {
-    const updated = tasks.map(t => {
-      if (t.id === taskId) {
-        return { ...t, status: targetStatus };
-      }
-      return t;
-    });
-    saveTasks(updated);
+  const handleMoveTask = async (taskId: string, targetStatus: Task['status']) => {
+    const taskToMove = tasks.find(t => t.id === taskId);
+    if (!taskToMove) return;
+
+    if (targetStatus === 'Done' && taskToMove.status !== 'Done') {
+      setPromptTask({ taskId, targetStatus });
+      setPromptValue(String(taskToMove.actualHours || 0));
+      setHoursPromptOpen(true);
+    } else {
+      await submitMoveTask(taskId, targetStatus, taskToMove.actualHours || 0);
+    }
+  };
+
+  const submitMoveTask = async (taskId: string, targetStatus: Task['status'], hoursInput: number) => {
+    const taskToMove = tasks.find(t => t.id === taskId);
+    if (!taskToMove) return;
+
+    const updatedTask = { ...taskToMove, status: targetStatus, actualHours: hoursInput };
+
+    // Update locally first for visual speed
+    setTasks(prev => prev.map(t => t.id === taskId ? updatedTask : t));
     if (selectedTask?.id === taskId) {
-      setSelectedTask(prev => prev ? { ...prev, status: targetStatus } : null);
+      setSelectedTask(updatedTask);
+    }
+
+    const res = await updateTaskAction(taskId, { status: targetStatus, actualHours: hoursInput });
+    if (res.success && res.data) {
+      setTasks(prev => prev.map(t => t.id === taskId ? (res.data as any) : t));
+      if (selectedTask?.id === taskId) {
+        setSelectedTask(res.data as any);
+      }
+      
+      if (project && taskToMove.status !== targetStatus) {
+        const wasCompleted = taskToMove.status === 'Done';
+        const isNowCompleted = targetStatus === 'Done';
+        const newCompleted = project.completedTasks + (isNowCompleted ? 1 : 0) - (wasCompleted ? 1 : 0);
+        setProject({
+          ...project,
+          completedTasks: newCompleted,
+          progress: project.tasksCount > 0 ? Math.round((newCompleted / project.tasksCount) * 100) : 0
+        });
+      }
+    } else {
+      console.error('Failed to move task on backend:', res.error);
+      const updated = tasks.map(t => t.id === taskId ? updatedTask : t);
+      saveTasks(updated);
     }
   };
 
   // Add Task Handler
-  const handleCreateTask = (e: React.FormEvent) => {
+  const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskTitle.trim()) return;
 
-    const assignees = defaultMembers.filter(m => newTaskAssignees.includes(m.name));
+    const selectedEmployees = availableMembers.filter(m => newTaskAssignees.includes(m.name));
+    const assignees = selectedEmployees.map(m => ({
+      id: m.id,
+      name: m.name,
+      initials: m.initials,
+      bg: m.bg
+    }));
 
-    const newTask: Task = {
-      id: `task_${Date.now()}`,
+    const newTaskData = {
       title: newTaskTitle,
       description: newTaskDesc,
       status: newTaskStatus,
       priority: newTaskPriority,
       startDate: newTaskStartDate || new Date().toISOString().split('T')[0],
       dueDate: newTaskDueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      assignees: assignees.length > 0 ? assignees : [defaultMembers[0]],
+      assignees: assignees.length > 0 ? assignees : [{
+        id: availableMembers[0]?.id || '1',
+        name: availableMembers[0]?.name || defaultMembers[0].name,
+      }],
+      projectId: projectId,
       subtasks: [],
       comments: [],
-      attachmentsCount: 0,
     };
 
-    saveTasks([newTask, ...tasks]);
+    const res = await createTaskAction(newTaskData);
+    if (res.success && res.data) {
+      setTasks(prev => [res.data as any, ...prev]);
+      
+      if (project) {
+        const newCount = project.tasksCount + 1;
+        const newCompleted = project.completedTasks + (newTaskStatus === 'Done' ? 1 : 0);
+        setProject({
+          ...project,
+          tasksCount: newCount,
+          completedTasks: newCompleted,
+          progress: newCount > 0 ? Math.round((newCompleted / newCount) * 100) : 0
+        });
+      }
+    } else {
+      console.error('Failed to create task on backend:', res.error);
+      const fallbackTask: Task = {
+        id: `task_${Date.now()}`,
+        title: newTaskTitle,
+        description: newTaskDesc,
+        status: newTaskStatus,
+        priority: newTaskPriority,
+        startDate: newTaskStartDate || new Date().toISOString().split('T')[0],
+        dueDate: newTaskDueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        assignees: selectedEmployees.length > 0 ? selectedEmployees : [availableMembers[0] || defaultMembers[0]],
+        subtasks: [],
+        comments: [],
+        attachmentsCount: 0,
+      };
+      saveTasks([fallbackTask, ...tasks]);
+    }
 
     // Reset fields
     setNewTaskTitle('');
@@ -513,16 +588,37 @@ export default function ProjectDetailPage() {
     setIsTaskModalOpen(false);
   };
 
-  const handleDeleteTask = (taskId: string) => {
+  const handleDeleteTask = async (taskId: string) => {
     if (confirm('Are you sure you want to delete this task?')) {
-      const updated = tasks.filter(t => t.id !== taskId);
-      saveTasks(updated);
-      setSelectedTask(null);
+      const taskToDelete = tasks.find(t => t.id === taskId);
+      if (!taskToDelete) return;
+
+      const res = await deleteTaskAction(taskId);
+      if (res.success) {
+        setTasks(prev => prev.filter(t => t.id !== taskId));
+        setSelectedTask(null);
+
+        if (project) {
+          const newCount = project.tasksCount - 1;
+          const newCompleted = project.completedTasks - (taskToDelete.status === 'Done' ? 1 : 0);
+          setProject({
+            ...project,
+            tasksCount: newCount,
+            completedTasks: newCompleted,
+            progress: newCount > 0 ? Math.round((newCompleted / newCount) * 100) : 0
+          });
+        }
+      } else {
+        console.error('Failed to delete task on backend:', res.error);
+        const updated = tasks.filter(t => t.id !== taskId);
+        saveTasks(updated);
+        setSelectedTask(null);
+      }
     }
   };
 
   // Subtasks actions
-  const handleAddSubtask = (e: React.FormEvent) => {
+  const handleAddSubtask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTask || !newSubtaskTitle.trim()) return;
 
@@ -532,18 +628,27 @@ export default function ProjectDetailPage() {
       completed: false,
     };
 
+    const newSubtasks = [...selectedTask.subtasks, newSub];
     const updatedTask = {
       ...selectedTask,
-      subtasks: [...selectedTask.subtasks, newSub],
+      subtasks: newSubtasks,
     };
 
-    const updatedTasks = tasks.map(t => t.id === selectedTask.id ? updatedTask : t);
-    saveTasks(updatedTasks);
+    setTasks(prev => prev.map(t => t.id === selectedTask.id ? updatedTask : t));
     setSelectedTask(updatedTask);
     setNewSubtaskTitle('');
+
+    const res = await updateTaskAction(selectedTask.id, { subtasks: newSubtasks });
+    if (res.success && res.data) {
+      const dbTask = res.data as any;
+      setTasks(prev => prev.map(t => t.id === selectedTask.id ? dbTask : t));
+      setSelectedTask(dbTask);
+    } else {
+      console.error('Failed to add subtask on backend:', res.error);
+    }
   };
 
-  const handleToggleSubtask = (subId: string) => {
+  const handleToggleSubtask = async (subId: string) => {
     if (!selectedTask) return;
 
     const updatedSubtasks = selectedTask.subtasks.map(s => {
@@ -558,12 +663,20 @@ export default function ProjectDetailPage() {
       subtasks: updatedSubtasks,
     };
 
-    const updatedTasks = tasks.map(t => t.id === selectedTask.id ? updatedTask : t);
-    saveTasks(updatedTasks);
+    setTasks(prev => prev.map(t => t.id === selectedTask.id ? updatedTask : t));
     setSelectedTask(updatedTask);
+
+    const res = await updateTaskAction(selectedTask.id, { subtasks: updatedSubtasks });
+    if (res.success && res.data) {
+      const dbTask = res.data as any;
+      setTasks(prev => prev.map(t => t.id === selectedTask.id ? dbTask : t));
+      setSelectedTask(dbTask);
+    } else {
+      console.error('Failed to toggle subtask on backend:', res.error);
+    }
   };
 
-  const handleDeleteSubtask = (subId: string) => {
+  const handleDeleteSubtask = async (subId: string) => {
     if (!selectedTask) return;
 
     const updatedSubtasks = selectedTask.subtasks.filter(s => s.id !== subId);
@@ -573,33 +686,50 @@ export default function ProjectDetailPage() {
       subtasks: updatedSubtasks,
     };
 
-    const updatedTasks = tasks.map(t => t.id === selectedTask.id ? updatedTask : t);
-    saveTasks(updatedTasks);
+    setTasks(prev => prev.map(t => t.id === selectedTask.id ? updatedTask : t));
     setSelectedTask(updatedTask);
+
+    const res = await updateTaskAction(selectedTask.id, { subtasks: updatedSubtasks });
+    if (res.success && res.data) {
+      const dbTask = res.data as any;
+      setTasks(prev => prev.map(t => t.id === selectedTask.id ? dbTask : t));
+      setSelectedTask(dbTask);
+    } else {
+      console.error('Failed to delete subtask on backend:', res.error);
+    }
   };
 
   // Comments Actions
-  const handleAddComment = (e: React.FormEvent) => {
+  const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTask || !newCommentText.trim()) return;
 
     const newComment: Comment = {
       id: `comm_${Date.now()}`,
-      author: 'Dev User',
-      initials: 'DU',
+      author: user?.name || 'Dev User',
+      initials: user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2) : 'DU',
       text: newCommentText,
       time: 'Just now',
     };
 
+    const updatedComments = [newComment, ...selectedTask.comments];
     const updatedTask = {
       ...selectedTask,
-      comments: [newComment, ...selectedTask.comments],
+      comments: updatedComments,
     };
 
-    const updatedTasks = tasks.map(t => t.id === selectedTask.id ? updatedTask : t);
-    saveTasks(updatedTasks);
+    setTasks(prev => prev.map(t => t.id === selectedTask.id ? updatedTask : t));
     setSelectedTask(updatedTask);
     setNewCommentText('');
+
+    const res = await updateTaskAction(selectedTask.id, { comments: updatedComments });
+    if (res.success && res.data) {
+      const dbTask = res.data as any;
+      setTasks(prev => prev.map(t => t.id === selectedTask.id ? dbTask : t));
+      setSelectedTask(dbTask);
+    } else {
+      console.error('Failed to add comment on backend:', res.error);
+    }
   };
 
   const getPriorityColor = (prio: Task['priority'] | Project['priority'] | undefined) => {
@@ -1250,6 +1380,81 @@ export default function ProjectDetailPage() {
 
       </div>
 
+      {/* Hours Spent Modal */}
+      {hoursPromptOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md animate-fadeIn">
+          <div className="relative w-full max-w-md bg-white rounded-3xl border border-slate-100 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.12)] p-6 sm:p-8 space-y-6 animate-scaleIn">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-pink-50 text-pink-650 border border-pink-100/30">
+                  <Clock className="h-4.5 w-4.5" />
+                </div>
+                <h3 className="text-base font-black text-slate-800 tracking-tight">Log Spent Hours</h3>
+              </div>
+              <button 
+                onClick={() => {
+                  setHoursPromptOpen(false);
+                  setPromptTask(null);
+                }}
+                className="h-7 w-7 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 cursor-pointer transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Modal Body / Form */}
+            <div className="space-y-4">
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                You marked this task as <strong className="text-slate-700">Done</strong>. How many hours did you spend to complete it?
+              </p>
+              
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Hours Spent</label>
+                <input
+                  type="number"
+                  min={0}
+                  required
+                  value={promptValue}
+                  onChange={(e) => setPromptValue(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-pink-500 focus:outline-none focus:ring-4 focus:ring-pink-500/8 transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setHoursPromptOpen(false);
+                  setPromptTask(null);
+                }}
+                className="px-4 py-2.5 rounded-xl border border-slate-250 hover:bg-slate-50 text-slate-600 text-xs font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (promptTask) {
+                    const hours = parseInt(promptValue, 10) || 0;
+                    await submitMoveTask(promptTask.taskId, promptTask.targetStatus, hours);
+                  }
+                  setHoursPromptOpen(false);
+                  setPromptTask(null);
+                }}
+                className="px-5 py-2.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold transition-all shadow-sm hover:shadow-md cursor-pointer"
+              >
+                Confirm & Log
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
       {/* dialog - Add Task Modal */}
       {isTaskModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-955/40 backdrop-blur-md animate-fadeIn">
@@ -1363,7 +1568,7 @@ export default function ProjectDetailPage() {
               <div className="space-y-2.5">
                 <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Assign Task To</label>
                 <div className="flex flex-wrap gap-2">
-                  {project.members.map((member) => {
+                  {((project && project.members && project.members.length > 0) ? project.members : availableMembers).map((member) => {
                     const isSelected = newTaskAssignees.includes(member.name);
                     return (
                       <button
@@ -1490,6 +1695,26 @@ export default function ProjectDetailPage() {
                     <ChevronDown className="h-3.5 w-3.5 absolute right-2.5 top-2 text-slate-450 pointer-events-none" />
                   </div>
                 </div>
+
+                {/* Hours Spent Column */}
+                {selectedTask.status === 'Done' && (
+                  <div className="col-span-2 border-t border-slate-100 pt-3.5 space-y-1.5 animate-fadeIn">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Hours Spent (Actual)</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={selectedTask.actualHours || 0}
+                      onChange={async (e) => {
+                        const val = parseInt(e.target.value, 10) || 0;
+                        const updatedTask = { ...selectedTask, actualHours: val };
+                        setSelectedTask(updatedTask);
+                        setTasks(prev => prev.map(t => t.id === selectedTask.id ? updatedTask : t));
+                        await updateTaskAction(selectedTask.id, { actualHours: val });
+                      }}
+                      className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    />
+                  </div>
+                )}
 
                 {/* Dates */}
                 <div className="col-span-2 grid grid-cols-2 gap-4 border-t border-slate-100 pt-3.5">

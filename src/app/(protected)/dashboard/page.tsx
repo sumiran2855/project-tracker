@@ -15,6 +15,8 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { cn } from '@/lib/utils';
 import { hasPermission } from '@/lib/auth/permissions';
 import { getProjectsAction } from '@/actions/projects';
+import { getTasksByProjectAction } from '@/actions/tasks';
+import { getIssuesByProjectAction } from '@/actions/issues';
 
 export const metadata: Metadata = {
   title: 'Dashboard — Project Tracker',
@@ -107,12 +109,42 @@ const recentProjects = [
 
 
 
-const recentActivity = [
-  { text: 'Bug #142 resolved in E-Commerce Platform', time: '2m ago', dot: 'bg-emerald-500' },
-  { text: 'Task "Design tokens" moved to Review', time: '18m ago', dot: 'bg-indigo-500' },
-  { text: 'New bug #143 filed by QA team', time: '1h ago', dot: 'bg-red-500' },
-  { text: 'Sprint 6 kicked off for Mobile Redesign', time: '3h ago', dot: 'bg-purple-500' },
-];
+function getRelativeTimeString(dateStr: string | Date | undefined): string {
+  if (!dateStr) return 'Unknown time';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return 'Unknown time';
+
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHr = Math.floor(diffMin / 60);
+  const diffDays = Math.floor(diffHr / 24);
+
+  if (diffSec < 60) return 'Just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffHr < 24) return `${diffHr}h ago`;
+  return `${diffDays}d ago`;
+}
+
+function formatDeadlineDate(dateStr: string | undefined): string {
+  if (!dateStr || dateStr === 'No Due Date') return 'No Due Date';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function isDeadlineUrgent(dateStr: string | undefined): boolean {
+  if (!dateStr || dateStr === 'No Due Date') return false;
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return false;
+  
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const diffMs = date.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  return diffDays <= 3;
+}
 
 const team = [
   { name: 'Ava Chen', role: 'Frontend', load: 82, initials: 'AC' },
@@ -121,11 +153,19 @@ const team = [
   { name: 'Sam Okafor', role: 'Design', load: 47, initials: 'SO' },
 ];
 
-const deadlines = [
-  { title: 'Mobile App Redesign — Review', date: 'Jul 12', urgent: true },
-  { title: 'E-Commerce Platform — Launch', date: 'Jul 20', urgent: false },
-  { title: 'Client sync: API Gateway v2', date: 'Jul 15', urgent: false },
-];
+function parseHoursFromBudget(budget: string | undefined): number {
+  if (!budget) return 0;
+  if (budget.includes('$')) return 0;
+  const matches = budget.match(/(\d+)\s*(h|hour|hours|hrs|hr)?/i);
+  if (matches) {
+    return parseInt(matches[1], 10);
+  }
+  const num = parseInt(budget.trim(), 10);
+  if (!isNaN(num)) {
+    return num;
+  }
+  return 0;
+}
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -133,18 +173,195 @@ export default async function DashboardPage() {
   const canViewQuickActions = hasPermission(user?.role, 'dashboard:view-quick-actions');
 
   let activeProjects: any[] = [];
+  let deadlines: { title: string; date: string; urgent: boolean }[] = [];
+  let recentActivity: { text: string; time: string; dot: string }[] = [];
+
   const dynamicStats = [
     { label: 'Active Projects', value: '0',   change: '+2',   iconName: 'Folder',       tint: '#6366f1', positive: true  },
-    { label: 'Open Tasks',      value: '48',   change: '-5',   iconName: 'CheckCircle2', tint: '#3b82f6', positive: true  },
-    { label: 'Open Bugs',       value: '7',    change: '+3',   iconName: 'AlertTriangle',tint: '#ef4444', positive: false },
-    { label: 'Hours Logged',    value: '134h', change: '+18h', iconName: 'Clock',        tint: '#ec4899', positive: true  },
+    { label: 'Open Tasks',      value: '0',   change: '-5',   iconName: 'CheckCircle2', tint: '#3b82f6', positive: true  },
+    { label: 'Open Bugs',       value: '0',   change: '+3',   iconName: 'AlertTriangle',tint: '#ef4444', positive: false },
+    { label: 'Hours Logged',    value: '0h',  change: '+18h', iconName: 'Clock',        tint: '#ec4899', positive: true  },
   ];
+
+  let openTasksCount = 0;
+  let openBugsCount = 0;
+  let totalAssignedHours = 0;
+  let totalActualHours = 0;
 
   try {
     const res = await getProjectsAction();
     if (res.success && res.data) {
       activeProjects = res.data;
       dynamicStats[0].value = String(activeProjects.length);
+
+      const gatheredDeadlines: { title: string; date: string; urgent: boolean; rawDate: Date }[] = [];
+      const gatheredActivities: { text: string; time: string; dot: string; rawDate: Date }[] = [];
+
+      activeProjects.forEach(p => {
+        totalAssignedHours += parseHoursFromBudget(p.budget);
+
+        if (p.dueDate && p.dueDate !== 'No Due Date') {
+          const d = new Date(p.dueDate);
+          if (!isNaN(d.getTime())) {
+            gatheredDeadlines.push({
+              title: `Project: ${p.name}`,
+              date: formatDeadlineDate(p.dueDate),
+              urgent: isDeadlineUrgent(p.dueDate),
+              rawDate: d
+            });
+          }
+        }
+
+        if (p.createdAt) {
+          const d = new Date(p.createdAt);
+          if (!isNaN(d.getTime())) {
+            gatheredActivities.push({
+              text: `Project "${p.name}" was created`,
+              time: getRelativeTimeString(p.createdAt),
+              dot: 'bg-indigo-500',
+              rawDate: d
+            });
+          }
+        }
+        if (p.updatedAt && p.updatedAt !== p.createdAt) {
+          const d = new Date(p.updatedAt);
+          if (!isNaN(d.getTime())) {
+            gatheredActivities.push({
+              text: `Project "${p.name}" updated to status ${p.status}`,
+              time: getRelativeTimeString(p.updatedAt),
+              dot: 'bg-purple-500',
+              rawDate: d
+            });
+          }
+        }
+      });
+
+      const tasksPromises = activeProjects.map(p => getTasksByProjectAction(p.id));
+      const issuesPromises = activeProjects.map(p => getIssuesByProjectAction(p.id));
+
+      const [tasksResList, issuesResList] = await Promise.all([
+        Promise.all(tasksPromises),
+        Promise.all(issuesPromises)
+      ]);
+
+      tasksResList.forEach(tRes => {
+        if (tRes.success && tRes.data) {
+          tRes.data.forEach(task => {
+            if (task.status !== 'Done') {
+              openTasksCount++;
+            } else {
+              totalActualHours += task.actualHours || 0;
+            }
+
+            if (task.dueDate) {
+              const d = new Date(task.dueDate);
+              if (!isNaN(d.getTime())) {
+                gatheredDeadlines.push({
+                  title: `Task: ${task.title} (${task.projectName || 'Project'})`,
+                  date: formatDeadlineDate(task.dueDate),
+                  urgent: isDeadlineUrgent(task.dueDate),
+                  rawDate: d
+                });
+              }
+            }
+
+            if (task.createdAt) {
+              const d = new Date(task.createdAt);
+              if (!isNaN(d.getTime())) {
+                gatheredActivities.push({
+                  text: `New task "${task.title}" added to ${task.projectName || 'Project'}`,
+                  time: getRelativeTimeString(task.createdAt),
+                  dot: 'bg-blue-500',
+                  rawDate: d
+                });
+              }
+            }
+            if (task.status === 'Done' && task.updatedAt) {
+              const d = new Date(task.updatedAt);
+              if (!isNaN(d.getTime())) {
+                gatheredActivities.push({
+                  text: `Task "${task.title}" completed`,
+                  time: getRelativeTimeString(task.updatedAt),
+                  dot: 'bg-emerald-500',
+                  rawDate: d
+                });
+              }
+            }
+          });
+        }
+      });
+
+      issuesResList.forEach(iRes => {
+        if (iRes.success && iRes.data) {
+          iRes.data.forEach(issue => {
+            if (issue.status !== 'Resolved' && issue.status !== 'Closed' && issue.type === 'Bug') {
+              openBugsCount++;
+            }
+
+            if (issue.dueDate) {
+              const d = new Date(issue.dueDate);
+              if (!isNaN(d.getTime())) {
+                gatheredDeadlines.push({
+                  title: `Issue: ${issue.title} (${issue.projectName || 'Project'})`,
+                  date: formatDeadlineDate(issue.dueDate),
+                  urgent: isDeadlineUrgent(issue.dueDate),
+                  rawDate: d
+                });
+              }
+            }
+
+            if (issue.createdAt) {
+              const d = new Date(issue.createdAt);
+              if (!isNaN(d.getTime())) {
+                gatheredActivities.push({
+                  text: `New issue "${issue.title}" created in ${issue.projectName || 'Project'}`,
+                  time: getRelativeTimeString(issue.createdAt),
+                  dot: 'bg-red-500',
+                  rawDate: d
+                });
+              }
+            }
+            if ((issue.status === 'Resolved' || issue.status === 'Closed') && issue.updatedAt) {
+              const d = new Date(issue.updatedAt);
+              if (!isNaN(d.getTime())) {
+                gatheredActivities.push({
+                  text: `Issue "${issue.title}" resolved`,
+                  time: getRelativeTimeString(issue.updatedAt),
+                  dot: 'bg-teal-500',
+                  rawDate: d
+                });
+              }
+            }
+          });
+        }
+      });
+
+      const remainingHours = Math.max(0, totalAssignedHours - totalActualHours);
+
+      dynamicStats[1].value = String(openTasksCount);
+      dynamicStats[2].value = String(openBugsCount);
+      dynamicStats[3].value = `${remainingHours}h`;
+
+      deadlines = gatheredDeadlines
+        .sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime())
+        .slice(0, 4)
+        .map(d => ({ title: d.title, date: d.date, urgent: d.urgent }));
+
+      recentActivity = gatheredActivities
+        .sort((a, b) => b.rawDate.getTime() - a.rawDate.getTime())
+        .slice(0, 5)
+        .map(a => ({ text: a.text, time: a.time, dot: a.dot }));
+
+      if (deadlines.length === 0) {
+        deadlines = [
+          { title: 'No upcoming deadlines', date: 'None', urgent: false }
+        ];
+      }
+      if (recentActivity.length === 0) {
+        recentActivity = [
+          { text: 'No recent activity recorded yet', time: 'Just now', dot: 'bg-slate-400' }
+        ];
+      }
     }
   } catch (error) {
     console.error('Failed to load projects in dashboard:', error);

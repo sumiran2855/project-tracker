@@ -25,9 +25,13 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, usePermission } from '@/contexts/UserContext';
+import { getProjectsAction, getEmployeesAction, type Employee } from '@/actions/projects';
+import { getTasksByProjectAction, createTaskAction, updateTaskAction, deleteTaskAction, type Task, type Subtask, type Comment } from '@/actions/tasks';
 
 // Types
-interface Member {
+export interface Member {
+  userId?: string;
+  id?: string;
   name: string;
   initials: string;
   bg: string;
@@ -53,34 +57,6 @@ interface Project {
   slackChannel?: string;
   startDate?: string;
   targetQuarter?: 'Q2 2026' | 'Q3 2026' | 'Q4 2026' | 'Future';
-}
-
-interface Subtask {
-  id: string;
-  title: string;
-  completed: boolean;
-}
-
-interface Comment {
-  id: string;
-  author: string;
-  initials: string;
-  text: string;
-  time: string;
-}
-
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  status: 'To Do' | 'In Progress' | 'In Review' | 'Done';
-  priority: 'Low' | 'Medium' | 'High' | 'Urgent';
-  startDate: string;
-  dueDate: string;
-  assignees: Member[];
-  subtasks: Subtask[];
-  comments: Comment[];
-  attachmentsCount: number;
 }
 
 interface GlobalTask extends Task {
@@ -238,6 +214,7 @@ export default function GlobalTasksPage() {
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<GlobalTask[]>([]);
+  const [availableMembers, setAvailableMembers] = useState<Employee[]>([]);
 
   const isEmployee = user?.role === 'Employee';
   const displayTasks = isEmployee
@@ -257,6 +234,11 @@ export default function GlobalTasksPage() {
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [newCommentText, setNewCommentText] = useState('');
 
+  // Task spent hours modal states
+  const [hoursPromptOpen, setHoursPromptOpen] = useState(false);
+  const [promptTask, setPromptTask] = useState<GlobalTask | null>(null);
+  const [promptValue, setPromptValue] = useState('0');
+
   // Add Task Modal States
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -270,54 +252,84 @@ export default function GlobalTasksPage() {
 
   // Load projects and compile tasks
   useEffect(() => {
-    // 1. Load projects
-    let loadedProjects: Project[] = [];
-    const storedProjects = localStorage.getItem('pwt_projects');
-    if (storedProjects) {
-      try {
-        loadedProjects = JSON.parse(storedProjects);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    if (loadedProjects.length === 0) {
-      loadedProjects = defaultProjects;
-      localStorage.setItem('pwt_projects', JSON.stringify(defaultProjects));
-    }
-    setProjects(loadedProjects);
-
-    // 2. Compile tasks across all projects
-    const allGlobalTasks: GlobalTask[] = [];
-    loadedProjects.forEach(proj => {
-      const storedTasksKey = `pwt_tasks_project_${proj.id}`;
-      const storedTasksStr = localStorage.getItem(storedTasksKey);
-      let projTasks: Task[] = [];
-      
-      if (storedTasksStr) {
-        try {
-          projTasks = JSON.parse(storedTasksStr);
-        } catch (e) {
-          console.error(e);
-        }
+    async function loadData() {
+      // 1. Load projects
+      const projRes = await getProjectsAction();
+      let loadedProjects: Project[] = [];
+      if (projRes.success && projRes.data) {
+        loadedProjects = projRes.data as any[];
+        setProjects(loadedProjects);
       } else {
-        // Use seed fallback
-        projTasks = fallbackTasks[proj.id] || [];
-        localStorage.setItem(storedTasksKey, JSON.stringify(projTasks));
+        const storedProjects = localStorage.getItem('pwt_projects');
+        if (storedProjects) {
+          try {
+            loadedProjects = JSON.parse(storedProjects);
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        if (loadedProjects.length === 0) {
+          loadedProjects = defaultProjects;
+        }
+        setProjects(loadedProjects);
       }
 
-      projTasks.forEach(task => {
-        allGlobalTasks.push({
-          ...task,
-          projectId: proj.id,
-          projectName: proj.name
-        });
-      });
-    });
+      // 2. Load employees
+      const empRes = await getEmployeesAction();
+      if (empRes.success && empRes.data) {
+        setAvailableMembers(empRes.data);
+      } else {
+        setAvailableMembers(
+          defaultMembers.map((m, i) => ({
+            id: String(i + 1),
+            name: m.name,
+            initials: m.initials,
+            bg: m.bg,
+            email: '',
+            role: 'Employee'
+          }))
+        );
+      }
 
-    setTasks(allGlobalTasks);
+      // 3. Load tasks for all projects
+      const tasksPromises = loadedProjects.map(async (proj) => {
+        const tasksRes = await getTasksByProjectAction(proj.id);
+        if (tasksRes.success && tasksRes.data) {
+          return tasksRes.data.map(task => ({
+            ...task,
+            projectId: proj.id,
+            projectName: proj.name
+          }));
+        } else {
+          // Fallback to localStorage
+          const storedTasksKey = `pwt_tasks_project_${proj.id}`;
+          const storedTasksStr = localStorage.getItem(storedTasksKey);
+          let projTasks: Task[] = [];
+          if (storedTasksStr) {
+            try {
+              projTasks = JSON.parse(storedTasksStr);
+            } catch (e) {
+              console.error(e);
+            }
+          } else {
+            projTasks = fallbackTasks[proj.id] || [];
+          }
+          return projTasks.map(task => ({
+            ...task,
+            projectId: proj.id,
+            projectName: proj.name
+          }));
+        }
+      });
+
+      const allTasksResults = await Promise.all(tasksPromises);
+      setTasks(allTasksResults.flat());
+    }
+
+    loadData();
   }, []);
 
-  // Sync state helpers
+  // Sync state helpers (fallback only)
   const saveAllTasks = (updatedGlobalTasks: GlobalTask[]) => {
     setTasks(updatedGlobalTasks);
 
@@ -362,48 +374,177 @@ export default function GlobalTasksPage() {
     localStorage.setItem('pwt_projects', JSON.stringify(updatedProjects));
   };
 
-  const handleUpdateTask = (updatedTask: GlobalTask) => {
-    const updated = tasks.map(t => t.id === updatedTask.id ? updatedTask : t);
-    saveAllTasks(updated);
-    if (selectedTask?.id === updatedTask.id) {
-      setSelectedTask(updatedTask);
+  const handleUpdateTask = async (updatedTask: GlobalTask) => {
+    const oldTask = tasks.find(t => t.id === updatedTask.id);
+    if (updatedTask.status === 'Done' && oldTask && oldTask.status !== 'Done') {
+      setPromptTask(updatedTask);
+      setPromptValue(String(oldTask.actualHours || 0));
+      setHoursPromptOpen(true);
+    } else {
+      await submitUpdateTask(updatedTask, updatedTask.actualHours || 0);
     }
   };
 
-  const handleDeleteTask = (taskId: string) => {
-    if (confirm('Are you sure you want to delete this task?')) {
-      const updated = tasks.filter(t => t.id !== taskId);
+  const submitUpdateTask = async (updatedTask: GlobalTask, hoursInput: number) => {
+    const { projectId, projectName, id, ...taskFields } = updatedTask;
+
+    const mappedAssignees = updatedTask.assignees.map(a => ({
+      userId: a.userId || a.id,
+      name: a.name,
+      initials: a.initials,
+      bg: a.bg
+    }));
+
+    const res = await updateTaskAction(id, {
+      ...taskFields,
+      actualHours: hoursInput,
+      assignees: mappedAssignees as any,
+    });
+
+    if (res.success && res.data) {
+      const newGlobalTask: GlobalTask = {
+        ...res.data,
+        projectId,
+        projectName,
+      };
+      setTasks(prev => prev.map(t => t.id === id ? newGlobalTask : t));
+      if (selectedTask?.id === id) {
+        setSelectedTask(newGlobalTask);
+      }
+
+      // Update projects counters locally
+      const oldTask = tasks.find(t => t.id === id);
+      if (oldTask && oldTask.status !== updatedTask.status) {
+        setProjects(prevProjs => prevProjs.map(p => {
+          if (p.id === projectId) {
+            const wasCompleted = oldTask.status === 'Done';
+            const isNowCompleted = updatedTask.status === 'Done';
+            const newCompleted = p.completedTasks + (isNowCompleted ? 1 : 0) - (wasCompleted ? 1 : 0);
+            return {
+              ...p,
+              completedTasks: newCompleted,
+              progress: p.tasksCount > 0 ? Math.round((newCompleted / p.tasksCount) * 100) : 0
+            };
+          }
+          return p;
+        }));
+      }
+    } else {
+      console.error('Failed to update task on backend:', res.error);
+      const updated = tasks.map(t => t.id === updatedTask.id ? updatedTask : t);
       saveAllTasks(updated);
-      setSelectedTask(null);
+      if (selectedTask?.id === updatedTask.id) {
+        setSelectedTask(updatedTask);
+      }
     }
   };
 
-  const handleCreateTask = (e: React.FormEvent) => {
+  const handleDeleteTask = async (taskId: string) => {
+    if (confirm('Are you sure you want to delete this task?')) {
+      const taskToDelete = tasks.find(t => t.id === taskId);
+      if (!taskToDelete) return;
+
+      const res = await deleteTaskAction(taskId);
+      if (res.success) {
+        setTasks(prev => prev.filter(t => t.id !== taskId));
+        setSelectedTask(null);
+
+        // Update projects counters locally
+        setProjects(prevProjs => prevProjs.map(p => {
+          if (p.id === taskToDelete.projectId) {
+            const newCount = p.tasksCount - 1;
+            const newCompleted = p.completedTasks - (taskToDelete.status === 'Done' ? 1 : 0);
+            return {
+              ...p,
+              tasksCount: newCount,
+              completedTasks: newCompleted,
+              progress: newCount > 0 ? Math.round((newCompleted / newCount) * 100) : 0
+            };
+          }
+          return p;
+        }));
+      } else {
+        console.error('Failed to delete task on backend:', res.error);
+        const updated = tasks.filter(t => t.id !== taskId);
+        saveAllTasks(updated);
+        setSelectedTask(null);
+      }
+    }
+  };
+
+  const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskTitle.trim() || !newTaskProject) return;
 
     const targetProject = projects.find(p => p.id === newTaskProject);
     if (!targetProject) return;
 
-    const assignees = defaultMembers.filter(m => newTaskAssignees.includes(m.name));
+    const selectedEmployees = availableMembers.filter(m => newTaskAssignees.includes(m.name));
+    const assignees = selectedEmployees.map(m => ({
+      id: m.id,
+      name: m.name,
+      initials: m.initials,
+      bg: m.bg
+    }));
 
-    const newTask: GlobalTask = {
-      id: `task_${Date.now()}`,
+    const newTaskData = {
       title: newTaskTitle,
       description: newTaskDesc,
       status: newTaskStatus,
       priority: newTaskPriority,
       startDate: newTaskStartDate || new Date().toISOString().split('T')[0],
       dueDate: newTaskDueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      assignees: assignees.length > 0 ? assignees : [defaultMembers[0]],
+      assignees: assignees.length > 0 ? assignees : [{
+        id: availableMembers[0]?.id || '1',
+        name: availableMembers[0]?.name || defaultMembers[0].name,
+      }],
+      projectId: targetProject.id,
       subtasks: [],
       comments: [],
-      attachmentsCount: 0,
-      projectId: targetProject.id,
-      projectName: targetProject.name,
     };
 
-    saveAllTasks([newTask, ...tasks]);
+    const res = await createTaskAction(newTaskData);
+    if (res.success && res.data) {
+      const createdTask: GlobalTask = {
+        ...res.data,
+        projectId: targetProject.id,
+        projectName: targetProject.name,
+      };
+      setTasks(prev => [createdTask, ...prev]);
+
+      // Update task counter on target project locally
+      setProjects(prevProjs => prevProjs.map(p => {
+        if (p.id === targetProject.id) {
+          const newCount = p.tasksCount + 1;
+          const newCompleted = p.completedTasks + (newTaskStatus === 'Done' ? 1 : 0);
+          return {
+            ...p,
+            tasksCount: newCount,
+            completedTasks: newCompleted,
+            progress: newCount > 0 ? Math.round((newCompleted / newCount) * 100) : 0
+          };
+        }
+        return p;
+      }));
+    } else {
+      console.error('Failed to create task on backend:', res.error);
+      const fallbackTask: GlobalTask = {
+        id: `task_${Date.now()}`,
+        title: newTaskTitle,
+        description: newTaskDesc,
+        status: newTaskStatus,
+        priority: newTaskPriority,
+        startDate: newTaskStartDate || new Date().toISOString().split('T')[0],
+        dueDate: newTaskDueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        assignees: selectedEmployees.length > 0 ? selectedEmployees : [availableMembers[0] || defaultMembers[0]],
+        subtasks: [],
+        comments: [],
+        attachmentsCount: 0,
+        projectId: targetProject.id,
+        projectName: targetProject.name,
+      };
+      saveAllTasks([fallbackTask, ...tasks]);
+    }
 
     // Reset Form
     setNewTaskTitle('');
@@ -951,6 +1092,81 @@ export default function GlobalTasksPage() {
 
     </div>
 
+      {/* Hours Spent Modal */}
+      {hoursPromptOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-955/40 backdrop-blur-md animate-fadeIn">
+          <div className="relative w-full max-w-md bg-white rounded-3xl border border-slate-100 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.12)] p-6 sm:p-8 space-y-6 animate-scaleIn">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-pink-50 text-pink-650 border border-pink-100/30">
+                  <Clock className="h-4.5 w-4.5" />
+                </div>
+                <h3 className="text-base font-black text-slate-800 tracking-tight">Log Spent Hours</h3>
+              </div>
+              <button 
+                onClick={() => {
+                  setHoursPromptOpen(false);
+                  setPromptTask(null);
+                }}
+                className="h-7 w-7 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 cursor-pointer transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Modal Body / Form */}
+            <div className="space-y-4">
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                You marked this task as <strong className="text-slate-700">Done</strong>. How many hours did you spend to complete it?
+              </p>
+              
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Hours Spent</label>
+                <input
+                  type="number"
+                  min={0}
+                  required
+                  value={promptValue}
+                  onChange={(e) => setPromptValue(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-pink-500 focus:outline-none focus:ring-4 focus:ring-pink-500/8 transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setHoursPromptOpen(false);
+                  setPromptTask(null);
+                }}
+                className="px-4 py-2.5 rounded-xl border border-slate-250 hover:bg-slate-50 text-slate-600 text-xs font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (promptTask) {
+                    const hours = parseInt(promptValue, 10) || 0;
+                    await submitUpdateTask(promptTask, hours);
+                  }
+                  setHoursPromptOpen(false);
+                  setPromptTask(null);
+                }}
+                className="px-5 py-2.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold transition-all shadow-sm hover:shadow-md cursor-pointer"
+              >
+                Confirm & Log
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
       {/* dialog - Add Task Modal */}
       {isTaskModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-955/40 backdrop-blur-md animate-fadeIn">
@@ -1083,7 +1299,7 @@ export default function GlobalTasksPage() {
               <div className="space-y-2.5">
                 <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Assign Task To</label>
                 <div className="flex flex-wrap gap-2">
-                  {defaultMembers.map((member) => {
+                  {availableMembers.map((member) => {
                     const isSelected = newTaskAssignees.includes(member.name);
                     return (
                       <button
@@ -1208,6 +1424,23 @@ export default function GlobalTasksPage() {
                     <ChevronDown className="h-3.5 w-3.5 absolute right-2.5 top-2 text-slate-455 pointer-events-none" />
                   </div>
                 </div>
+
+                {/* Hours Spent */}
+                {selectedTask.status === 'Done' && (
+                  <div className="col-span-2 border-t border-slate-100 pt-3.5 space-y-1.5 animate-fadeIn">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Hours Spent (Actual)</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={selectedTask.actualHours || 0}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10) || 0;
+                        handleUpdateTask({ ...selectedTask, actualHours: val });
+                      }}
+                      className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    />
+                  </div>
+                )}
 
                 {/* Dates */}
                 <div className="col-span-2 grid grid-cols-2 gap-4 border-t border-slate-100 pt-3.5">

@@ -22,29 +22,12 @@ import {
 import { cn } from '@/lib/utils';
 import { useUser, usePermission } from '@/contexts/UserContext';
 
-interface Member {
-  name: string;
-  initials: string;
-  bg: string;
-}
+import { getProjectsAction, getEmployeesAction, type Employee, type Member } from '@/actions/projects';
+import { getIssuesByProjectAction, createIssueAction, updateIssueAction, deleteIssueAction, type Issue } from '@/actions/issues';
 
 interface Project {
   id: string;
   name: string;
-}
-
-interface Issue {
-  id: string;
-  title: string;
-  description: string;
-  status: 'Open' | 'In Progress' | 'Resolved' | 'Closed';
-  priority: 'Low' | 'Medium' | 'High' | 'Critical';
-  type: 'Bug' | 'Task' | 'Improvement' | 'Security';
-  projectId: string;
-  projectName: string;
-  dueDate: string;
-  assignees: Member[];
-  commentsCount: number;
 }
 
 const defaultProjects: Project[] = [
@@ -118,19 +101,13 @@ const fallbackIssues: Issue[] = [
   }
 ];
 
-const availableMembers: Member[] = [
-  { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
-  { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
-  { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
-  { name: 'Emma Watson', initials: 'EW', bg: 'bg-rose-500' },
-];
-
 export default function IssuesPage() {
   const { user } = useUser();
   const canDeleteIssue = usePermission('issue:delete');
 
   const [issues, setIssues] = useState<Issue[]>([]);
   const [projects, setProjects] = useState<Project[]>(defaultProjects);
+  const [availableMembers, setAvailableMembers] = useState<Employee[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [projectFilter, setProjectFilter] = useState('All');
   const [priorityFilter, setPriorityFilter] = useState('All');
@@ -148,32 +125,74 @@ export default function IssuesPage() {
   const [newAssignees, setNewAssignees] = useState<string[]>([]);
 
   // Load from LocalStorage
+  // Load from Backend/LocalStorage
   useEffect(() => {
-    // Attempt to load projects
-    const storedProjects = localStorage.getItem('pwt_projects');
-    if (storedProjects) {
-      try {
-        const parsed = JSON.parse(storedProjects);
-        if (parsed.length > 0) {
-          setProjects(parsed.map((p: any) => ({ id: p.id, name: p.name })));
+    async function loadProjects() {
+      const res = await getProjectsAction();
+      if (res.success && res.data) {
+        setProjects(res.data.map((p: any) => ({ id: p.id, name: p.name })));
+        
+        // Fetch issues for all loaded projects
+        const issuesPromises = res.data.map((p: any) => getIssuesByProjectAction(p.id));
+        const results = await Promise.all(issuesPromises);
+        const allIssues: Issue[] = [];
+        results.forEach(r => {
+          if (r.success && r.data) {
+            allIssues.push(...r.data);
+          }
+        });
+        setIssues(allIssues);
+      } else {
+        const storedProjects = localStorage.getItem('pwt_projects');
+        if (storedProjects) {
+          try {
+            const parsed = JSON.parse(storedProjects);
+            if (parsed.length > 0) {
+              setProjects(parsed.map((p: any) => ({ id: p.id, name: p.name })));
+            }
+          } catch (e) {
+            console.error(e);
+          }
         }
-      } catch (e) {
-        console.error(e);
+
+        const storedIssues = localStorage.getItem('pwt_issues');
+        if (storedIssues) {
+          try {
+            setIssues(JSON.parse(storedIssues));
+          } catch (e) {
+            console.error(e);
+          }
+        } else {
+          setIssues(fallbackIssues);
+        }
       }
     }
 
-    // Load Issues
-    const storedIssues = localStorage.getItem('pwt_issues');
-    if (storedIssues) {
-      try {
-        setIssues(JSON.parse(storedIssues));
-      } catch (e) {
-        console.error(e);
+    async function loadEmployees() {
+      const res = await getEmployeesAction();
+      if (res.success && res.data) {
+        setAvailableMembers(res.data);
+      } else {
+        setAvailableMembers(
+          [
+            { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
+            { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
+            { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
+            { name: 'Emma Watson', initials: 'EW', bg: 'bg-rose-500' },
+          ].map((m, i) => ({
+            id: String(i + 1),
+            name: m.name,
+            initials: m.initials,
+            bg: m.bg,
+            email: '',
+            role: 'Employee'
+          }))
+        );
       }
-    } else {
-      setIssues(fallbackIssues);
-      localStorage.setItem('pwt_issues', JSON.stringify(fallbackIssues));
     }
+
+    loadProjects();
+    loadEmployees();
   }, []);
 
   const saveIssues = (updatedIssues: Issue[]) => {
@@ -181,15 +200,20 @@ export default function IssuesPage() {
     localStorage.setItem('pwt_issues', JSON.stringify(updatedIssues));
   };
 
-  const handleCreateIssue = (e: React.FormEvent) => {
+  const handleCreateIssue = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || !newProject) return;
 
     const targetProject = projects.find(p => p.id === newProject);
-    const assignees = availableMembers.filter(m => newAssignees.includes(m.name));
+    const selectedEmployees = availableMembers.filter(m => newAssignees.includes(m.name));
+    const assignees = selectedEmployees.map(m => ({
+      userId: m.id,
+      name: m.name,
+      initials: m.initials,
+      bg: m.bg
+    }));
 
-    const newIssue: Issue = {
-      id: `iss-${Date.now()}`,
+    const newIssueData = {
       title: newTitle,
       description: newDesc,
       status: newStatus,
@@ -198,12 +222,38 @@ export default function IssuesPage() {
       projectId: newProject,
       projectName: targetProject ? targetProject.name : 'Unknown Project',
       dueDate: newDueDate || new Date().toISOString().split('T')[0],
-      assignees: assignees.length > 0 ? assignees : [availableMembers[0]],
-      commentsCount: 0
+      assignees: assignees.length > 0 ? assignees : [{
+        userId: availableMembers[0]?.id || '1',
+        name: availableMembers[0]?.name || 'Sarah Connor',
+        initials: availableMembers[0]?.initials || 'SC',
+        bg: availableMembers[0]?.bg || 'bg-indigo-500'
+      }],
     };
 
-    const updated = [newIssue, ...issues];
-    saveIssues(updated);
+    const res = await createIssueAction(newIssueData);
+    if (res.success && res.data) {
+      setIssues(prev => [res.data as any, ...prev]);
+    } else {
+      console.error('Failed to create issue on backend:', res.error);
+      const fallbackIssue: Issue = {
+        id: `iss-${Date.now()}`,
+        title: newTitle,
+        description: newDesc,
+        status: newStatus,
+        priority: newPriority,
+        type: newType,
+        projectId: newProject,
+        projectName: targetProject ? targetProject.name : 'Unknown Project',
+        dueDate: newDueDate || new Date().toISOString().split('T')[0],
+        assignees: selectedEmployees.map(m => ({
+          name: m.name,
+          initials: m.initials,
+          bg: m.bg
+        })),
+        commentsCount: 0
+      };
+      saveIssues([fallbackIssue, ...issues]);
+    }
 
     // Reset Form
     setNewTitle('');
@@ -217,19 +267,35 @@ export default function IssuesPage() {
     setIsModalOpen(false);
   };
 
-  const handleDeleteIssue = (id: string, e: React.MouseEvent) => {
+  const handleDeleteIssue = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('Are you sure you want to delete this issue?')) {
-      const updated = issues.filter(iss => iss.id !== id);
-      saveIssues(updated);
+      const res = await deleteIssueAction(id);
+      if (res.success) {
+        setIssues(prev => prev.filter(iss => iss.id !== id));
+      } else {
+        console.error('Failed to delete issue on backend:', res.error);
+        const updated = issues.filter(iss => iss.id !== id);
+        saveIssues(updated);
+      }
     }
   };
 
-  const handleToggleStatus = (issue: Issue, e: React.MouseEvent) => {
+  const handleToggleStatus = async (issue: Issue, e: React.MouseEvent) => {
     e.stopPropagation();
     const nextStatus: Issue['status'] = issue.status === 'Resolved' ? 'Open' : 'Resolved';
-    const updated = issues.map(iss => iss.id === issue.id ? { ...iss, status: nextStatus } : iss);
-    saveIssues(updated);
+    
+    // Optimistic UI update
+    setIssues(prev => prev.map(iss => iss.id === issue.id ? { ...iss, status: nextStatus } : iss));
+
+    const res = await updateIssueAction(issue.id, { status: nextStatus });
+    if (res.success && res.data) {
+      setIssues(prev => prev.map(iss => iss.id === issue.id ? (res.data as any) : iss));
+    } else {
+      console.error('Failed to update issue status on backend:', res.error);
+      const updated = issues.map(iss => iss.id === issue.id ? { ...iss, status: nextStatus } : iss);
+      saveIssues(updated);
+    }
   };
 
   // Filter Issues
