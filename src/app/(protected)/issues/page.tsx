@@ -24,6 +24,7 @@ import { useUser, usePermission } from '@/contexts/UserContext';
 
 import { getProjectsAction, getEmployeesAction, type Employee, type Member } from '@/actions/projects';
 import { getIssuesByProjectAction, createIssueAction, updateIssueAction, deleteIssueAction, type Issue } from '@/actions/issues';
+import { AddIssueModal } from '@/components/dashboard/AddIssueModal';
 
 interface Project {
   id: string;
@@ -115,14 +116,8 @@ export default function IssuesPage() {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newTitle, setNewTitle] = useState('');
-  const [newDesc, setNewDesc] = useState('');
-  const [newProject, setNewProject] = useState('');
-  const [newStatus, setNewStatus] = useState<Issue['status']>('Open');
-  const [newPriority, setNewPriority] = useState<Issue['priority']>('Medium');
-  const [newType, setNewType] = useState<Issue['type']>('Bug');
-  const [newDueDate, setNewDueDate] = useState('');
-  const [newAssignees, setNewAssignees] = useState<string[]>([]);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [issueToDeleteId, setIssueToDeleteId] = useState<string | null>(null);
 
   // Load from LocalStorage
   // Load from Backend/LocalStorage
@@ -200,84 +195,37 @@ export default function IssuesPage() {
     localStorage.setItem('pwt_issues', JSON.stringify(updatedIssues));
   };
 
-  const handleCreateIssue = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle.trim() || !newProject) return;
-
-    const targetProject = projects.find(p => p.id === newProject);
-    const selectedEmployees = availableMembers.filter(m => newAssignees.includes(m.name));
-    const assignees = selectedEmployees.map(m => ({
-      userId: m.id,
-      name: m.name,
-      initials: m.initials,
-      bg: m.bg
-    }));
-
-    const newIssueData = {
-      title: newTitle,
-      description: newDesc,
-      status: newStatus,
-      priority: newPriority,
-      type: newType,
-      projectId: newProject,
-      projectName: targetProject ? targetProject.name : 'Unknown Project',
-      dueDate: newDueDate || new Date().toISOString().split('T')[0],
-      assignees: assignees.length > 0 ? assignees : [{
-        userId: availableMembers[0]?.id || '1',
-        name: availableMembers[0]?.name || 'Sarah Connor',
-        initials: availableMembers[0]?.initials || 'SC',
-        bg: availableMembers[0]?.bg || 'bg-indigo-500'
-      }],
-    };
-
-    const res = await createIssueAction(newIssueData);
-    if (res.success && res.data) {
-      setIssues(prev => [res.data as any, ...prev]);
-    } else {
-      console.error('Failed to create issue on backend:', res.error);
-      const fallbackIssue: Issue = {
-        id: `iss-${Date.now()}`,
-        title: newTitle,
-        description: newDesc,
-        status: newStatus,
-        priority: newPriority,
-        type: newType,
-        projectId: newProject,
-        projectName: targetProject ? targetProject.name : 'Unknown Project',
-        dueDate: newDueDate || new Date().toISOString().split('T')[0],
-        assignees: selectedEmployees.map(m => ({
-          name: m.name,
-          initials: m.initials,
-          bg: m.bg
-        })),
-        commentsCount: 0
-      };
-      saveIssues([fallbackIssue, ...issues]);
-    }
-
-    // Reset Form
-    setNewTitle('');
-    setNewDesc('');
-    setNewProject('');
-    setNewStatus('Open');
-    setNewPriority('Medium');
-    setNewType('Bug');
-    setNewDueDate('');
-    setNewAssignees([]);
-    setIsModalOpen(false);
+  const handleIssueSuccess = async () => {
+    const issuesPromises = projects.map((p: any) => getIssuesByProjectAction(p.id));
+    const results = await Promise.all(issuesPromises);
+    const allIssues: Issue[] = [];
+    results.forEach(r => {
+      if (r.success && r.data) {
+        allIssues.push(...(r.data as Issue[]));
+      }
+    });
+    setIssues(allIssues);
   };
 
-  const handleDeleteIssue = async (id: string, e: React.MouseEvent) => {
+  const handleDeleteIssue = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('Are you sure you want to delete this issue?')) {
-      const res = await deleteIssueAction(id);
-      if (res.success) {
-        setIssues(prev => prev.filter(iss => iss.id !== id));
-      } else {
-        console.error('Failed to delete issue on backend:', res.error);
-        const updated = issues.filter(iss => iss.id !== id);
-        saveIssues(updated);
-      }
+    setIssueToDeleteId(id);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteIssue = async () => {
+    if (!issueToDeleteId) return;
+    const id = issueToDeleteId;
+    setIsDeleteConfirmOpen(false);
+    setIssueToDeleteId(null);
+
+    const res = await deleteIssueAction(id);
+    if (res.success) {
+      setIssues(prev => prev.filter(iss => iss.id !== id));
+    } else {
+      console.error('Failed to delete issue on backend:', res.error);
+      const updated = issues.filter(iss => iss.id !== id);
+      saveIssues(updated);
     }
   };
 
@@ -357,9 +305,6 @@ export default function IssuesPage() {
 
           <button
             onClick={() => {
-              if (projects.length > 0) {
-                setNewProject(projects[0].id);
-              }
               setIsModalOpen(true);
             }}
             className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-755 text-white px-4.5 py-2.5 text-xs font-bold shadow-md shadow-indigo-600/10 transition-all cursor-pointer"
@@ -699,181 +644,59 @@ export default function IssuesPage() {
 
       </div>
 
-      {/* modal - Add Issue Modal */}     {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md animate-fadeIn">
-          <div className="relative w-full max-w-lg bg-white rounded-3xl border border-slate-100 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.12)] p-6 sm:p-8 md:space-y-6 space-y-4 animate-scaleIn max-h-[90vh] flex flex-col">
+      {/* modal - Add Issue Modal */}
+      <AddIssueModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        projects={projects}
+        availableMembers={availableMembers}
+        onSuccess={handleIssueSuccess}
+      />
 
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4 shrink-0">
+      {/* modal - Delete Confirmation Modal */}
+      {isDeleteConfirmOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-955/40 backdrop-blur-md animate-fadeIn">
+          <div className="relative w-full max-w-sm bg-white rounded-3xl border border-slate-100 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.12)] p-6 sm:p-7 space-y-5 animate-scaleIn">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-650 border border-indigo-100/30">
-                  <Bug className="h-4.5 w-4.5" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-red-655 border border-red-100/30">
+                  <Trash2 className="h-4.5 w-4.5" />
                 </div>
-                <h3 className="text-base font-black text-slate-800 tracking-tight">Add New Issue</h3>
+                <h3 className="text-base font-black text-slate-800 tracking-tight">Delete Issue</h3>
               </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
+              <button 
+                onClick={() => setIsDeleteConfirmOpen(false)}
                 className="h-7 w-7 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 cursor-pointer transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleCreateIssue} className="flex-1 flex flex-col min-h-0">
-              {/* Scrollable Container */}
-              <div className="flex-1 overflow-y-auto space-y-5 pr-2 -mr-2 min-h-0">
-                {/* Project Selection */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Destination Project</label>
-                  <div className="relative">
-                    <select
-                      required
-                      value={newProject}
-                      onChange={(e) => setNewProject(e.target.value)}
-                      className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
-                    >
-                      <option value="" disabled>Select project...</option>
-                      {projects.map(p => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                  </div>
-                </div>
+            {/* Modal Body */}
+            <p className="text-xs font-bold text-slate-500 leading-relaxed">
+              Are you sure you want to delete this issue? This action is permanent and cannot be undone.
+            </p>
 
-                {/* Title */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Issue Title</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Signature mismatch in custom auth endpoint"
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-805 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all"
-                  />
-                </div>
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-3.5 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsDeleteConfirmOpen(false)}
+                className="px-4 py-2.5 rounded-xl border border-slate-250 hover:bg-slate-50 text-slate-655 text-xs font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteIssue}
+                className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-750 text-white text-xs font-bold transition-all shadow-sm hover:shadow-md cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
 
-                {/* Description */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Description / Details</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Describe logs, environment, and replication steps..."
-                    value={newDesc}
-                    onChange={(e) => setNewDesc(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-805 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all resize-none"
-                  />
-                </div>
-
-                {/* Type, Priority & Status */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Type</label>
-                    <div className="relative">
-                      <select
-                        value={newType}
-                        onChange={(e) => setNewType(e.target.value as Issue['type'])}
-                        className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
-                      >
-                        <option value="Bug">Bug</option>
-                        <option value="Security">Security</option>
-                        <option value="Improvement">Improvement</option>
-                        <option value="Task">Task</option>
-                      </select>
-                      <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Priority</label>
-                    <div className="relative">
-                      <select
-                        value={newPriority}
-                        onChange={(e) => setNewPriority(e.target.value as Issue['priority'])}
-                        className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
-                      >
-                        <option value="Low">Low</option>
-                        <option value="Medium">Medium</option>
-                        <option value="High">High</option>
-                        <option value="Critical">Critical</option>
-                      </select>
-                      <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Status</label>
-                    <div className="relative">
-                      <select
-                        value={newStatus}
-                        onChange={(e) => setNewStatus(e.target.value as Issue['status'])}
-                        className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
-                      >
-                        <option value="Open">Open</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Resolved">Resolved</option>
-                        <option value="Closed">Closed</option>
-                      </select>
-                      <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Assignees */}
-                <div className="space-y-2.5">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Assign Team Members</label>
-                  <div className="flex flex-wrap gap-2.5">
-                    {availableMembers.map((member) => {
-                      const isSelected = newAssignees.includes(member.name);
-                      return (
-                        <button
-                          key={member.name}
-                          type="button"
-                          onClick={() => {
-                            if (isSelected) {
-                              setNewAssignees(newAssignees.filter(m => m !== member.name));
-                            } else {
-                              setNewAssignees([...newAssignees, member.name]);
-                            }
-                          }}
-                          className={cn(
-                            "flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border text-[11px] font-bold transition-all duration-200 cursor-pointer",
-                            isSelected
-                              ? "bg-indigo-50/80 border-indigo-200 text-indigo-700 shadow-3xs ring-1 ring-indigo-200/50"
-                              : "bg-white border-slate-200 text-slate-650 hover:bg-slate-50 hover:border-slate-300 shadow-3xs"
-                          )}
-                        >
-                          <div className={cn("h-5.5 w-5.5 rounded-full flex items-center justify-center text-[8px] text-white font-black shadow-3xs shrink-0", member.bg)}>
-                            {member.initials}
-                          </div>
-                          <span>{member.name}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              {/* Form Buttons */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-xs font-bold transition-all cursor-pointer active:scale-98"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-indigo-650 hover:bg-indigo-750 text-white text-xs font-bold shadow-md shadow-indigo-650/10 transition-all cursor-pointer active:scale-98"
-                >
-                  Create Issue
-                </button>
-              </div>
-
-            </form>
           </div>
         </div>
       )}

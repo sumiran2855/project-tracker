@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getProjectsAction, createProjectAction, deleteProjectAction, getEmployeesAction, type Employee } from '@/actions/projects';
+import { AddProjectModal } from '@/components/dashboard/AddProjectModal';
 
 interface Member {
   name: string;
@@ -218,21 +219,6 @@ export default function ProjectsPage() {
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newProjName, setNewProjName] = useState('');
-  const [newProjDesc, setNewProjDesc] = useState('');
-  const [newProjStatus, setNewProjStatus] = useState<Project['status']>('Planning');
-  const [newProjTags, setNewProjTags] = useState('');
-  const [newProjDueDate, setNewProjDueDate] = useState('');
-  const [newProjMembers, setNewProjMembers] = useState<string[]>([]);
-  
-  // Upgraded Metadata State
-  const [newProjTechStack, setNewProjTechStack] = useState('');
-  const [newProjPriority, setNewProjPriority] = useState<Project['priority']>('Medium');
-  const [newProjBudget, setNewProjBudget] = useState('');
-  const [newProjRepositoryUrl, setNewProjRepositoryUrl] = useState('');
-  const [newProjSlackChannel, setNewProjSlackChannel] = useState('');
-  const [newProjStartDate, setNewProjStartDate] = useState('');
-  const [newProjQuarter, setNewProjQuarter] = useState<Project['targetQuarter']>('Q3 2026');
 
   // Load from backend API
   useEffect(() => {
@@ -286,76 +272,11 @@ export default function ProjectsPage() {
   const inReviewCount = projects.filter(p => p.status === 'In Review').length;
   const planningCount = projects.filter(p => p.status === 'Planning').length;
 
-  const handleCreateProject = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProjName.trim()) return;
-
-    const selectedMembers = availableMembers
-      .filter(m => newProjMembers.includes(m.name))
-      .map(m => ({ userId: m.id, name: m.name, initials: m.initials, bg: m.bg }));
-
-    const newProjectData: Partial<Project> = {
-      name: newProjName,
-      description: newProjDesc,
-      status: newProjStatus,
-      progress: newProjStatus === 'Completed' ? 100 : newProjStatus === 'Planning' ? 0 : 10,
-      tags: newProjTags.split(',').map(t => t.trim()).filter(Boolean),
-      dueDate: newProjDueDate || 'No Due Date',
-      members: selectedMembers,
-      techStack: newProjTechStack.split(',').map(t => t.trim()).filter(Boolean),
-      priority: newProjPriority,
-      budget: newProjBudget || undefined,
-      repositoryUrl: newProjRepositoryUrl || undefined,
-      slackChannel: newProjSlackChannel || undefined,
-      startDate: newProjStartDate || undefined,
-      targetQuarter: newProjQuarter || undefined,
-    };
-
-    const res = await createProjectAction(newProjectData);
-    if (res.success && res.data) {
-      setProjects(prev => [res.data as any, ...prev]);
-    } else {
-      console.error('Failed to create project on backend:', res.error);
-      const fallbackProject: Project = {
-        id: String(Date.now()),
-        name: newProjName,
-        description: newProjDesc,
-        status: newProjStatus,
-        progress: newProjStatus === 'Completed' ? 100 : newProjStatus === 'Planning' ? 0 : 10,
-        tags: newProjTags.split(',').map(t => t.trim()).filter(Boolean),
-        tasksCount: 0,
-        completedTasks: 0,
-        commentsCount: 0,
-        attachmentsCount: 0,
-        dueDate: newProjDueDate || 'No Due Date',
-        members: selectedMembers.length > 0 ? selectedMembers as any : [{ name: 'Default User', initials: 'DU', bg: 'bg-slate-500' }],
-        techStack: newProjTechStack.split(',').map(t => t.trim()).filter(Boolean),
-        priority: newProjPriority,
-        budget: newProjBudget || undefined,
-        repositoryUrl: newProjRepositoryUrl || undefined,
-        slackChannel: newProjSlackChannel || undefined,
-        startDate: newProjStartDate || undefined,
-        targetQuarter: newProjQuarter || undefined,
-      };
-      const updated = [fallbackProject, ...projects];
-      saveProjects(updated);
+  const handleProjectSuccess = async () => {
+    const projRes = await getProjectsAction();
+    if (projRes.success && projRes.data) {
+      setProjects(projRes.data as any[]);
     }
-
-    // Reset Form & Close Modal
-    setNewProjName('');
-    setNewProjDesc('');
-    setNewProjStatus('Planning');
-    setNewProjTags('');
-    setNewProjDueDate('');
-    setNewProjMembers([]);
-    setNewProjTechStack('');
-    setNewProjPriority('Medium');
-    setNewProjBudget('');
-    setNewProjRepositoryUrl('');
-    setNewProjSlackChannel('');
-    setNewProjStartDate('');
-    setNewProjQuarter('Q3 2026');
-    setIsModalOpen(false);
   };
 
   const handleDeleteProject = async (id: string, e: React.MouseEvent) => {
@@ -732,272 +653,12 @@ export default function ProjectsPage() {
       </div>
 
       {/* Modal - New Project Form */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md animate-fadeIn">
-          <div className="relative w-full max-w-2xl bg-white rounded-3xl border border-slate-100 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.12)] p-6 sm:p-8 space-y-6 animate-scaleIn max-h-[90vh] flex flex-col">
-            
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4 shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-650 border border-indigo-100/30">
-                  <Folder className="h-4.5 w-4.5" />
-                </div>
-                <h3 className="text-base font-black text-slate-800 tracking-tight">Add New Initiative</h3>
-              </div>
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="h-7 w-7 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 cursor-pointer transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* Modal Form */}
-            <form onSubmit={handleCreateProject} className="flex-1 flex flex-col min-h-0">
-              {/* Scrollable Form Body */}
-              <div className="flex-1 overflow-y-auto space-y-5 pr-2 -mr-2 min-h-0">
-                
-                {/* Section 1: General Info */}
-                <div className="space-y-4">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1 flex items-center gap-1.5">
-                    <span>01. General Information</span>
-                  </h4>
-                  
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Project Name *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Stripe Integration V2"
-                      value={newProjName}
-                      onChange={(e) => setNewProjName(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Description / Goals</label>
-                    <textarea
-                      rows={3}
-                      placeholder="Describe the main milestones, goals, and what this project is about..."
-                      value={newProjDesc}
-                      onChange={(e) => setNewProjDesc(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all resize-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Section 2: Timeline & Status */}
-                <div className="space-y-4 pt-2">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1">
-                    <span>02. Timeline & Planning</span>
-                  </h4>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Initial Status</label>
-                      <div className="relative">
-                        <select
-                          value={newProjStatus}
-                          onChange={(e) => setNewProjStatus(e.target.value as Project['status'])}
-                          className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
-                        >
-                          <option value="Planning">Planning</option>
-                          <option value="In Progress">In Progress</option>
-                          <option value="In Review">In Review</option>
-                          <option value="Completed">Completed</option>
-                        </select>
-                        <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Target Quarter</label>
-                      <div className="relative">
-                        <select
-                          value={newProjQuarter}
-                          onChange={(e) => setNewProjQuarter(e.target.value as Project['targetQuarter'])}
-                          className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
-                        >
-                          <option value="Q2 2026">Q2 2026</option>
-                          <option value="Q3 2026">Q3 2026</option>
-                          <option value="Q4 2026">Q4 2026</option>
-                          <option value="Future">Future</option>
-                        </select>
-                        <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Start Date</label>
-                      <input
-                        type="date"
-                        value={newProjStartDate}
-                        onChange={(e) => setNewProjStartDate(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Due Date</label>
-                      <input
-                        type="date"
-                        value={newProjDueDate}
-                        onChange={(e) => setNewProjDueDate(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Section 3: Technical & Operational Metadata */}
-                <div className="space-y-4 pt-2">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1">
-                    <span>03. Tech Stack & Operations</span>
-                  </h4>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tech Stack (comma separated)</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Next.js, Node.js, Stripe"
-                        value={newProjTechStack}
-                        onChange={(e) => setNewProjTechStack(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Priority</label>
-                      <div className="relative">
-                        <select
-                          value={newProjPriority}
-                          onChange={(e) => setNewProjPriority(e.target.value as Project['priority'])}
-                          className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
-                        >
-                          <option value="Low">Low</option>
-                          <option value="Medium">Medium</option>
-                          <option value="High">High</option>
-                          <option value="Critical">Critical</option>
-                        </select>
-                        <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Budget / Est. Hours</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. $10,000"
-                        value={newProjBudget}
-                        onChange={(e) => setNewProjBudget(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Slack / Discord</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. #initiative-auth"
-                        value={newProjSlackChannel}
-                        onChange={(e) => setNewProjSlackChannel(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Repository Link</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. https://github.com/..."
-                        value={newProjRepositoryUrl}
-                        onChange={(e) => setNewProjRepositoryUrl(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tags (comma separated)</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Frontend, Billing, Design"
-                      value={newProjTags}
-                      onChange={(e) => setNewProjTags(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all"
-                    />
-                  </div>
-                </div>
-
-                {/* Section 4: Members selection */}
-                <div className="space-y-4 pt-2">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1">
-                    <span>04. Team Allocation</span>
-                  </h4>
-                  
-                  <div className="space-y-2.5">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Assign Team Members</label>
-                    <div className="flex flex-wrap gap-2.5">
-                      {availableMembers.map((member) => {
-                        const isSelected = newProjMembers.includes(member.name);
-                        return (
-                          <button
-                            key={member.name}
-                            type="button"
-                            onClick={() => {
-                              if (isSelected) {
-                                setNewProjMembers(newProjMembers.filter(m => m !== member.name));
-                              } else {
-                                setNewProjMembers([...newProjMembers, member.name]);
-                              }
-                            }}
-                            className={cn(
-                              "flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border text-[11px] font-bold transition-all duration-200 cursor-pointer",
-                              isSelected 
-                                ? "bg-indigo-50/80 border-indigo-200 text-indigo-700 shadow-3xs ring-1 ring-indigo-200/50" 
-                                : "bg-white border-slate-200 text-slate-650 hover:bg-slate-50 hover:border-slate-300 shadow-3xs"
-                            )}
-                          >
-                            <div className={cn("h-5.5 w-5.5 rounded-full flex items-center justify-center text-[8px] text-white font-black shadow-3xs shrink-0", member.bg)}>
-                              {member.initials}
-                            </div>
-                            <span>{member.name}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Form Buttons */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 shrink-0 mt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-xs font-bold transition-all cursor-pointer active:scale-98"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-indigo-650 hover:bg-indigo-750 text-white text-xs font-bold shadow-md shadow-indigo-650/10 transition-all cursor-pointer active:scale-98"
-                >
-                  Create Project
-                </button>
-              </div>
-
-            </form>
-          </div>
-        </div>
-      )}
+      <AddProjectModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        availableMembers={availableMembers}
+        onSuccess={handleProjectSuccess}
+      />
 
     </>
   );

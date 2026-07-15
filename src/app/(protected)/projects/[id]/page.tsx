@@ -27,12 +27,14 @@ import {
   Terminal,
   Hash,
   Coins,
-  ShieldAlert
+  ShieldAlert,
+  Pencil
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, usePermission } from '@/contexts/UserContext';
 import { getProjectByIdAction, updateProjectAction, getEmployeesAction, type Employee } from '@/actions/projects';
 import { getTasksByProjectAction, createTaskAction, updateTaskAction, deleteTaskAction, type Task, type Subtask, type Comment } from '@/actions/tasks';
+import { AddProjectModal } from '@/components/dashboard/AddProjectModal';
 
 // Types
 export interface Member {
@@ -280,6 +282,7 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [availableMembers, setAvailableMembers] = useState<Employee[]>([]);
+  const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
   
   const isEmployee = user?.role === 'Employee';
   const displayTasks = isEmployee
@@ -813,6 +816,14 @@ export default function ProjectDetailPage() {
                   </select>
                   <ChevronDown className="h-3 w-3 absolute right-2 top-1.5 text-slate-400 pointer-events-none" />
                 </div>
+
+                <button
+                  onClick={() => setIsEditProjectModalOpen(true)}
+                  className="inline-flex h-7 items-center gap-1.5 rounded-full border border-slate-200 bg-white hover:bg-slate-55 px-3 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all cursor-pointer shadow-3xs hover:border-slate-300"
+                >
+                  <Pencil className="h-3 w-3 text-indigo-500" />
+                  <span>Edit Details</span>
+                </button>
               </div>
 
               <p className="text-xs text-slate-500 font-medium leading-relaxed max-w-2xl">{project.description}</p>
@@ -1054,7 +1065,7 @@ export default function ProjectDetailPage() {
                   </div>
 
                   {/* Task list inside column */}
-                  <div className="space-y-3.5 flex-1 overflow-y-auto max-h-[60vh] pr-1.5 scrollbar-thin">
+                  <div className="space-y-3.5 flex-1 overflow-y-auto no-scrollbar max-h-[60vh] pr-1.5">
                     {columnTasks.length === 0 ? (
                       <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200/80 rounded-2xl text-slate-350 text-[10px] font-bold text-center h-28 select-none">
                         Drop Tasks Here
@@ -1629,7 +1640,7 @@ export default function ProjectDetailPage() {
           <div className="relative w-full max-w-xl h-full bg-white shadow-2xl border-l border-slate-200 flex flex-col justify-between animate-slideIn">
             
             {/* Drawer Body Content */}
-            <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
+            <div className="flex-1 overflow-y-auto no-scrollbar p-6 sm:p-8 space-y-6">
               
               {/* Header section */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -1888,6 +1899,28 @@ export default function ProjectDetailPage() {
         </div>
       )}
 
+      {/* Edit Project Modal */}
+      <AddProjectModal
+        isOpen={isEditProjectModalOpen}
+        onClose={() => setIsEditProjectModalOpen(false)}
+        availableMembers={availableMembers}
+        projectToEdit={project}
+        onSuccess={async () => {
+          const res = await getProjectByIdAction(projectId);
+          if (res.success && res.data) {
+            setProject(res.data as any);
+          }
+        }}
+      />
+      <style dangerouslySetInnerHTML={{__html: `
+        .no-scrollbar::-webkit-scrollbar {
+          display: none !important;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none !important;
+          scrollbar-width: none !important;
+        }
+      `}} />
     </>
   );
 }

@@ -12,9 +12,10 @@ import {
 } from 'lucide-react';
 import { ProjectCard } from '@/components/dashboard/ProjectCard';
 import { StatCard } from '@/components/dashboard/StatCard';
+import { QuickActionsPanel } from '@/components/dashboard/QuickActionsPanel';
 import { cn } from '@/lib/utils';
 import { hasPermission } from '@/lib/auth/permissions';
-import { getProjectsAction } from '@/actions/projects';
+import { getProjectsAction, getEmployeesAction } from '@/actions/projects';
 import { getTasksByProjectAction } from '@/actions/tasks';
 import { getIssuesByProjectAction } from '@/actions/issues';
 
@@ -175,6 +176,8 @@ export default async function DashboardPage() {
   let activeProjects: any[] = [];
   let deadlines: { title: string; date: string; urgent: boolean }[] = [];
   let recentActivity: { text: string; time: string; dot: string }[] = [];
+  let workloadData: { name: string; role: string; load: number; initials: string; bg?: string }[] = team;
+  let allEmployees: any[] = [];
 
   const dynamicStats = [
     { label: 'Active Projects', value: '0',   change: '+2',   iconName: 'Folder',       tint: '#6366f1', positive: true  },
@@ -362,12 +365,85 @@ export default async function DashboardPage() {
           { text: 'No recent activity recorded yet', time: 'Just now', dot: 'bg-slate-400' }
         ];
       }
+
+      // Fetch employees & calculate workload dynamically
+      const employeesRes = await getEmployeesAction();
+      if (employeesRes.success && employeesRes.data) {
+        allEmployees = employeesRes.data;
+        const employees = employeesRes.data.filter(emp => emp.role.toLowerCase() === 'employee');
+        
+        const calculatedWorkloads = employees.map(emp => {
+          let assignedHours = 0;
+          
+          // 1. Project allocation
+          activeProjects.forEach(p => {
+            const isMember = p.members.some((m: any) => m.name === emp.name || m.userId === emp.id);
+            if (isMember) {
+              const projHours = parseHoursFromBudget(p.budget) || 40; // Default to 40 hours if budget unspecified
+              const memberCount = p.members.length || 1;
+              let share = projHours / memberCount;
+              
+              // Project urgency weight multiplier
+              if (p.dueDate && p.dueDate !== 'No Due Date') {
+                const diffMs = new Date(p.dueDate).getTime() - new Date().getTime();
+                const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                if (diffDays <= 3 && diffDays >= 0) {
+                  share *= 1.5; // increase weight by 50% for tight deadline
+                } else if (diffDays < 0) {
+                  share *= 2.0; // double weight for overdue projects
+                }
+              }
+              assignedHours += share;
+            }
+          });
+
+          // 2. Active tasks allocation
+          tasksResList.forEach(tRes => {
+            if (tRes.success && tRes.data) {
+              tRes.data.forEach(task => {
+                if (task.status !== 'Done') {
+                  const isAssigned = task.assignees.some((a: any) => a.name === emp.name || a.userId === emp.id);
+                  if (isAssigned) {
+                    assignedHours += 10; // estimate 10 hours per active task
+                    
+                    // Task urgency burden
+                    if (task.dueDate) {
+                      const diffMs = new Date(task.dueDate).getTime() - new Date().getTime();
+                      const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                      if (diffDays <= 2 && diffDays >= 0) {
+                        assignedHours += 15;
+                      } else if (diffDays < 0) {
+                        assignedHours += 25;
+                      }
+                    }
+                  }
+                }
+              });
+            }
+          });
+
+          // Scale capacity based on standard 80 hours capacity (2 weeks work cycle)
+          const loadPercent = Math.min(100, Math.round((assignedHours / 80) * 100));
+
+          return {
+            name: emp.name,
+            role: emp.role,
+            load: loadPercent || 15, // fallback to min 15% to represent baseline activity
+            initials: emp.initials || emp.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
+            bg: emp.bg
+          };
+        });
+
+        if (calculatedWorkloads.length > 0) {
+          workloadData = calculatedWorkloads;
+        }
+      }
     }
   } catch (error) {
     console.error('Failed to load projects in dashboard:', error);
   }
 
-  const projectsToRender = activeProjects.length > 0 ? activeProjects.slice(0, 4).map(p => {
+  const projectsToRender = activeProjects.length > 0 ? activeProjects.slice(0, 12).map(p => {
     const barColors: Record<string, string> = {
       'Planning': '#06b6d4',
       'In Progress': '#6366f1',
@@ -444,10 +520,14 @@ export default async function DashboardPage() {
           </div>
           <div className="flex items-end justify-between gap-3 h-40">
             {weeklyHours.map((d) => (
-              <div key={d.day} className="flex flex-1 flex-col items-center gap-2">
-                <div className="w-full h-32 flex items-end rounded-lg bg-slate-50 overflow-hidden">
+              <div key={d.day} className="group relative flex flex-1 flex-col items-center gap-2">
+                {/* Tooltip */}
+                <div className="absolute bottom-[105%] left-1/2 -translate-x-1/2 bg-slate-850 text-white text-[10px] font-bold py-1 px-2 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 shadow-md whitespace-nowrap z-10">
+                  {d.hours} hrs logged
+                </div>
+                <div className="w-full h-32 flex items-end rounded-lg bg-slate-50 overflow-hidden cursor-pointer hover:bg-slate-100/70 transition-colors">
                   <div
-                    className="w-full rounded-lg bg-gradient-to-t from-indigo-500 to-indigo-600 transition-all"
+                    className="w-full rounded-lg bg-gradient-to-t from-indigo-500 to-indigo-600 transition-all duration-550 group-hover:from-indigo-600 group-hover:to-indigo-700"
                     style={{ height: `${(d.hours / maxHours) * 100}%` }}
                   />
                 </div>
@@ -463,9 +543,9 @@ export default async function DashboardPage() {
             <h2 className="text-base font-bold text-slate-800 mb-1">Team Workload</h2>
             <p className="text-xs text-slate-400 mb-5">Capacity this sprint</p>
             <div className="space-y-4">
-              {team.map((t) => (
+              {workloadData.map((t) => (
                 <div key={t.name} className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-[10px] font-bold text-indigo-600 border border-indigo-100/50">
+                  <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold border border-slate-100 shadow-3xs", t.bg || "bg-indigo-50 text-indigo-650 border border-indigo-100/50")}>
                     {t.initials}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -500,10 +580,12 @@ export default async function DashboardPage() {
               View all
             </a>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 bg-slate-50/30 flex-1">
-            {projectsToRender.map((p) => (
-              <ProjectCard key={p.name} p={p} />
-            ))}
+          <div className="max-h-[580px] overflow-y-auto p-6 bg-slate-50/30 flex-1 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {projectsToRender.map((p) => (
+                <ProjectCard key={p.name} p={p} />
+              ))}
+            </div>
           </div>
         </div>
 
@@ -544,29 +626,7 @@ export default async function DashboardPage() {
           </div>
 
           {canViewQuickActions && (
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs lg:col-span-2">
-              <h2 className="text-sm font-bold text-slate-800 mb-3">Quick Actions</h2>
-              <div className="flex flex-col gap-2">
-                {[
-                  { label: 'New Project', icon: Plus, fg: '#4f46e5', bg: '#e0e7ff60' },
-                  { label: 'Log Time', icon: Play, fg: '#10b981', bg: '#d1fae560' },
-                  { label: 'File a Bug', icon: Bug, fg: '#ef4444', bg: '#fee2e260' },
-                ].map((qa) => {
-                  const Icon = qa.icon;
-                  return (
-                    <button
-                      key={qa.label}
-                      type="button"
-                      className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all hover:brightness-95 cursor-pointer shadow-xs"
-                      style={{ color: qa.fg, backgroundColor: qa.bg }}
-                    >
-                      <Icon className="h-4 w-4 shrink-0" />
-                      <span>{qa.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            <QuickActionsPanel projects={activeProjects} employees={allEmployees} />
           )}
         </div>
       </div>
