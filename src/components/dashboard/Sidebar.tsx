@@ -1,7 +1,9 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
+import { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { cn, isItemInSprint } from '@/lib/utils';
+import { fetchAllSprintData } from '@/lib/sprintLoader';
 import {
   LayoutDashboard,
   Folder,
@@ -40,6 +42,7 @@ interface SidebarProps {
 
 export function Sidebar({ onClose, className, isCollapsed = false, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user } = useUser();
 
   const navigationGroups = [
@@ -70,10 +73,47 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
     items: group.items.filter((item: any) => !item.permission || hasPermission(user?.role, item.permission))
   })).filter(group => group.items.length > 0);
 
-  const progress = 84;
+  const [progress, setProgress] = useState(0);
   const radius = 20;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (progress / 100) * circumference;
+
+  useEffect(() => {
+    async function calculateSprintProgress() {
+      try {
+        const { tasks, issues } = await fetchAllSprintData();
+        const sprintTasks = tasks.filter((t: any) => isItemInSprint(t.dueDate, t.status));
+        const sprintIssues = issues.filter((i: any) => isItemInSprint(i.dueDate, i.status));
+        
+        const totalItems = sprintTasks.length + sprintIssues.length;
+        if (totalItems === 0) {
+          setProgress(100);
+          return;
+        }
+        
+        const completedTasks = sprintTasks.filter((t: any) => t.status === 'Done').length;
+        const resolvedIssues = sprintIssues.filter((i: any) => i.status === 'Resolved' || i.status === 'Closed').length;
+        
+        const calculated = Math.round(((completedTasks + resolvedIssues) / totalItems) * 100);
+        setProgress(calculated);
+      } catch (err) {
+        console.error("Error calculating sprint progress", err);
+      }
+    }
+    
+    calculateSprintProgress();
+    
+    const handleStorageChange = () => {
+      calculateSprintProgress();
+    };
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('pwt_update', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('pwt_update', handleStorageChange);
+    };
+  }, []);
 
   return (
     <aside
@@ -86,8 +126,9 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
         {/* Workspace switcher — circular avatar + card */}
         <div className="p-4">
           <button
+            onClick={() => router.push('/workshop')}
             className={cn(
-              'flex items-center rounded-2xl bg-white text-left transition-all hover:shadow-md focus:outline-none cursor-pointer group border border-slate-200/80',
+              'flex items-center rounded-2xl bg-white text-left transition-all hover:shadow-md focus:outline-none cursor-pointer group border border-slate-200/80 w-full',
               isCollapsed ? 'p-2 justify-center mx-auto' : 'p-3 w-full gap-3'
             )}
           >
@@ -99,7 +140,7 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
               <>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-bold text-slate-800 leading-tight">PWT Workspace</p>
-                  <p className="truncate text-[10px] text-slate-400 font-medium mt-0.5 leading-none">Pro Dashboard</p>
+                  <p className="truncate text-[10px] text-slate-450 font-semibold mt-0.5 leading-none">Pro Dashboard</p>
                 </div>
                 <ChevronsUpDown className="h-3.5 w-3.5 text-slate-400 shrink-0 group-hover:text-indigo-600 transition-colors" />
               </>
@@ -188,7 +229,10 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
         {isCollapsed ? (
           <Tooltip>
             <TooltipTrigger asChild>
-              <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white border border-slate-200 mx-auto cursor-pointer text-indigo-600 hover:bg-slate-50 transition-colors">
+              <button 
+                onClick={() => router.push('/sprint')}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white border border-slate-200 mx-auto cursor-pointer text-indigo-600 hover:bg-slate-50 transition-colors"
+              >
                 <Sparkles className="h-4 w-4" />
               </button>
             </TooltipTrigger>
@@ -218,7 +262,10 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
             <div className="min-w-0 flex-1">
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Weekly Sprint</p>
               <p className="text-xs font-bold text-slate-800">Almost there</p>
-              <button className="mt-1.5 text-[10px] font-bold text-indigo-600 hover:underline cursor-pointer">
+              <button 
+                onClick={() => router.push('/sprint')}
+                className="mt-1.5 text-[10px] font-bold text-indigo-600 hover:underline cursor-pointer"
+              >
                 View details
               </button>
             </div>

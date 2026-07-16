@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, Search, Bell, User, Settings, LogOut, Command } from 'lucide-react';
+import { Menu, Search, Bell, User, Settings, LogOut, Command, Inbox, Check } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { logoutAction } from '@/actions/auth';
 import { Sidebar } from './Sidebar';
+import { cn } from '@/lib/utils';
+import { fetchLiveNotifications } from '@/lib/sprintLoader';
 
 interface NavbarProps {
   userName?: string | null;
@@ -24,6 +26,68 @@ export function Navbar({ userName, userEmail }: NavbarProps) {
   const [isPending, startTransition] = useTransition();
   const pathname = usePathname();
   const router = useRouter();
+
+  // Notification States
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  const loadLiveNotifications = async () => {
+    try {
+      const data = await fetchLiveNotifications();
+      setNotifications(data);
+    } catch (e) {
+      console.error("Failed to load live notifications in navbar", e);
+    }
+  };
+
+  useEffect(() => {
+    loadLiveNotifications();
+
+    const handleUpdate = () => {
+      loadLiveNotifications();
+    };
+    window.addEventListener('pwt_notifications_update', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener('pwt_notifications_update', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, []);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const markAllAsRead = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const stored = localStorage.getItem('pwt_read_notifications');
+      let readIds: string[] = stored ? JSON.parse(stored) : [];
+      notifications.forEach(n => {
+        if (!readIds.includes(n.id)) {
+          readIds.push(n.id);
+        }
+      });
+      localStorage.setItem('pwt_read_notifications', JSON.stringify(readIds));
+      window.dispatchEvent(new Event('pwt_notifications_update'));
+      window.dispatchEvent(new Event('storage'));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleNotificationClick = (id: string) => {
+    try {
+      const stored = localStorage.getItem('pwt_read_notifications');
+      let readIds: string[] = stored ? JSON.parse(stored) : [];
+      if (!readIds.includes(id)) {
+        readIds.push(id);
+        localStorage.setItem('pwt_read_notifications', JSON.stringify(readIds));
+      }
+      window.dispatchEvent(new Event('pwt_notifications_update'));
+      window.dispatchEvent(new Event('storage'));
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleLogout = () => {
     startTransition(() => {
@@ -109,14 +173,91 @@ export function Navbar({ userName, userEmail }: NavbarProps) {
 
 
 
-          <button
-            type="button"
-            className="relative flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
-            aria-label="Notifications"
-          >
-            <Bell className="h-4 w-4" />
-            <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-indigo-500 ring-2 ring-white" />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="relative flex h-8 w-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer focus:outline-none"
+                aria-label="Notifications"
+              >
+                <Bell className="h-4 w-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-indigo-500 ring-2 ring-white" />
+                )}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-80 mt-2 p-1.5 bg-white border border-slate-200 rounded-2xl shadow-lg z-50"
+            >
+              <div className="px-3.5 py-2.5 flex items-center justify-between border-b border-slate-100 mb-1">
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-xs font-black text-slate-800">Notifications</h3>
+                  {unreadCount > 0 && (
+                    <span className="bg-indigo-50 text-indigo-650 px-1.5 py-0.5 rounded-full text-[9px] font-black">
+                      {unreadCount} new
+                    </span>
+                  )}
+                </div>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={markAllAsRead}
+                    className="text-[10px] font-bold text-indigo-650 hover:underline cursor-pointer flex items-center gap-0.5"
+                  >
+                    Mark all read
+                  </button>
+                )}
+              </div>
+
+              <div className="max-h-72 overflow-y-auto divide-y divide-slate-50 no-scrollbar">
+                {notifications.length === 0 ? (
+                  <div className="py-8 text-center">
+                    <Inbox className="h-6 w-6 text-slate-300 mx-auto mb-2" />
+                    <p className="text-[10px] text-slate-400 font-bold">All caught up!</p>
+                  </div>
+                ) : (
+                  notifications.slice(0, 4).map((notif) => (
+                    <DropdownMenuItem
+                      key={notif.id}
+                      onClick={() => handleNotificationClick(notif.id)}
+                      className={cn(
+                        "flex items-start gap-3 rounded-xl p-2.5 transition-colors cursor-pointer focus:bg-slate-50",
+                        !notif.read ? "bg-indigo-50/20" : ""
+                      )}
+                    >
+                      <div className={cn(
+                        "h-7 w-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold",
+                        notif.type === 'issue' ? "bg-rose-50 text-rose-600" :
+                        notif.type === 'task' ? "bg-indigo-50 text-indigo-650" :
+                        notif.type === 'project' ? "bg-amber-50 text-amber-600" :
+                        "bg-emerald-50 text-emerald-600"
+                      )}>
+                        {notif.type === 'issue' ? '!' : notif.type === 'task' ? '✓' : notif.type === 'project' ? 'P' : 'S'}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <p className="text-[11px] font-black text-slate-800 truncate">{notif.title}</p>
+                          <span className="text-[9px] text-slate-450 font-semibold shrink-0">{notif.time}</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 font-semibold line-clamp-2 leading-relaxed mt-0.5">{notif.description}</p>
+                      </div>
+                      {!notif.read && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0 self-center" />
+                      )}
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </div>
+
+              <DropdownMenuSeparator className="-mx-1.5 my-1 h-px bg-slate-100" />
+              <DropdownMenuItem
+                onClick={() => router.push('/notifications')}
+                className="w-full text-center justify-center py-2 text-[10px] font-extrabold text-indigo-650 hover:bg-slate-50 cursor-pointer rounded-xl"
+              >
+                View all notifications
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <div className="h-5 w-px bg-slate-100 mx-0.5" />
 

@@ -137,7 +137,7 @@ export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, 
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-4 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-655 border border-indigo-100/30">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-650 border border-indigo-100/30">
               <Folder className="h-4.5 w-4.5" />
             </div>
             <h3 className="text-base font-black text-slate-800 tracking-tight">

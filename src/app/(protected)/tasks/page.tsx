@@ -1467,7 +1467,7 @@ export default function GlobalTasksPage() {
                 <div className="flex flex-wrap gap-2.5">
                   {selectedTask.assignees.map((assignee, idx) => (
                     <div key={idx} className="flex items-center gap-1.8 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
-                      <div className={cn("h-5 w-5 rounded-md flex items-center justify-center text-[7px] text-white font-extrabold shadow-3xs", assignee.bg)}>
+                      <div className={cn("h-5 w-5 rounded-md flex items-center justify-center text-[7px] text-white font-extrabold shadow-3xs mr-2", assignee.bg)}>
                         {assignee.initials}
                       </div>
                       <span className="text-[10px] font-bold text-slate-650">{assignee.name}</span>

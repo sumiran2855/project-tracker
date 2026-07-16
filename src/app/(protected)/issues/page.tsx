@@ -17,10 +17,12 @@ import {
   Trash2,
   Folder,
   Tag,
-  ChevronDown
+  ChevronDown,
+  Bookmark
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, usePermission } from '@/contexts/UserContext';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 import { getProjectsAction, getEmployeesAction, type Employee, type Member } from '@/actions/projects';
 import { getIssuesByProjectAction, createIssueAction, updateIssueAction, deleteIssueAction, type Issue } from '@/actions/issues';
@@ -118,6 +120,12 @@ export default function IssuesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [issueToDeleteId, setIssueToDeleteId] = useState<string | null>(null);
+
+  // Detailed Drawer States
+  const [activeDetailItem, setActiveDetailItem] = useState<any | null>(null);
+  const [tempHours, setTempHours] = useState('0');
+  const [isEditingHours, setIsEditingHours] = useState(false);
+  const [newCommentText, setNewCommentText] = useState('');
 
   // Load from LocalStorage
   // Load from Backend/LocalStorage
@@ -243,6 +251,149 @@ export default function IssuesPage() {
       console.error('Failed to update issue status on backend:', res.error);
       const updated = issues.map(iss => iss.id === issue.id ? { ...iss, status: nextStatus } : iss);
       saveIssues(updated);
+    }
+  };
+
+  // Open card details drawer
+  const handleCardClick = (issue: Issue) => {
+    const issueCommentsKey = `pwt_comments_issue_${issue.id}`;
+    let savedComments: any[] = [];
+    try {
+      const stored = localStorage.getItem(issueCommentsKey);
+      if (stored) savedComments = JSON.parse(stored);
+    } catch { }
+
+    setActiveDetailItem({
+      id: issue.id,
+      title: issue.title,
+      description: issue.description,
+      status: issue.status,
+      priority: issue.priority,
+      type: issue.type,
+      dueDate: issue.dueDate,
+      assignees: issue.assignees,
+      actualHours: (issue as any).actualHours || 0,
+      comments: savedComments,
+      itemType: 'issue'
+    });
+    setTempHours(String((issue as any).actualHours || 0));
+    setIsEditingHours(false);
+  };
+
+  const handleUpdateStatus = async (newStatus: Issue['status']) => {
+    if (!activeDetailItem) return;
+    const res = await updateIssueAction(activeDetailItem.id, { status: newStatus });
+    if (res.success && res.data) {
+      setActiveDetailItem((prev: any) => prev ? { ...prev, status: newStatus } : null);
+      setIssues(prev => prev.map(i => i.id === activeDetailItem.id ? { ...i, status: newStatus } : i));
+    } else {
+      setActiveDetailItem((prev: any) => prev ? { ...prev, status: newStatus } : null);
+      const updated = issues.map(i => i.id === activeDetailItem.id ? { ...i, status: newStatus } : i);
+      setIssues(updated);
+      localStorage.setItem('pwt_issues', JSON.stringify(updated));
+    }
+  };
+
+  const handleUpdatePriority = async (newPriority: Issue['priority']) => {
+    if (!activeDetailItem) return;
+    const res = await updateIssueAction(activeDetailItem.id, { priority: newPriority });
+    if (res.success && res.data) {
+      setActiveDetailItem((prev: any) => prev ? { ...prev, priority: newPriority } : null);
+      setIssues(prev => prev.map(i => i.id === activeDetailItem.id ? { ...i, priority: newPriority } : i));
+    } else {
+      setActiveDetailItem((prev: any) => prev ? { ...prev, priority: newPriority } : null);
+      const updated = issues.map(i => i.id === activeDetailItem.id ? { ...i, priority: newPriority } : i);
+      setIssues(updated);
+      localStorage.setItem('pwt_issues', JSON.stringify(updated));
+    }
+  };
+
+  const handleUpdateType = async (newType: Issue['type']) => {
+    if (!activeDetailItem) return;
+    const res = await updateIssueAction(activeDetailItem.id, { type: newType });
+    if (res.success && res.data) {
+      setActiveDetailItem((prev: any) => prev ? { ...prev, type: newType } : null);
+      setIssues(prev => prev.map(i => i.id === activeDetailItem.id ? { ...i, type: newType } : i));
+    } else {
+      setActiveDetailItem((prev: any) => prev ? { ...prev, type: newType } : null);
+      const updated = issues.map(i => i.id === activeDetailItem.id ? { ...i, type: newType } : i);
+      setIssues(updated);
+      localStorage.setItem('pwt_issues', JSON.stringify(updated));
+    }
+  };
+
+  const handleUpdateTargetDate = async (newVal: string) => {
+    if (!activeDetailItem) return;
+    const valueToSave = newVal || 'No Due Date';
+    const res = await updateIssueAction(activeDetailItem.id, { dueDate: valueToSave });
+    if (res.success && res.data) {
+      setActiveDetailItem((prev: any) => prev ? { ...prev, dueDate: valueToSave } : null);
+      setIssues(prev => prev.map(i => i.id === activeDetailItem.id ? { ...i, dueDate: valueToSave } : i));
+    } else {
+      setActiveDetailItem((prev: any) => prev ? { ...prev, dueDate: valueToSave } : null);
+      const updated = issues.map(i => i.id === activeDetailItem.id ? { ...i, dueDate: valueToSave } : i);
+      setIssues(updated);
+      localStorage.setItem('pwt_issues', JSON.stringify(updated));
+    }
+  };
+
+  const handleSaveHoursValue = async () => {
+    if (!activeDetailItem) return;
+    const numHours = parseFloat(tempHours) || 0;
+    const res = await updateIssueAction(activeDetailItem.id, { actualHours: numHours } as any);
+    if (res.success && res.data) {
+      setActiveDetailItem((prev: any) => prev ? { ...prev, actualHours: numHours } : null);
+      setIssues(prev => prev.map(i => i.id === activeDetailItem.id ? { ...i, actualHours: numHours } as any : i));
+      setIsEditingHours(false);
+    } else {
+      setActiveDetailItem((prev: any) => prev ? { ...prev, actualHours: numHours } : null);
+      const updated = issues.map(i => i.id === activeDetailItem.id ? { ...i, actualHours: numHours } as any : i);
+      setIssues(updated);
+      localStorage.setItem('pwt_issues', JSON.stringify(updated));
+      setIsEditingHours(false);
+    }
+  };
+
+  const handleAddComment = async () => {
+    if (!activeDetailItem || !newCommentText.trim()) return;
+    const newComment = {
+      id: 'comment_' + Date.now(),
+      author: user?.name || 'PWT Team Member',
+      initials: user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'ME',
+      text: newCommentText.trim(),
+      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) + ', Today'
+    };
+    const nextComments = [...(activeDetailItem.comments || []), newComment];
+
+    const res = await updateIssueAction(activeDetailItem.id, { commentsCount: nextComments.length });
+    if (res.success) {
+      localStorage.setItem(`pwt_comments_issue_${activeDetailItem.id}`, JSON.stringify(nextComments));
+      setActiveDetailItem((prev: any) => prev ? { ...prev, comments: nextComments } : null);
+      setIssues(prev => prev.map(i => i.id === activeDetailItem.id ? { ...i, commentsCount: nextComments.length } : i));
+      setNewCommentText('');
+    } else {
+      localStorage.setItem(`pwt_comments_issue_${activeDetailItem.id}`, JSON.stringify(nextComments));
+      setActiveDetailItem((prev: any) => prev ? { ...prev, comments: nextComments } : null);
+      const updated = issues.map(i => i.id === activeDetailItem.id ? { ...i, commentsCount: nextComments.length } : i);
+      setIssues(updated);
+      localStorage.setItem('pwt_issues', JSON.stringify(updated));
+      setNewCommentText('');
+    }
+  };
+
+  const handleDeleteActiveItem = async () => {
+    if (!activeDetailItem) return;
+    if (confirm(`Are you sure you want to delete this issue?`)) {
+      const res = await deleteIssueAction(activeDetailItem.id);
+      if (res.success) {
+        setIssues(prev => prev.filter(i => i.id !== activeDetailItem.id));
+        setActiveDetailItem(null);
+      } else {
+        const updated = issues.filter(i => i.id !== activeDetailItem.id);
+        setIssues(updated);
+        localStorage.setItem('pwt_issues', JSON.stringify(updated));
+        setActiveDetailItem(null);
+      }
     }
   };
 
@@ -465,7 +616,8 @@ export default function IssuesPage() {
               return (
                 <div
                   key={issue.id}
-                  className="group relative flex flex-col md:grid md:grid-cols-[1.5fr_180px_100px_100px_100px_96px_40px] md:items-center gap-3 bg-white border border-slate-100 rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4 cursor-default transition-all duration-200 hover:-translate-y-px overflow-hidden animate-fadeIn"
+                  onClick={() => handleCardClick(issue)}
+                  className="group relative flex flex-col md:grid md:grid-cols-[1.5fr_180px_100px_100px_100px_96px_40px] md:items-center gap-3 bg-white border border-slate-100 rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4 cursor-pointer transition-all duration-200 hover:-translate-y-px overflow-hidden animate-fadeIn"
                   style={{ boxShadow: '0 1px 3px 0 rgba(0,0,0,0.04)' }}
                   onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.boxShadow = `0 4px 14px -4px ${accent}22`}
                   onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 3px 0 rgba(0,0,0,0.04)'}
@@ -700,6 +852,271 @@ export default function IssuesPage() {
           </div>
         </div>
       )}
+      {/* ────────────────────────────────────────────────────────
+          SLIDE-IN SIDE PANEL: CARD DETAILED DRAWER
+          ──────────────────────────────────────────────────────── */}
+      <Sheet open={!!activeDetailItem} onOpenChange={(open) => { if (!open) setActiveDetailItem(null); }}>
+        <SheetContent side="right" showCloseButton={false} className="w-full sm:max-w-3xl bg-white border-l border-slate-200 shadow-2xl p-0 flex flex-col h-full animate-slideIn">
+          {activeDetailItem && (
+            <>
+              {/* Header */}
+              <div className="px-6 py-4.5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
+                <div className="flex items-center gap-2">
+                  <Bookmark className="h-4.5 w-4.5 text-indigo-650 fill-indigo-650/10" />
+                  <span className="text-[10px] font-black uppercase tracking-wider text-indigo-650 font-sans">
+                    Issue Workspace Details
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveDetailItem(null)}
+                  className="h-8 w-8 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-205 flex items-center justify-center text-slate-400 cursor-pointer transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-white no-scrollbar">
+                {/* Title */}
+                <div>
+                  <h2 className="text-lg font-black text-slate-808 tracking-tight leading-snug">
+                    {activeDetailItem.title}
+                  </h2>
+                  {activeDetailItem.description && (
+                    <p className="text-xs font-semibold text-slate-450 leading-relaxed mt-2 bg-slate-50 border border-slate-150 p-3.5 rounded-2xl">
+                      {activeDetailItem.description}
+                    </p>
+                  )}
+                </div>
+
+                {/* Metadata Grid */}
+                <div className="bg-slate-50/50 rounded-2xl border border-slate-200 p-4 space-y-4 shadow-3xs">
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Status */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Status</label>
+                      <div className="relative">
+                        <select
+                          value={activeDetailItem.status}
+                          onChange={(e) => handleUpdateStatus(e.target.value as any)}
+                          className="w-full appearance-none rounded-xl border border-slate-150 bg-white hover:bg-slate-50 px-3 py-2.5 text-xs text-slate-700 font-bold focus:outline-none shadow-3xs cursor-pointer pr-8"
+                        >
+                          <option value="Open">Open</option>
+                          <option value="In Progress">In Progress</option>
+                          <option value="Resolved">Resolved</option>
+                          <option value="Closed">Closed</option>
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                      </div>
+                    </div>
+
+                    {/* Priority */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Priority</label>
+                      <div className="relative">
+                        <select
+                          value={activeDetailItem.priority}
+                          onChange={(e) => handleUpdatePriority(e.target.value as any)}
+                          className="w-full appearance-none rounded-xl border border-slate-150 bg-white hover:bg-slate-50 px-3 py-2.5 text-xs text-slate-700 font-bold focus:outline-none shadow-3xs cursor-pointer pr-8"
+                        >
+                          <option value="Low">Low</option>
+                          <option value="Medium">Medium</option>
+                          <option value="High">High</option>
+                          <option value="Critical">Critical</option>
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Type */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Type</label>
+                      <div className="relative">
+                        <select
+                          value={activeDetailItem.type}
+                          onChange={(e) => handleUpdateType(e.target.value as any)}
+                          className="w-full appearance-none rounded-xl border border-slate-150 bg-white hover:bg-slate-55 px-3 py-2.5 text-xs text-slate-700 font-bold focus:outline-none shadow-3xs cursor-pointer pr-8"
+                        >
+                          <option value="Bug">Bug</option>
+                          <option value="Security">Security</option>
+                          <option value="Improvement">Improvement</option>
+                          <option value="Task">Task</option>
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                      </div>
+                    </div>
+
+                    {/* Due Date */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Due Date</label>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-150 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 shadow-3xs transition-all w-full text-left select-none"
+                        >
+                          <Clock className="h-4 w-4 text-indigo-555 shrink-0" />
+                          <span>
+                            {activeDetailItem.dueDate && activeDetailItem.dueDate !== 'No Due Date'
+                              ? (() => {
+                                const parts = activeDetailItem.dueDate.split('-');
+                                if (parts.length === 3) return activeDetailItem.dueDate;
+                                return new Date(activeDetailItem.dueDate).toISOString().split('T')[0];
+                              })()
+                              : 'Set Due Date'
+                            }
+                          </span>
+                        </button>
+                        <input
+                          type="date"
+                          dir="rtl"
+                          value={activeDetailItem.dueDate && activeDetailItem.dueDate !== 'No Due Date' ? activeDetailItem.dueDate : ''}
+                          onChange={(e) => handleUpdateTargetDate(e.target.value)}
+                          onClick={(e) => {
+                            try {
+                              (e.target as HTMLInputElement).showPicker();
+                            } catch (err) {}
+                          }}
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Logged Hours */}
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Logged Hours</label>
+                    <div>
+                      {isEditingHours ? (
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="number"
+                            value={tempHours}
+                            onChange={(e) => setTempHours(e.target.value)}
+                            className="w-20 border border-slate-200 focus:border-indigo-500 rounded-lg px-2.5 py-1 text-[11px] font-black text-slate-808 outline-none transition-all shadow-3xs bg-white"
+                            step="0.5"
+                            min="0"
+                            autoFocus
+                          />
+                          <button
+                            onClick={handleSaveHoursValue}
+                            className="px-2.5 py-1 rounded-lg bg-indigo-650 hover:bg-indigo-755 text-white text-[10px] font-black shadow-3xs transition-all cursor-pointer"
+                          >
+                            Save
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setTempHours(String(activeDetailItem.actualHours || 0));
+                            setIsEditingHours(true);
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-150 bg-white hover:bg-slate-55 text-xs font-bold text-slate-700 shadow-3xs transition-all cursor-pointer w-36 text-left select-none"
+                        >
+                          <Clock className="h-4 w-4 text-indigo-550 shrink-0" />
+                          <span>{activeDetailItem.actualHours || 0} hours</span>
+                          <span className="text-[8px] text-slate-400 ml-auto font-bold uppercase tracking-wider">Edit</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Assignees */}
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Assignees</label>
+                  <div className="flex flex-wrap gap-2">
+                    {activeDetailItem.assignees && activeDetailItem.assignees.length > 0 ? (
+                      activeDetailItem.assignees.map((a: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-2 pl-1.5 pr-3.5 py-1.5 rounded-full border border-slate-200 bg-white text-xs font-bold text-slate-700 shadow-3xs"
+                        >
+                          <div className={cn("h-5.5 w-5.5 rounded-full flex items-center justify-center text-[8px] text-white font-black shrink-0 shadow-3xs", a.bg || 'bg-indigo-500')}>
+                            {a.initials}
+                          </div>
+                          <span>{a.name}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <span className="text-xs text-slate-400 font-semibold italic">No assignees</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Discussion */}
+                <div className="space-y-4 pt-2">
+                  <h3 className="text-[10px] font-black uppercase tracking-wider text-indigo-650 flex items-center gap-1.5 pb-1 font-sans">
+                    <MessageSquare className="h-3.5 w-3.5 text-indigo-650" />
+                    Discussion ({activeDetailItem.comments?.length || 0})
+                  </h3>
+
+                  {/* Input comment field */}
+                  <div className="flex gap-3 items-start">
+                    <div className={cn("h-7 w-7 rounded-full flex items-center justify-center text-[9px] text-white font-extrabold shrink-0 shadow-2xs mt-1 bg-indigo-600")}>
+                      {user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : 'DU'}
+                    </div>
+                    <div className="flex-1 space-y-3">
+                      <textarea
+                        value={newCommentText}
+                        onChange={(e) => setNewCommentText(e.target.value)}
+                        placeholder="Ask a question or post progress notes..."
+                        rows={2.5}
+                        className="w-full border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-indigo-500 bg-white transition-all resize-none shadow-3xs placeholder:text-slate-400"
+                      />
+                      <div className="flex justify-end">
+                        <button
+                          onClick={handleAddComment}
+                          className="inline-flex items-center justify-center rounded-xl bg-indigo-650 hover:bg-indigo-755 text-white px-5 py-2 text-xs font-black transition-all cursor-pointer shadow-3xs"
+                        >
+                          Comment
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Comment Thread list */}
+                  <div className="space-y-3 pt-2">
+                    {activeDetailItem.comments?.map((comment: any) => (
+                      <div key={comment.id} className="bg-slate-50/50 border border-slate-200 p-3 rounded-2xl shadow-3xs flex gap-3">
+                        <div className={cn("h-7 w-7 rounded-full flex items-center justify-center text-[9px] text-white font-extrabold shrink-0 shadow-2xs bg-indigo-500")}>
+                          {comment.initials}
+                        </div>
+                        <div className="space-y-0.5 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-black text-slate-800">{comment.author}</span>
+                            <span className="text-[8px] font-bold text-slate-400">{comment.time}</span>
+                          </div>
+                          <p className="text-xs font-semibold text-slate-655 leading-relaxed">{comment.text}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4.5 border-t border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/35">
+                <button
+                  onClick={handleDeleteActiveItem}
+                  className="flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl bg-red-50 hover:bg-red-105 text-red-600 text-xs font-black transition-all cursor-pointer shadow-3xs border border-red-100"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>Delete Issue</span>
+                </button>
+                <button
+                  onClick={() => setActiveDetailItem(null)}
+                  className="px-4.5 py-2.5 rounded-xl bg-white hover:bg-slate-55 border border-slate-250 text-slate-655 text-xs font-black transition-all cursor-pointer shadow-3xs"
+                >
+                  Close Drawer
+                </button>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </>
   );
 }
