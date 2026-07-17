@@ -31,8 +31,12 @@
   /* Custom Emerald & Amber (for gradients / board statuses) */
   --color-emerald-450: #10b981;
   --color-emerald-550: #059669;
+  --color-emerald-650: #059669;
   --color-amber-450: #f59e0b;
   --color-amber-550: #d97706;
+
+  /* Custom Red Shades */
+  --color-red-650: #dc2626;
 
   /* Custom animations */
   --animate-fadeUp: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
