@@ -11,10 +11,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { logoutAction } from '@/actions/auth';
+import { logoutAction, updateNotificationStateAction } from '@/actions/auth';
 import { Sidebar } from './Sidebar';
 import { cn } from '@/lib/utils';
 import { fetchLiveNotifications } from '@/lib/sprintLoader';
+import { useUser } from '@/contexts/UserContext';
 
 interface NavbarProps {
   userName?: string | null;
@@ -26,6 +27,7 @@ export function Navbar({ userName, userEmail }: NavbarProps) {
   const [isPending, startTransition] = useTransition();
   const pathname = usePathname();
   const router = useRouter();
+  const { user, setUser } = useUser();
 
   // Notification States
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -53,9 +55,27 @@ export function Navbar({ userName, userEmail }: NavbarProps) {
     };
   }, []);
 
+  // Sync user's notifications state from database to localStorage on user load/update
+  useEffect(() => {
+    if (user) {
+      let changed = false;
+      if (user.readNotifications) {
+        localStorage.setItem('pwt_read_notifications', JSON.stringify(user.readNotifications));
+        changed = true;
+      }
+      if (user.deletedNotifications) {
+        localStorage.setItem('pwt_deleted_notifications', JSON.stringify(user.deletedNotifications));
+        changed = true;
+      }
+      if (changed) {
+        loadLiveNotifications();
+      }
+    }
+  }, [user]);
+
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  const markAllAsRead = (e: React.MouseEvent) => {
+  const markAllAsRead = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     try {
@@ -67,6 +87,15 @@ export function Navbar({ userName, userEmail }: NavbarProps) {
         }
       });
       localStorage.setItem('pwt_read_notifications', JSON.stringify(readIds));
+
+      // Update database
+      const deletedStored = localStorage.getItem('pwt_deleted_notifications');
+      const deletedIds: string[] = deletedStored ? JSON.parse(deletedStored) : [];
+      const res = await updateNotificationStateAction(readIds, deletedIds);
+      if (res.success && res.data) {
+        setUser(res.data);
+      }
+
       window.dispatchEvent(new Event('pwt_notifications_update'));
       window.dispatchEvent(new Event('storage'));
     } catch (err) {
@@ -74,7 +103,7 @@ export function Navbar({ userName, userEmail }: NavbarProps) {
     }
   };
 
-  const handleNotificationClick = (id: string) => {
+  const handleNotificationClick = async (id: string) => {
     try {
       const stored = localStorage.getItem('pwt_read_notifications');
       let readIds: string[] = stored ? JSON.parse(stored) : [];
@@ -82,6 +111,15 @@ export function Navbar({ userName, userEmail }: NavbarProps) {
         readIds.push(id);
         localStorage.setItem('pwt_read_notifications', JSON.stringify(readIds));
       }
+
+      // Update database
+      const deletedStored = localStorage.getItem('pwt_deleted_notifications');
+      const deletedIds: string[] = deletedStored ? JSON.parse(deletedStored) : [];
+      const res = await updateNotificationStateAction(readIds, deletedIds);
+      if (res.success && res.data) {
+        setUser(res.data);
+      }
+
       window.dispatchEvent(new Event('pwt_notifications_update'));
       window.dispatchEvent(new Event('storage'));
     } catch (err) {

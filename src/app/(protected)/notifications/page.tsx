@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fetchLiveNotifications, NotificationItem } from '@/lib/sprintLoader';
+import { useUser } from '@/contexts/UserContext';
+import { updateNotificationStateAction } from '@/actions/auth';
 
 export default function NotificationsPage() {
   const router = useRouter();
@@ -22,6 +24,7 @@ export default function NotificationsPage() {
   const [filterTab, setFilterTab] = useState<'all' | 'unread' | 'read'>('all');
   const [typeFilter, setTypeFilter] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const { user, setUser } = useUser();
 
   // Initial Load
   const loadLiveNotifications = async () => {
@@ -47,7 +50,25 @@ export default function NotificationsPage() {
     };
   }, []);
 
-  const handleMarkAsRead = (id: string) => {
+  // Sync user's notifications state from database to localStorage on user load/update
+  useEffect(() => {
+    if (user) {
+      let changed = false;
+      if (user.readNotifications) {
+        localStorage.setItem('pwt_read_notifications', JSON.stringify(user.readNotifications));
+        changed = true;
+      }
+      if (user.deletedNotifications) {
+        localStorage.setItem('pwt_deleted_notifications', JSON.stringify(user.deletedNotifications));
+        changed = true;
+      }
+      if (changed) {
+        loadLiveNotifications();
+      }
+    }
+  }, [user]);
+
+  const handleMarkAsRead = async (id: string) => {
     try {
       const stored = localStorage.getItem('pwt_read_notifications');
       let readIds: string[] = stored ? JSON.parse(stored) : [];
@@ -55,6 +76,15 @@ export default function NotificationsPage() {
         readIds.push(id);
         localStorage.setItem('pwt_read_notifications', JSON.stringify(readIds));
       }
+
+      // Update database
+      const deletedStored = localStorage.getItem('pwt_deleted_notifications');
+      const deletedIds: string[] = deletedStored ? JSON.parse(deletedStored) : [];
+      const res = await updateNotificationStateAction(readIds, deletedIds);
+      if (res.success && res.data) {
+        setUser(res.data);
+      }
+
       window.dispatchEvent(new Event('pwt_notifications_update'));
       window.dispatchEvent(new Event('storage'));
     } catch (e) {
@@ -62,7 +92,7 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleDelete = (id: string, e: React.MouseEvent) => {
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
       const stored = localStorage.getItem('pwt_deleted_notifications');
@@ -71,6 +101,15 @@ export default function NotificationsPage() {
         deletedIds.push(id);
         localStorage.setItem('pwt_deleted_notifications', JSON.stringify(deletedIds));
       }
+
+      // Update database
+      const readStored = localStorage.getItem('pwt_read_notifications');
+      const readIds: string[] = readStored ? JSON.parse(readStored) : [];
+      const res = await updateNotificationStateAction(readIds, deletedIds);
+      if (res.success && res.data) {
+        setUser(res.data);
+      }
+
       window.dispatchEvent(new Event('pwt_notifications_update'));
       window.dispatchEvent(new Event('storage'));
     } catch (e) {
@@ -78,7 +117,7 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleMarkAllRead = () => {
+  const handleMarkAllRead = async () => {
     try {
       const stored = localStorage.getItem('pwt_read_notifications');
       let readIds: string[] = stored ? JSON.parse(stored) : [];
@@ -88,6 +127,15 @@ export default function NotificationsPage() {
         }
       });
       localStorage.setItem('pwt_read_notifications', JSON.stringify(readIds));
+
+      // Update database
+      const deletedStored = localStorage.getItem('pwt_deleted_notifications');
+      const deletedIds: string[] = deletedStored ? JSON.parse(deletedStored) : [];
+      const res = await updateNotificationStateAction(readIds, deletedIds);
+      if (res.success && res.data) {
+        setUser(res.data);
+      }
+
       window.dispatchEvent(new Event('pwt_notifications_update'));
       window.dispatchEvent(new Event('storage'));
     } catch (e) {
@@ -95,7 +143,7 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleClearAll = () => {
+  const handleClearAll = async () => {
     if (confirm('Are you sure you want to clear all notifications?')) {
       try {
         const stored = localStorage.getItem('pwt_deleted_notifications');
@@ -106,6 +154,15 @@ export default function NotificationsPage() {
           }
         });
         localStorage.setItem('pwt_deleted_notifications', JSON.stringify(deletedIds));
+
+        // Update database
+        const readStored = localStorage.getItem('pwt_read_notifications');
+        const readIds: string[] = readStored ? JSON.parse(readStored) : [];
+        const res = await updateNotificationStateAction(readIds, deletedIds);
+        if (res.success && res.data) {
+          setUser(res.data);
+        }
+
         window.dispatchEvent(new Event('pwt_notifications_update'));
         window.dispatchEvent(new Event('storage'));
       } catch (e) {

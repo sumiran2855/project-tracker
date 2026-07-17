@@ -168,3 +168,115 @@ export async function updateUserRoleAction(role: string): Promise<{ success: boo
     return { success: false, error: error?.message || 'Failed to update user role' };
   }
 }
+
+export async function updateNotificationStateAction(
+  readNotifications: string[],
+  deletedNotifications: string[]
+): Promise<{ success: boolean; data?: SafeUser; error?: string }> {
+  const { getSession } = await import('@/lib/auth/dal');
+
+  try {
+    const session = await getSession();
+    if (!session?.token) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const res = await apiClient.put<{ success: boolean; data: { user: SafeUser } }>(
+      'auth/notifications/state',
+      { readNotifications, deletedNotifications },
+      { token: session.token }
+    );
+
+    // Update local next.js session too so that next.js session cookie is up to date
+    await createSession(res.data.user, session.token, false);
+
+    return { success: true, data: res.data.user };
+  } catch (error: any) {
+    return { success: false, error: error?.message || 'Failed to update notification state' };
+  }
+}
+
+export async function updateProfileAction(profileData: {
+  name: string;
+  email: string;
+  role: string;
+  location: string;
+  department: string;
+  skills: string[];
+  collaborators: { name: string; initials: string; bg: string; role: string }[];
+}): Promise<{ success: boolean; data?: SafeUser; error?: string }> {
+  const { getSession } = await import('@/lib/auth/dal');
+
+  try {
+    const session = await getSession();
+    if (!session?.token) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const res = await apiClient.put<{ success: boolean; data: { user: SafeUser } }>(
+      'auth/profile',
+      profileData,
+      { token: session.token }
+    );
+
+    // Update local next.js session too so that next.js session cookie is up to date
+    await createSession(res.data.user, session.token, false);
+
+    return { success: true, data: res.data.user };
+  } catch (error: any) {
+    return { success: false, error: error?.message || 'Failed to update profile' };
+  }
+}
+
+export async function inviteCollaboratorAction(inviteeData: {
+  email: string;
+  name: string;
+  role: string;
+  bg: string;
+  initials: string;
+}): Promise<{ success: boolean; data?: SafeUser; error?: string }> {
+  const { getSession } = await import('@/lib/auth/dal');
+
+  try {
+    const session = await getSession();
+    if (!session?.token) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const res = await apiClient.post<{ success: boolean; data: { user: SafeUser } }>(
+      'auth/collab/invite',
+      inviteeData,
+      { token: session.token }
+    );
+
+    // Update local next.js session too so that next.js session cookie is up to date
+    await createSession(res.data.user, session.token, false);
+
+    return { success: true, data: res.data.user };
+  } catch (error: any) {
+    return { success: false, error: error?.message || 'Failed to send collaboration invitation' };
+  }
+}
+
+export async function removeCollaboratorAction(email: string): Promise<{ success: boolean; data?: SafeUser; error?: string }> {
+  const { getSession } = await import('@/lib/auth/dal');
+
+  try {
+    const session = await getSession();
+    if (!session?.token) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const res = await apiClient.delete<{ success: boolean; data: { user: SafeUser } }>(
+      `auth/collab/remove?email=${encodeURIComponent(email)}`,
+      { token: session.token }
+    );
+
+    // Update local next.js session too so that next.js session cookie is up to date
+    await createSession(res.data.user, session.token, false);
+
+    return { success: true, data: res.data.user };
+  } catch (error: any) {
+    return { success: false, error: error?.message || 'Failed to remove collaborator' };
+  }
+}

@@ -929,6 +929,13 @@ export default function GlobalTasksPage() {
                               <h4 className="text-xs font-black text-slate-800 leading-snug group-hover:text-indigo-600 transition-colors">
                                 {task.title}
                               </h4>
+
+                              {/* Description snippet */}
+                              {task.description && (
+                                <p className="text-[10px] text-slate-450 line-clamp-2 leading-relaxed mt-1.5 font-medium">
+                                  {task.description}
+                                </p>
+                              )}
                             </div>
 
                             {/* Footer */}

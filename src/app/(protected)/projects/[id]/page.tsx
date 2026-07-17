@@ -34,6 +34,7 @@ import { cn } from '@/lib/utils';
 import { useUser, usePermission } from '@/contexts/UserContext';
 import { getProjectByIdAction, updateProjectAction, getEmployeesAction, type Employee } from '@/actions/projects';
 import { getTasksByProjectAction, createTaskAction, updateTaskAction, deleteTaskAction, type Task, type Subtask, type Comment } from '@/actions/tasks';
+import { getIssuesByProjectAction } from '@/actions/issues';
 import { AddProjectModal } from '@/components/dashboard/AddProjectModal';
 
 // Types
@@ -281,6 +282,7 @@ export default function ProjectDetailPage() {
 
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [issues, setIssues] = useState<any[]>([]);
   const [availableMembers, setAvailableMembers] = useState<Employee[]>([]);
   const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
   
@@ -288,6 +290,26 @@ export default function ProjectDetailPage() {
   const displayTasks = isEmployee
     ? tasks.filter(t => t.assignees.some(a => a.name === user?.name))
     : tasks;
+
+  const parseHoursFromBudget = (budgetVal: string | undefined): number => {
+    if (!budgetVal) return 0;
+    if (budgetVal.includes('$')) return 0;
+    const matches = budgetVal.match(/(\d+)\s*(h|hour|hours|hrs|hr)?/i);
+    if (matches) {
+      return parseInt(matches[1], 10);
+    }
+    const num = parseInt(budgetVal.trim(), 10);
+    if (!isNaN(num)) {
+      return num;
+    }
+    return 0;
+  };
+
+  const projectBudgetHours = project ? parseHoursFromBudget(project.budget) : 0;
+  const tasksLoggedHours = tasks.reduce((sum, t) => sum + (t.actualHours || 0), 0);
+  const issuesLoggedHours = issues.reduce((sum, i) => sum + (i.actualHours || 0), 0);
+  const totalLoggedProjectHours = tasksLoggedHours + issuesLoggedHours;
+  const remainingProjectHours = Math.max(0, projectBudgetHours - totalLoggedProjectHours);
 
   const [activeTab, setActiveTab] = useState<'kanban' | 'list' | 'timeline'>('kanban');
 
@@ -387,9 +409,17 @@ export default function ProjectDetailPage() {
       }
     }
 
+    async function loadIssues() {
+      const res = await getIssuesByProjectAction(projectId);
+      if (res.success && res.data) {
+        setIssues(res.data);
+      }
+    }
+
     loadProject();
     loadTasks();
     loadEmployees();
+    loadIssues();
   }, [projectId]);
 
   // Sync state helpers
@@ -942,7 +972,14 @@ export default function ProjectDetailPage() {
                 <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block">Budget / Est. Hours</span>
                 <div className="flex items-center gap-1.5 text-xs font-bold text-slate-750">
                   <Coins className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
-                  <span>{project.budget}</span>
+                  <div className="flex flex-col">
+                    <span>{project.budget}</span>
+                    {projectBudgetHours > 0 && (
+                      <span className="text-[9px] text-slate-450 font-bold mt-0.5">
+                        Spent: {totalLoggedProjectHours}h | Left: {remainingProjectHours}h
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

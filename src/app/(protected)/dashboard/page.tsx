@@ -252,9 +252,8 @@ export default async function DashboardPage() {
           tRes.data.forEach(task => {
             if (task.status !== 'Done') {
               openTasksCount++;
-            } else {
-              totalActualHours += task.actualHours || 0;
             }
+            totalActualHours += task.actualHours || 0;
 
             if (task.dueDate) {
               const d = new Date(task.dueDate);
@@ -300,6 +299,7 @@ export default async function DashboardPage() {
             if (issue.status !== 'Resolved' && issue.status !== 'Closed' && issue.type === 'Bug') {
               openBugsCount++;
             }
+            totalActualHours += issue.actualHours || 0;
 
             if (issue.dueDate) {
               const d = new Date(issue.dueDate);
@@ -343,7 +343,8 @@ export default async function DashboardPage() {
 
       dynamicStats[1].value = String(openTasksCount);
       dynamicStats[2].value = String(openBugsCount);
-      dynamicStats[3].value = `${remainingHours}h`;
+      dynamicStats[3].value = `${totalActualHours}h`;
+      dynamicStats[3].change = `${remainingHours}h left`;
 
       deadlines = gatheredDeadlines
         .sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime())

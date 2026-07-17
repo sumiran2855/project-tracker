@@ -41,6 +41,14 @@ export interface SafeUser {
   email: string;
   name: string | null;
   role: string;
+  readNotifications?: string[];
+  deletedNotifications?: string[];
+  skills?: string[];
+  location?: string;
+  department?: string;
+  lastLogin?: string;
+  createdAt?: string;
+  collaborators?: { name: string; initials: string; bg: string; role: string }[];
 }
 
 /**

@@ -16,6 +16,7 @@ export interface Issue {
   dueDate: string;
   assignees: Member[];
   commentsCount: number;
+  actualHours?: number;
   createdAt?: string;
   updatedAt?: string;
 }
