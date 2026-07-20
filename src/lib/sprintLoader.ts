@@ -1,92 +1,85 @@
-import { getProjectsAction } from '@/actions/projects';
-import { getTasksByProjectAction, Task } from '@/actions/tasks';
-import { getIssuesByProjectAction, Issue } from '@/actions/issues';
+import { getSprintSummaryAction, Project } from '@/actions/projects';
+import { Task } from '@/actions/tasks';
+import { Issue } from '@/actions/issues';
 
-export async function fetchAllSprintData() {
-  let loadedProjects: any[] = [];
-  
-  try {
-    const projRes = await getProjectsAction();
-    if (projRes.success && projRes.data) {
-      loadedProjects = projRes.data;
-    }
-  } catch (err) {
-    console.error("Failed to fetch projects from backend", err);
+interface SprintDataResult {
+  tasks: Task[];
+  issues: Issue[];
+  projects: Project[];
+}
+
+let sprintDataCache: { data: SprintDataResult; timestamp: number } | null = null;
+let activeSprintPromise: Promise<SprintDataResult> | null = null;
+const SPRINT_CACHE_TTL_MS = 5000; // 5 seconds cache
+
+export function clearSprintDataCache() {
+  sprintDataCache = null;
+  activeSprintPromise = null;
+}
+
+export async function fetchAllSprintData(): Promise<SprintDataResult> {
+  const now = Date.now();
+
+  // Return cached result if valid
+  if (sprintDataCache && now - sprintDataCache.timestamp < SPRINT_CACHE_TTL_MS) {
+    return sprintDataCache.data;
   }
 
-  if (loadedProjects.length === 0 && typeof window !== 'undefined') {
-    const storedProjects = localStorage.getItem('pwt_projects');
-    if (storedProjects) {
-      try {
-        loadedProjects = JSON.parse(storedProjects);
-      } catch (e) {
-        console.error(e);
-      }
-    }
+  // Deduplicate in-flight promises
+  if (activeSprintPromise) {
+    return activeSprintPromise;
   }
 
-  // Fetch tasks for all projects
-  const tasksPromises = loadedProjects.map(async (proj) => {
+  activeSprintPromise = (async () => {
     try {
-      const tasksRes = await getTasksByProjectAction(proj.id);
-      if (tasksRes.success && tasksRes.data) {
-        return tasksRes.data.map(task => ({
-          ...task,
-          projectId: proj.id,
-          projectName: proj.name
-        }));
+      const summaryRes = await getSprintSummaryAction();
+      if (summaryRes.success && summaryRes.data) {
+        const result: SprintDataResult = {
+          projects: summaryRes.data.projects || [],
+          tasks: summaryRes.data.tasks || [],
+          issues: summaryRes.data.issues || []
+        };
+        sprintDataCache = { data: result, timestamp: Date.now() };
+        return result;
       }
     } catch (err) {
-      console.error(`Failed to fetch tasks for project ${proj.id}`, err);
+      console.error("Failed to fetch sprint summary from backend", err);
     }
 
-    // Fallback to localStorage
-    const storedTasksKey = `pwt_tasks_project_${proj.id}`;
-    const storedTasksStr = typeof window !== 'undefined' ? localStorage.getItem(storedTasksKey) : null;
-    let projTasks: Task[] = [];
-    if (storedTasksStr) {
+    // Fallback to localStorage if backend is unreachable or returns empty
+    let loadedProjects: Project[] = [];
+    let tasks: Task[] = [];
+    let issues: Issue[] = [];
+
+    if (typeof window !== 'undefined') {
       try {
-        projTasks = JSON.parse(storedTasksStr);
+        const storedProjects = localStorage.getItem('pwt_projects');
+        if (storedProjects) loadedProjects = JSON.parse(storedProjects);
+
+        const storedIssues = localStorage.getItem('pwt_issues');
+        if (storedIssues) issues = JSON.parse(storedIssues);
+
+        loadedProjects.forEach(proj => {
+          const storedTasksKey = `pwt_tasks_project_${proj.id}`;
+          const storedTasksStr = localStorage.getItem(storedTasksKey);
+          if (storedTasksStr) {
+            const projTasks: Task[] = JSON.parse(storedTasksStr);
+            tasks.push(...projTasks.map(t => ({ ...t, projectId: proj.id, projectName: proj.name })));
+          }
+        });
       } catch (e) {
-        console.error(e);
+        console.error("Error reading fallback sprint data from localStorage", e);
       }
     }
-    return projTasks.map(task => ({
-      ...task,
-      projectId: proj.id,
-      projectName: proj.name
-    }));
+
+    const fallbackResult: SprintDataResult = { tasks, issues, projects: loadedProjects };
+    sprintDataCache = { data: fallbackResult, timestamp: Date.now() };
+    return fallbackResult;
+  })().finally(() => {
+    activeSprintPromise = null;
   });
 
-  const allTasksResults = await Promise.all(tasksPromises);
-  const tasks = allTasksResults.flat();
-
-  // Fetch issues for all projects
-  let issues: Issue[] = [];
-  try {
-    const issuesPromises = loadedProjects.map((p: any) => getIssuesByProjectAction(p.id));
-    const results = await Promise.all(issuesPromises);
-    results.forEach(r => {
-      if (r.success && r.data) {
-        issues.push(...r.data);
-      }
-    });
-  } catch (err) {
-    console.error("Failed to fetch issues from backend", err);
-  }
-
-  if (issues.length === 0 && typeof window !== 'undefined') {
-    const storedIssues = localStorage.getItem('pwt_issues');
-    if (storedIssues) {
-      try {
-        issues = JSON.parse(storedIssues);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  }
-
-  return { tasks, issues, projects: loadedProjects };
+  return activeSprintPromise;
 }
 
 export interface NotificationItem {

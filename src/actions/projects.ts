@@ -31,6 +31,8 @@ export interface Project {
   slackChannel?: string;
   startDate?: string;
   targetQuarter?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Employee {
@@ -149,5 +151,39 @@ export async function deleteProjectAction(id: string): Promise<{ success: boolea
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error?.message || 'Failed to delete project' };
+  }
+}
+
+export async function getSprintSummaryAction(): Promise<{
+  success: boolean;
+  data?: { projects: Project[]; tasks: any[]; issues: any[] };
+  error?: string;
+}> {
+  try {
+    const session = await getSession();
+    if (!session?.token) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const [projectsRes, tasksRes, issuesRes] = await Promise.all([
+      apiClient.get<{ success: boolean; data: { projects: Project[] } }>('projects', { token: session.token }).catch(() => null),
+      apiClient.get<{ success: boolean; data: { tasks: any[] } }>('tasks', { token: session.token }).catch(() => null),
+      apiClient.get<{ success: boolean; data: { issues: any[] } }>('issues', { token: session.token }).catch(() => null)
+    ]);
+
+    const projects = projectsRes?.data?.projects || [];
+    const tasks = tasksRes?.data?.tasks || [];
+    const issues = issuesRes?.data?.issues || [];
+
+    return {
+      success: true,
+      data: {
+        projects,
+        tasks,
+        issues
+      }
+    };
+  } catch (error: any) {
+    return { success: false, error: error?.message || 'Failed to fetch sprint summary' };
   }
 }

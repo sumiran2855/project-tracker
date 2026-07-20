@@ -60,12 +60,20 @@ export function Navbar({ userName, userEmail }: NavbarProps) {
     if (user) {
       let changed = false;
       if (user.readNotifications) {
-        localStorage.setItem('pwt_read_notifications', JSON.stringify(user.readNotifications));
-        changed = true;
+        const currentRead = localStorage.getItem('pwt_read_notifications');
+        const nextRead = JSON.stringify(user.readNotifications);
+        if (currentRead !== nextRead) {
+          localStorage.setItem('pwt_read_notifications', nextRead);
+          changed = true;
+        }
       }
       if (user.deletedNotifications) {
-        localStorage.setItem('pwt_deleted_notifications', JSON.stringify(user.deletedNotifications));
-        changed = true;
+        const currentDeleted = localStorage.getItem('pwt_deleted_notifications');
+        const nextDeleted = JSON.stringify(user.deletedNotifications);
+        if (currentDeleted !== nextDeleted) {
+          localStorage.setItem('pwt_deleted_notifications', nextDeleted);
+          changed = true;
+        }
       }
       if (changed) {
         loadLiveNotifications();

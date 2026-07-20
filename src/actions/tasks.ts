@@ -55,6 +55,24 @@ export async function getTasksByProjectAction(projectId: string): Promise<{ succ
   }
 }
 
+export async function getAllTasksAction(): Promise<{ success: boolean; data?: Task[]; error?: string }> {
+  try {
+    const session = await getSession();
+    if (!session?.token) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const res = await apiClient.get<{ success: boolean; data: { tasks: Task[] } }>(
+      'tasks',
+      { token: session.token }
+    );
+
+    return { success: true, data: res.data.tasks };
+  } catch (error: any) {
+    return { success: false, error: error?.message || 'Failed to fetch tasks' };
+  }
+}
+
 export async function getTaskByIdAction(id: string): Promise<{ success: boolean; data?: Task; error?: string }> {
   try {
     const session = await getSession();

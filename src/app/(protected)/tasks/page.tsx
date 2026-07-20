@@ -26,7 +26,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useUser, usePermission } from '@/contexts/UserContext';
 import { getProjectsAction, getEmployeesAction, type Employee } from '@/actions/projects';
-import { getTasksByProjectAction, createTaskAction, updateTaskAction, deleteTaskAction, type Task, type Subtask, type Comment } from '@/actions/tasks';
+import { getTasksByProjectAction, getAllTasksAction, createTaskAction, updateTaskAction, deleteTaskAction, type Task, type Subtask, type Comment } from '@/actions/tasks';
 
 // Types
 export interface Member {
@@ -291,17 +291,22 @@ export default function GlobalTasksPage() {
         );
       }
 
-      // 3. Load tasks for all projects
-      const tasksPromises = loadedProjects.map(async (proj) => {
-        const tasksRes = await getTasksByProjectAction(proj.id);
-        if (tasksRes.success && tasksRes.data) {
-          return tasksRes.data.map(task => ({
+      // 3. Load all tasks in 1 single call
+      const tasksRes = await getAllTasksAction();
+      if (tasksRes.success && tasksRes.data && tasksRes.data.length > 0) {
+        const mappedTasks: GlobalTask[] = tasksRes.data.map(task => {
+          const proj = loadedProjects.find(p => p.id === task.projectId);
+          return {
             ...task,
-            projectId: proj.id,
-            projectName: proj.name
-          }));
-        } else {
-          // Fallback to localStorage
+            projectId: task.projectId || proj?.id || '',
+            projectName: task.projectName || proj?.name || 'Workspace Project'
+          };
+        });
+        setTasks(mappedTasks);
+      } else {
+        // Fallback to per-project localStorage
+        const allFallbackTasks: GlobalTask[] = [];
+        loadedProjects.forEach(proj => {
           const storedTasksKey = `pwt_tasks_project_${proj.id}`;
           const storedTasksStr = localStorage.getItem(storedTasksKey);
           let projTasks: Task[] = [];
@@ -314,16 +319,14 @@ export default function GlobalTasksPage() {
           } else {
             projTasks = fallbackTasks[proj.id] || [];
           }
-          return projTasks.map(task => ({
-            ...task,
+          allFallbackTasks.push(...projTasks.map(t => ({
+            ...t,
             projectId: proj.id,
             projectName: proj.name
-          }));
-        }
-      });
-
-      const allTasksResults = await Promise.all(tasksPromises);
-      setTasks(allTasksResults.flat());
+          })));
+        });
+        setTasks(allFallbackTasks);
+      }
     }
 
     loadData();

@@ -44,3 +44,11 @@ export function isOverdueActive(dateStr: string | undefined | null, status: stri
 export function isItemInSprint(dateStr: string | undefined | null, status: string) {
   return isDateInCurrentWeek(dateStr) || isOverdueActive(dateStr, status);
 }
+
+export function getDefaultViewRoute(defaultView?: string): string {
+  if (!defaultView) return '/dashboard';
+  const val = defaultView.trim().toLowerCase();
+  if (val.includes('task')) return '/tasks';
+  if (val.includes('project')) return '/projects';
+  return '/dashboard';
+}

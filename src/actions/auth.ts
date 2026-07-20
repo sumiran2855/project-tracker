@@ -5,12 +5,15 @@ import { LoginSchema, SignupSchema, ForgotPasswordSchema, ResetPasswordSchema } 
 import { createSession, deleteSession } from '@/lib/auth/session';
 import { DEFAULT_LOGIN_REDIRECT, LOGIN_ROUTE } from '@/constants/routes';
 import { apiClient, ApiError } from '@/lib/api/apiClient';
+import { getDefaultViewRoute } from '@/lib/utils';
 import type { 
   LoginActionState, 
   SignupActionState, 
   ForgotPasswordActionState, 
   ResetPasswordActionState,
-  SafeUser
+  SafeUser,
+  WorkspacePrefs,
+  NotificationPrefs
 } from '@/types/auth.types';
 
 export async function loginAction(
@@ -31,11 +34,14 @@ export async function loginAction(
   const { email, password } = validatedFields.data;
   const remember = formData.get('remember') === 'on';
 
+  let user: SafeUser | null = null;
+
   try {
     const res = await apiClient.post<{ success: boolean; data: { user: SafeUser; token: string } }>(
       'auth/login',
       { email, password }
     );
+    user = res.data.user;
     await createSession(res.data.user, res.data.token, remember);
   } catch (error) {
     if (error instanceof ApiError) {
@@ -44,7 +50,8 @@ export async function loginAction(
     return { message: 'Failed to connect to authentication server.' };
   }
 
-  redirect(DEFAULT_LOGIN_REDIRECT);
+  const redirectRoute = getDefaultViewRoute(user?.workspacePrefs?.defaultView);
+  redirect(redirectRoute);
 }
 
 export async function signupAction(
@@ -64,12 +71,14 @@ export async function signupAction(
   }
 
   const { fullName, email, password } = validatedFields.data;
+  let user: SafeUser | null = null;
 
   try {
     const res = await apiClient.post<{ success: boolean; data: { user: SafeUser; token: string } }>(
       'auth/register',
       { name: fullName, email, password }
     );
+    user = res.data.user;
     await createSession(res.data.user, res.data.token, false);
   } catch (error) {
     if (error instanceof ApiError) {
@@ -78,7 +87,8 @@ export async function signupAction(
     return { message: 'Failed to connect to authentication server.' };
   }
 
-  redirect(DEFAULT_LOGIN_REDIRECT);
+  const redirectRoute = getDefaultViewRoute(user?.workspacePrefs?.defaultView);
+  redirect(redirectRoute);
 }
 
 export async function logoutAction(): Promise<never> {
@@ -278,5 +288,31 @@ export async function removeCollaboratorAction(email: string): Promise<{ success
     return { success: true, data: res.data.user };
   } catch (error: any) {
     return { success: false, error: error?.message || 'Failed to remove collaborator' };
+  }
+}
+
+export async function updatePreferencesAction(prefs: {
+  workspacePrefs?: WorkspacePrefs;
+  notificationPrefs?: NotificationPrefs;
+}): Promise<{ success: boolean; data?: SafeUser; error?: string }> {
+  const { getSession } = await import('@/lib/auth/dal');
+
+  try {
+    const session = await getSession();
+    if (!session?.token) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const res = await apiClient.put<{ success: boolean; data: { user: SafeUser } }>(
+      'auth/preferences',
+      prefs,
+      { token: session.token }
+    );
+
+    await createSession(res.data.user, session.token, false);
+
+    return { success: true, data: res.data.user };
+  } catch (error: any) {
+    return { success: false, error: error?.message || 'Failed to update preferences' };
   }
 }

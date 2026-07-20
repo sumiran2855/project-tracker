@@ -35,6 +35,22 @@ export type LoginActionState =
   }
   | undefined;
 
+export interface NotificationPrefs {
+  emailTasks: boolean;
+  emailDueDates: boolean;
+  emailDigests: boolean;
+  pushMentions: boolean;
+  pushStatusChanges: boolean;
+  soundAlerts: boolean;
+}
+
+export interface WorkspacePrefs {
+  defaultView: string;
+  theme: 'light' | 'dark' | 'system';
+  weekStart: 'Sunday' | 'Monday';
+  accentTint: string;
+}
+
 /** Safe user DTO — never include passwordHash in this type */
 export interface SafeUser {
   id: string;
@@ -49,6 +65,8 @@ export interface SafeUser {
   lastLogin?: string;
   createdAt?: string;
   collaborators?: { name: string; initials: string; bg: string; role: string }[];
+  notificationPrefs?: NotificationPrefs;
+  workspacePrefs?: WorkspacePrefs;
 }
 
 /**

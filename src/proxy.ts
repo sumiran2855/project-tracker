@@ -39,8 +39,8 @@ export async function proxy(request: NextRequest) {
     }
 
     if (isAuthenticated && isPublicRoute) {
-        const dashboardUrl = new URL(DEFAULT_LOGIN_REDIRECT, request.url);
-        return NextResponse.redirect(dashboardUrl);
+        const homeUrl = new URL('/', request.url);
+        return NextResponse.redirect(homeUrl);
     }
 
     return NextResponse.next();

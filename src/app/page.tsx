@@ -1,11 +1,13 @@
 import { redirect } from 'next/navigation';
-import { DEFAULT_LOGIN_REDIRECT } from '@/constants/routes';
+import { getCurrentUser } from '@/lib/auth/dal';
+import { getDefaultViewRoute } from '@/lib/utils';
 
 /**
- * Root page — immediately redirects to the dashboard.
- * The proxy (proxy.ts) handles the unauthenticated redirect to /login
- * before this page is ever rendered.
+ * Root page — immediately redirects to user's preferred entry view.
+ * Unauthenticated users are redirected to /login by proxy.ts.
  */
-export default function RootPage() {
-  redirect(DEFAULT_LOGIN_REDIRECT);
+export default async function RootPage() {
+  const user = await getCurrentUser();
+  const redirectRoute = getDefaultViewRoute(user?.workspacePrefs?.defaultView);
+  redirect(redirectRoute);
 }

@@ -7,47 +7,19 @@ import {
   Bell, 
   Sliders, 
   Database, 
-  Sparkles, 
   Check, 
   Save, 
   RefreshCcw,
-  Volume2,
   Mail,
   Monitor,
-  Layout,
-  Palette
+  AlertCircle,
+  Loader2,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/contexts/UserContext';
-import { updateUserRoleAction } from '@/actions/auth';
-
-interface UserProfile {
-  name: string;
-  email: string;
-  role: string;
-}
-
-interface NotificationPrefs {
-  emailTasks: boolean;
-  emailDueDates: boolean;
-  emailDigests: boolean;
-  pushMentions: boolean;
-  pushStatusChanges: boolean;
-  soundAlerts: boolean;
-}
-
-interface WorkspacePrefs {
-  defaultView: string;
-  theme: 'light' | 'dark' | 'system';
-  weekStart: 'Sunday' | 'Monday';
-  accentTint: string;
-}
-
-const defaultProfile: UserProfile = {
-  name: 'Sarah Connor',
-  email: 'sarah.connor@cyberdyne.io',
-  role: 'Workspace Administrator'
-};
+import { updateProfileAction, updatePreferencesAction } from '@/actions/auth';
+import type { WorkspacePrefs, NotificationPrefs } from '@/types/auth.types';
 
 const defaultNotifications: NotificationPrefs = {
   emailTasks: true,
@@ -68,28 +40,92 @@ const defaultWorkspace: WorkspacePrefs = {
 export default function SettingsPage() {
   const { user, setUser } = useUser();
   const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'workspace' | 'data' | 'testing'>('profile');
-  const [profile, setProfile] = useState<UserProfile>(defaultProfile);
+
+  // Profile fields — seeded from real user context
+  const [profileName, setProfileName] = useState(user?.name || '');
+  const [profileEmail, setProfileEmail] = useState(user?.email || '');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileSaveSuccess, setProfileSaveSuccess] = useState(false);
+  const [profileSaveError, setProfileSaveError] = useState('');
+
   const [notifications, setNotifications] = useState<NotificationPrefs>(defaultNotifications);
   const [workspace, setWorkspace] = useState<WorkspacePrefs>(defaultWorkspace);
+  const [isSavingPrefs, setIsSavingPrefs] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [prefsSaveError, setPrefsSaveError] = useState('');
 
-  // Load configuration
+  // Keep profile & preferences fields in sync when user context loads/updates
   useEffect(() => {
-    const savedProfile = localStorage.getItem('pwt_settings_profile');
-    if (savedProfile) setProfile(JSON.parse(savedProfile));
+    if (user) {
+      setProfileName(user.name || '');
+      setProfileEmail(user.email || '');
+      if (user.workspacePrefs) {
+        setWorkspace(user.workspacePrefs);
+      }
+      if (user.notificationPrefs) {
+        setNotifications(user.notificationPrefs);
+      }
+    }
+  }, [user]);
 
+  // Load non-profile configuration from localStorage as fallback
+  useEffect(() => {
     const savedNotifications = localStorage.getItem('pwt_settings_notifications');
-    if (savedNotifications) setNotifications(JSON.parse(savedNotifications));
+    if (savedNotifications && !user?.notificationPrefs) {
+      setNotifications(JSON.parse(savedNotifications));
+    }
 
     const savedWorkspace = localStorage.getItem('pwt_settings_workspace');
-    if (savedWorkspace) setWorkspace(JSON.parse(savedWorkspace));
-  }, []);
+    if (savedWorkspace && !user?.workspacePrefs) {
+      setWorkspace(JSON.parse(savedWorkspace));
+    }
+  }, [user?.notificationPrefs, user?.workspacePrefs]);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('pwt_settings_profile', JSON.stringify(profile));
+    if (!user) return;
+    setIsSavingProfile(true);
+    setProfileSaveError('');
+    const res = await updateProfileAction({
+      name: profileName,
+      email: profileEmail,
+      role: user.role || '',
+      location: user.location || '',
+      department: user.department || '',
+      skills: user.skills || [],
+      collaborators: user.collaborators || [],
+    });
+    setIsSavingProfile(false);
+    if (res.success && res.data) {
+      setUser(res.data);
+      setProfileSaveSuccess(true);
+      setTimeout(() => setProfileSaveSuccess(false), 3000);
+    } else {
+      setProfileSaveError(res.error || 'Failed to save profile');
+    }
+  };
+
+  const handleSave = async () => {
+    setIsSavingPrefs(true);
+    setPrefsSaveError('');
+
+    // Save to local storage for immediate fallback access
     localStorage.setItem('pwt_settings_notifications', JSON.stringify(notifications));
     localStorage.setItem('pwt_settings_workspace', JSON.stringify(workspace));
+
+    // Save to backend database
+    const res = await updatePreferencesAction({
+      workspacePrefs: workspace,
+      notificationPrefs: notifications,
+    });
+
+    setIsSavingPrefs(false);
+
+    if (res.success && res.data) {
+      setUser(res.data);
+    } else if (res.error) {
+      setPrefsSaveError(res.error);
+    }
 
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 3000);
@@ -141,7 +177,6 @@ export default function SettingsPage() {
             { id: 'notifications', label: 'Notifications', icon: Bell },
             { id: 'workspace', label: 'Preferences', icon: Sliders },
             { id: 'data', label: 'Data & Storage', icon: Database },
-            { id: 'testing', label: 'Testing Role Switcher', icon: RefreshCcw },
           ].map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -164,51 +199,97 @@ export default function SettingsPage() {
         </div>
 
         {/* Content Box */}
-        <form onSubmit={handleSave} className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden flex flex-col min-h-[420px]">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden flex flex-col min-h-[420px]">
           
           {/* Main Area */}
           <div className="p-6 sm:p-8 flex-1 space-y-6">
             
-            {/* 1. Profile Section */}
+            {/* 1. Profile Section — backed by real API */}
             {activeTab === 'profile' && (
-              <div className="space-y-4">
+              <form onSubmit={handleSaveProfile} className="space-y-5">
                 <div>
                   <h3 className="text-sm font-black text-slate-800">User Profile Details</h3>
                   <p className="text-[10px] text-slate-400 mt-0.5">Manage your identity credentials across pages.</p>
                 </div>
+
+                {/* Avatar + info banner */}
+                <div className="flex items-center gap-4 p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100/40">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white text-base font-black">
+                    {(profileName || user?.name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-black text-slate-800 truncate">{profileName || user?.name}</p>
+                    <p className="text-[10px] text-slate-500 font-medium">{user?.email}</p>
+                    <span className="inline-block mt-1 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-650">
+                      {user?.role}
+                    </span>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold uppercase tracking-wider text-slate-450">Display Name</label>
                     <input
                       type="text"
                       required
-                      value={profile.name}
-                      onChange={e => setProfile(p => ({ ...p, name: e.target.value }))}
+                      value={profileName}
+                      onChange={e => setProfileName(e.target.value)}
                       className="w-full rounded-xl border border-slate-250 bg-white px-3.5 py-2.5 text-xs text-slate-855 focus:border-indigo-500 focus:outline-none"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-455">Role / Designation</label>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-450">Role / Designation</label>
                     <input
                       type="text"
-                      required
-                      value={profile.role}
-                      onChange={e => setProfile(p => ({ ...p, role: e.target.value }))}
-                      className="w-full rounded-xl border border-slate-250 bg-white px-3.5 py-2.5 text-xs text-slate-855 focus:border-indigo-500 focus:outline-none"
+                      readOnly
+                      value={user?.role || ''}
+                      title="Change your role from the Testing Role Switcher tab"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-500 focus:outline-none cursor-not-allowed"
                     />
+                    <p className="text-[9px] text-slate-400">Role is managed from the <span className="font-bold">Testing Role Switcher</span> tab.</p>
                   </div>
                 </div>
+
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-slate-450">Email Address</label>
                   <input
                     type="email"
                     required
-                    value={profile.email}
-                    onChange={e => setProfile(p => ({ ...p, email: e.target.value }))}
+                    value={profileEmail}
+                    onChange={e => setProfileEmail(e.target.value)}
                     className="w-full rounded-xl border border-slate-250 bg-white px-3.5 py-2.5 text-xs text-slate-855 focus:border-indigo-500 focus:outline-none"
                   />
                 </div>
-              </div>
+
+                {/* Profile section footer */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                  <div>
+                    {profileSaveSuccess && (
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-xl">
+                        <Check className="h-3.5 w-3.5 stroke-[3px]" />
+                        Profile saved!
+                      </span>
+                    )}
+                    {profileSaveError && (
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 bg-red-50 px-3 py-1 rounded-xl">
+                        <AlertCircle className="h-3.5 w-3.5" />
+                        {profileSaveError}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isSavingProfile}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-650 hover:bg-indigo-750 text-white px-4.5 py-2.5 text-xs font-bold shadow-md shadow-indigo-650/10 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed min-w-[130px]"
+                  >
+                    {isSavingProfile ? (
+                      <><Loader2 className="h-3.5 w-3.5 animate-spin" /><span>Saving...</span></>
+                    ) : (
+                      <><Save className="h-4 w-4" /><span>Save Changes</span></>
+                    )}
+                  </button>
+                </div>
+              </form>
             )}
 
             {/* 2. Notifications Section */}
@@ -442,97 +523,41 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* 5. Testing Role Switcher Section */}
-            {activeTab === 'testing' && (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-sm font-black text-slate-800">Development Role Switcher</h3>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Dynamically switch between user roles to test Role-Based Access Control (RBAC) permissions.</p>
-                </div>
-
-                <div className="bg-indigo-50/50 border border-indigo-150/40 rounded-2xl p-4 sm:p-5 flex items-start gap-3">
-                  <Sparkles className="h-4.5 w-4.5 text-indigo-650 shrink-0 mt-0.5" />
-                  <div className="space-y-1">
-                    <p className="text-xs font-bold text-slate-800">Current Active Role: <span className="text-indigo-650 font-black">{user?.role}</span></p>
-                    <p className="text-[10px] text-slate-500 font-medium leading-relaxed">
-                      Changing your role will update your account in the database and active session context. Pages, sidebar options, and action triggers will immediately update to reflect your selected role's permissions.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {(['Employee', 'Admin', 'Manager', 'Team Lead', 'Client'] as const).map((r) => {
-                    const isCurrent = user?.role?.toLowerCase() === r.toLowerCase();
-                    return (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={async () => {
-                          if (isCurrent) return;
-                          const res = await updateUserRoleAction(r);
-                          if (res.success) {
-                            if (user) {
-                              setUser({ ...user, role: r });
-                            }
-                            setSaveSuccess(true);
-                            setTimeout(() => setSaveSuccess(false), 3000);
-                          } else {
-                            alert(res.error || 'Failed to update role');
-                          }
-                        }}
-                        className={cn(
-                          "flex flex-col items-start p-4 rounded-2xl border text-left transition-all cursor-pointer select-none",
-                          isCurrent
-                            ? "bg-white border-indigo-650 ring-2 ring-indigo-500/20 shadow-xs"
-                            : "bg-slate-50/50 border-slate-200 hover:border-slate-350 hover:bg-white"
-                        )}
-                      >
-                        <div className="flex items-center justify-between w-full">
-                          <span className={cn("text-xs font-black", isCurrent ? "text-indigo-650 font-extrabold" : "text-slate-700")}>
-                            {r}
-                          </span>
-                          {isCurrent && (
-                            <Check className="h-4 w-4 text-indigo-600" />
-                          )}
-                        </div>
-                        <span className="text-[9px] text-slate-450 mt-1.5 font-medium leading-normal">
-                          {r === 'Admin' && 'Full system control, manages all entities and configurations.'}
-                          {r === 'Manager' && 'Manages projects, tasks, roadmaps, views reports and team workload.'}
-                          {r === 'Team Lead' && 'Oversees teams, manages projects/tasks/roadmaps, views workload.'}
-                          {r === 'Client' && 'Views/creates projects, views roadmaps and reports, manages client tasks.'}
-                          {r === 'Employee' && 'Default role. Accesses assigned projects, tasks, roadmaps. Restricted reports.'}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
           </div>
 
-          {/* Footer bar */}
-          {activeTab !== 'data' && activeTab !== 'testing' && (
+          {/* Footer bar — only for notifications & workspace tabs */}
+          {(activeTab === 'notifications' || activeTab === 'workspace') && (
             <div className="bg-slate-50/50 border-t border-slate-100 px-6 py-4 flex items-center justify-between">
               <div>
                 {saveSuccess && (
                   <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-xl">
                     <Check className="h-3.5 w-3.5 stroke-[3px]" />
-                    Settings saved successfully!
+                    Preferences saved successfully!
+                  </span>
+                )}
+                {prefsSaveError && (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 bg-red-50 px-3 py-1 rounded-xl">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {prefsSaveError}
                   </span>
                 )}
               </div>
               <button
-                type="submit"
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-650 hover:bg-indigo-750 text-white px-4.5 py-2.5 text-xs font-bold shadow-md shadow-indigo-650/10 transition-all cursor-pointer"
+                type="button"
+                onClick={handleSave}
+                disabled={isSavingPrefs}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-650 hover:bg-indigo-750 text-white px-4.5 py-2.5 text-xs font-bold shadow-md shadow-indigo-650/10 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed min-w-[130px]"
               >
-                <Save className="h-4.5 w-4.5" />
-                <span>Save Changes</span>
+                {isSavingPrefs ? (
+                  <><Loader2 className="h-3.5 w-3.5 animate-spin" /><span>Saving...</span></>
+                ) : (
+                  <><Save className="h-4.5 w-4.5" /><span>Save Changes</span></>
+                )}
               </button>
             </div>
           )}
 
-        </form>
+        </div>
 
       </div>
 
