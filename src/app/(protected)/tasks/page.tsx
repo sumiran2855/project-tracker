@@ -65,57 +65,7 @@ interface GlobalTask extends Task {
 }
 
 // Fallbacks
-const defaultProjects: Project[] = [
-  {
-    id: '1',
-    name: 'SaaS Onboarding Flow',
-    description: 'Redesign and polish the signup and onboarding screens to reduce user drop-offs.',
-    status: 'In Progress',
-    progress: 65,
-    tags: ['Design', 'UX Research'],
-    tasksCount: 5,
-    completedTasks: 3,
-    commentsCount: 24,
-    attachmentsCount: 4,
-    dueDate: '2026-07-25',
-    startDate: '2026-07-01',
-    priority: 'High',
-    techStack: ['React', 'Figma', 'Mixpanel', 'Tailwind'],
-    budget: '$15,000',
-    repositoryUrl: 'https://github.com/my-org/saas-onboarding',
-    slackChannel: '#proj-onboarding',
-    targetQuarter: 'Q3 2026',
-    members: [
-      { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
-      { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
-      { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
-    ],
-  },
-  {
-    id: '2',
-    name: 'API Authentication V2',
-    description: 'Implement JWT tokens, OAuth, and custom session middleware for protected endpoints.',
-    status: 'In Review',
-    progress: 90,
-    tags: ['Backend', 'Security'],
-    tasksCount: 3,
-    completedTasks: 2,
-    commentsCount: 18,
-    attachmentsCount: 6,
-    dueDate: '2026-07-18',
-    startDate: '2026-07-05',
-    priority: 'Critical',
-    techStack: ['Node.js', 'Redis', 'JWT', 'PostgreSQL'],
-    budget: '$25,000',
-    repositoryUrl: 'https://github.com/my-org/auth-v2',
-    slackChannel: '#sec-auth',
-    targetQuarter: 'Q3 2026',
-    members: [
-      { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
-      { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
-    ],
-  },
-];
+const defaultProjects: Project[] = [];
 
 const fallbackTasks: Record<string, Task[]> = {
   '1': [
@@ -259,6 +209,7 @@ export default function GlobalTasksPage() {
       if (projRes.success && projRes.data) {
         loadedProjects = projRes.data as any[];
         setProjects(loadedProjects);
+        localStorage.setItem('pwt_projects', JSON.stringify(loadedProjects));
       } else {
         const storedProjects = localStorage.getItem('pwt_projects');
         if (storedProjects) {
@@ -268,16 +219,13 @@ export default function GlobalTasksPage() {
             console.error(e);
           }
         }
-        if (loadedProjects.length === 0) {
-          loadedProjects = defaultProjects;
-        }
         setProjects(loadedProjects);
       }
 
       // 2. Load employees
       const empRes = await getEmployeesAction();
       if (empRes.success && empRes.data) {
-        setAvailableMembers(empRes.data);
+        setAvailableMembers(empRes.data.filter(e => e.role?.toLowerCase() !== 'admin'));
       } else {
         setAvailableMembers(
           defaultMembers.map((m, i) => ({
@@ -559,6 +507,7 @@ export default function GlobalTasksPage() {
     setNewTaskDueDate('');
     setNewTaskAssignees([]);
     setIsTaskModalOpen(false);
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('pwt_update'));
   };
 
   // Drag and Drop Column Handlers
@@ -571,13 +520,16 @@ export default function GlobalTasksPage() {
     const taskId = e.dataTransfer.getData('text/plain');
     if (!taskId) return;
 
-    const updated = tasks.map(t => {
-      if (t.id === taskId) {
-        return { ...t, status: targetStatus };
+    const targetTask = tasks.find(t => t.id === taskId);
+    if (targetTask) {
+      if (targetStatus === 'Done' && targetTask.status !== 'Done') {
+        setPromptTask({ ...targetTask, status: 'Done' });
+        setPromptValue(String(targetTask.actualHours || 0));
+        setHoursPromptOpen(true);
+      } else {
+        handleUpdateTask({ ...targetTask, status: targetStatus });
       }
-      return t;
-    });
-    saveAllTasks(updated);
+    }
   };
 
   // Filter Tasks
@@ -1208,7 +1160,15 @@ export default function GlobalTasksPage() {
                   <select
                     required
                     value={newTaskProject}
-                    onChange={(e) => setNewTaskProject(e.target.value)}
+                    onChange={(e) => {
+                      const selectedId = e.target.value;
+                      setNewTaskProject(selectedId);
+                      const targetProj = projects.find((p) => p.id === selectedId);
+                      if (targetProj && Array.isArray(targetProj.members)) {
+                        const targetMemberNames = new Set(targetProj.members.map((m: any) => (m.name || '').toLowerCase()));
+                        setNewTaskAssignees((prev) => prev.filter((name) => targetMemberNames.has(name.toLowerCase())));
+                      }
+                    }}
                     className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
                   >
                     <option value="" disabled>Select project...</option>
@@ -1309,33 +1269,56 @@ export default function GlobalTasksPage() {
               <div className="space-y-2.5">
                 <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Assign Task To</label>
                 <div className="flex flex-wrap gap-2">
-                  {availableMembers.map((member) => {
-                    const isSelected = newTaskAssignees.includes(member.name);
-                    return (
-                      <button
-                        key={member.name}
-                        type="button"
-                        onClick={() => {
-                          if (isSelected) {
-                            setNewTaskAssignees(newTaskAssignees.filter(m => m !== member.name));
-                          } else {
-                            setNewTaskAssignees([...newTaskAssignees, member.name]);
-                          }
-                        }}
-                        className={cn(
-                          "flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border text-[11px] font-bold transition-all duration-200 cursor-pointer",
-                          isSelected 
-                            ? "bg-indigo-50/80 border-indigo-200 text-indigo-700 shadow-3xs ring-1 ring-indigo-200/50" 
-                            : "bg-white border-slate-200 text-slate-650 hover:bg-slate-50 hover:border-slate-300 shadow-3xs"
-                        )}
-                      >
-                        <div className={cn("h-5.5 w-5.5 rounded-full flex items-center justify-center text-[8px] text-white font-black shadow-3xs shrink-0", member.bg)}>
-                          {member.initials}
-                        </div>
-                        <span>{member.name}</span>
-                      </button>
-                    );
-                  })}
+                  {(() => {
+                    const selectedTaskProj = projects.find((p) => p.id === newTaskProject || (p as any)._id === newTaskProject);
+                    let taskAssignableMembers: any[] = [];
+                    if (selectedTaskProj) {
+                      const projMembers = selectedTaskProj.members || [];
+                      const projMemberNames = new Set(projMembers.map((m: any) => (m.name || '').toLowerCase()));
+                      
+                      taskAssignableMembers = availableMembers.filter(
+                        (m) => m.role?.toLowerCase() !== 'admin' && projMemberNames.has((m.name || '').toLowerCase())
+                      );
+                      
+                      if (taskAssignableMembers.length === 0 && projMembers.length > 0) {
+                        taskAssignableMembers = projMembers.filter((m: any) => m.role?.toLowerCase() !== 'admin');
+                      }
+                    } else {
+                      taskAssignableMembers = availableMembers.filter((m) => m.role?.toLowerCase() !== 'admin');
+                    }
+
+                    if (taskAssignableMembers.length === 0) {
+                      return <p className="text-xs text-slate-400 font-medium italic">No team members assigned to this project.</p>;
+                    }
+
+                    return taskAssignableMembers.map((member) => {
+                      const isSelected = newTaskAssignees.includes(member.name);
+                      return (
+                        <button
+                          key={member.name}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setNewTaskAssignees(newTaskAssignees.filter(m => m !== member.name));
+                            } else {
+                              setNewTaskAssignees([...newTaskAssignees, member.name]);
+                            }
+                          }}
+                          className={cn(
+                            "flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border text-[11px] font-bold transition-all duration-200 cursor-pointer",
+                            isSelected 
+                              ? "bg-indigo-50/80 border-indigo-200 text-indigo-700 shadow-3xs ring-1 ring-indigo-200/50" 
+                              : "bg-white border-slate-200 text-slate-650 hover:bg-slate-50 hover:border-slate-300 shadow-3xs"
+                          )}
+                        >
+                          <div className={cn("h-5.5 w-5.5 rounded-full flex items-center justify-center text-[8px] text-white font-black shadow-3xs shrink-0", member.bg || 'bg-indigo-500')}>
+                            {member.initials || member.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                          </div>
+                          <span>{member.name}</span>
+                        </button>
+                      );
+                    });
+                  })()}
                 </div>
               </div>
 
@@ -1631,6 +1614,85 @@ export default function GlobalTasksPage() {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Log Hours Completion Modal */}
+      {hoursPromptOpen && promptTask && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-955/60 backdrop-blur-md animate-fadeIn">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-150 space-y-5 animate-scaleUp">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2 text-indigo-650 font-black text-xs uppercase tracking-widest">
+                <Clock className="h-4 w-4 text-indigo-600" />
+                <span>Log Task Completion Hours</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setHoursPromptOpen(false);
+                  setPromptTask(null);
+                }}
+                className="h-8 w-8 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-150 flex items-center justify-center text-slate-500 cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div>
+              <h3 className="text-base font-bold text-slate-800">{promptTask.title}</h3>
+              <p className="text-xs text-slate-500 mt-1 font-medium">
+                Please enter the actual hours spent to complete this task.
+              </p>
+            </div>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const hours = parseFloat(promptValue) || 0;
+                const updatedTask = { ...promptTask, actualHours: hours };
+                setHoursPromptOpen(false);
+                setPromptTask(null);
+                await submitUpdateTask(updatedTask, hours);
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Hours Logged (Hours)
+                </label>
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  required
+                  autoFocus
+                  value={promptValue}
+                  onChange={(e) => setPromptValue(e.target.value)}
+                  className="w-full text-sm font-bold rounded-xl border border-slate-200 px-4 py-2.5 bg-white text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                  placeholder="e.g. 4"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHoursPromptOpen(false);
+                    setPromptTask(null);
+                  }}
+                  className="px-4.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-xs font-bold transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-indigo-650 hover:bg-indigo-750 text-white text-xs font-bold shadow-md shadow-indigo-650/10 transition-all cursor-pointer"
+                >
+                  Confirm & Complete Task
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -29,6 +29,7 @@ import { getEmployeesAction, getProjectsAction } from '@/actions/projects';
 import type { Employee } from '@/actions/projects';
 import { getTasksByProjectAction } from '@/actions/tasks';
 import { getIssuesByProjectAction } from '@/actions/issues';
+import { fetchAllSprintData } from '@/lib/sprintLoader';
 
 interface Member {
   name: string;
@@ -205,74 +206,7 @@ export default function ProfilePage() {
   // Update dynamic counts
   useEffect(() => {
     async function fetchStats() {
-      // 1. Get projects from backend API
-      let loadedProjects: any[] = [];
-      const projRes = await getProjectsAction();
-      if (projRes.success && projRes.data && projRes.data.length > 0) {
-        loadedProjects = projRes.data;
-      } else {
-        const storedProjects = localStorage.getItem('pwt_projects');
-        if (storedProjects) {
-          try {
-            loadedProjects = JSON.parse(storedProjects);
-          } catch (e) {
-            console.error(e);
-          }
-        }
-        if (!loadedProjects || loadedProjects.length === 0) {
-          loadedProjects = [];
-        }
-      }
-
-      // 2. Fetch tasks and issues per project from backend API
-      let allTasks: any[] = [];
-      let allIssues: any[] = [];
-
-      const tasksPromises = loadedProjects.map(p => getTasksByProjectAction(p.id));
-      const issuesPromises = loadedProjects.map(p => getIssuesByProjectAction(p.id));
-
-      const [tasksResults, issuesResults] = await Promise.all([
-        Promise.all(tasksPromises),
-        Promise.all(issuesPromises)
-      ]);
-
-      loadedProjects.forEach((p, idx) => {
-        const tRes = tasksResults[idx];
-        if (tRes && tRes.success && tRes.data && tRes.data.length > 0) {
-          allTasks.push(...tRes.data.map((t: any) => ({ ...t, projectId: p.id })));
-        } else {
-          const storedTasks = localStorage.getItem(`pwt_tasks_project_${p.id}`);
-          let parsedTasks: any[] = [];
-          if (storedTasks) {
-            try {
-              parsedTasks = JSON.parse(storedTasks);
-            } catch (e) {
-              console.error(e);
-            }
-          }
-          allTasks.push(...parsedTasks.map((t: any) => ({ ...t, projectId: p.id })));
-        }
-
-        const iRes = issuesResults[idx];
-        if (iRes && iRes.success && iRes.data && iRes.data.length > 0) {
-          allIssues.push(...iRes.data.map((iss: any) => ({ ...iss, projectId: p.id })));
-        }
-      });
-
-      // If no issues were retrieved from the backend for any project, load from localStorage
-      if (allIssues.length === 0) {
-        const storedIssues = localStorage.getItem('pwt_issues');
-        if (storedIssues) {
-          try {
-            allIssues = JSON.parse(storedIssues);
-          } catch (e) {
-            console.error(e);
-          }
-        }
-        if (!allIssues || allIssues.length === 0) {
-          allIssues = [];
-        }
-      }
+      const { projects: loadedProjects, tasks: allTasks, issues: allIssues } = await fetchAllSprintData();
 
       // 3. Compute stats
       let assigned = 0;
@@ -369,7 +303,7 @@ export default function ProfilePage() {
     }
 
     fetchStats();
-  }, [profile.name, systemEmployees, systemEmployees.length]);
+  }, [profile.name, systemEmployees.length]);
 
   const openEditModal = () => {
     setEditName(profile.name);

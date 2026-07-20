@@ -141,7 +141,7 @@ export function ProjectCard({ p }: { p: Project }) {
         <div className="flex items-center justify-between pt-3.5 border-t border-slate-100 mt-auto">
           {/* Avatar Stack */}
           <div className="flex -space-x-2">
-            {p.team.map((member) => (
+            {p.team.filter((member: any) => member.role?.toLowerCase() !== 'admin').map((member) => (
               <div
                 key={member.name}
                 title={member.name}

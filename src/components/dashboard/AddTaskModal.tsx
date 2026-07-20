@@ -36,7 +36,8 @@ export function AddTaskModal({
   // Reset state when modal closes/opens
   useEffect(() => {
     if (isOpen) {
-      setNewProject(defaultProjectId || projects[0]?.id || '');
+      const initialProjId = defaultProjectId || projects[0]?.id || '';
+      setNewProject(initialProjId);
       setNewTitle('');
       setNewDesc('');
       setNewStatus('To Do');
@@ -53,6 +54,33 @@ export function AddTaskModal({
     }
   }, [isOpen, projects, defaultProjectId]);
 
+  const selectedProj = projects.find((p) => p.id === newProject || (p as any)._id === newProject);
+
+  let assignableMembers: any[] = [];
+  if (selectedProj) {
+    const projMembers = selectedProj.members || [];
+    const projMemberNames = new Set(projMembers.map((m: any) => (m.name || '').toLowerCase()));
+    
+    assignableMembers = availableMembers.filter(
+      (m) => m.role?.toLowerCase() !== 'admin' && projMemberNames.has((m.name || '').toLowerCase())
+    );
+    
+    if (assignableMembers.length === 0 && projMembers.length > 0) {
+      assignableMembers = projMembers.filter((m: any) => m.role?.toLowerCase() !== 'admin');
+    }
+  } else {
+    assignableMembers = availableMembers.filter((m) => m.role?.toLowerCase() !== 'admin');
+  }
+
+  const handleProjectChange = (projId: string) => {
+    setNewProject(projId);
+    const targetProj = projects.find((p) => p.id === projId);
+    if (targetProj && Array.isArray(targetProj.members)) {
+      const targetMemberNames = new Set(targetProj.members.map((m: any) => (m.name || '').toLowerCase()));
+      setNewAssignees((prev) => prev.filter((name) => targetMemberNames.has(name.toLowerCase())));
+    }
+  };
+
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -65,14 +93,16 @@ export function AddTaskModal({
       return;
     }
 
-    const selectedAssignees = availableMembers
-      .filter((m) => newAssignees.includes(m.name))
-      .map((m) => ({
-        userId: m.id,
-        name: m.name,
-        initials: m.initials || m.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
-        bg: m.bg || 'bg-indigo-100 text-indigo-750',
-      }));
+    const combinedMembers = [...availableMembers, ...(targetProj.members || [])];
+    const selectedAssignees = newAssignees.map((name) => {
+      const found = combinedMembers.find((m) => m.name === name);
+      return {
+        userId: found?.id || found?.userId || '',
+        name: name,
+        initials: found?.initials || name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
+        bg: found?.bg || 'bg-indigo-100 text-indigo-750',
+      };
+    });
 
     const taskData = {
       title: newTitle,
@@ -147,7 +177,7 @@ export function AddTaskModal({
                 <select
                   required
                   value={newProject}
-                  onChange={(e) => setNewProject(e.target.value)}
+                  onChange={(e) => handleProjectChange(e.target.value)}
                   className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-808 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
                 >
                   <option value="" disabled>Select project...</option>
@@ -250,33 +280,37 @@ export function AddTaskModal({
             <div className="space-y-2.5">
               <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Assign Team Members</label>
               <div className="flex flex-wrap gap-2.5">
-                {availableMembers.map((member) => {
-                  const isSelected = newAssignees.includes(member.name);
-                  return (
-                    <button
-                      key={member.name}
-                      type="button"
-                      onClick={() => {
-                        if (isSelected) {
-                          setNewAssignees(newAssignees.filter(m => m !== member.name));
-                        } else {
-                          setNewAssignees([...newAssignees, member.name]);
-                        }
-                      }}
-                      className={cn(
-                        "flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border text-[11px] font-bold transition-all duration-200 cursor-pointer",
-                        isSelected
-                          ? "bg-indigo-50/80 border-indigo-200 text-indigo-700 shadow-3xs ring-1 ring-indigo-200/50"
-                          : "bg-white border-slate-200 text-slate-650 hover:bg-slate-50 hover:border-slate-300 shadow-3xs"
-                      )}
-                    >
-                      <div className={cn("h-5.5 w-5.5 rounded-full flex items-center justify-center text-[8px] text-white font-black shadow-3xs shrink-0", member.bg)}>
-                        {member.initials || member.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
-                      </div>
-                      <span>{member.name}</span>
-                    </button>
-                  );
-                })}
+                {assignableMembers.length > 0 ? (
+                  assignableMembers.map((member) => {
+                    const isSelected = newAssignees.includes(member.name);
+                    return (
+                      <button
+                        key={member.name}
+                        type="button"
+                        onClick={() => {
+                          if (isSelected) {
+                            setNewAssignees(newAssignees.filter(m => m !== member.name));
+                          } else {
+                            setNewAssignees([...newAssignees, member.name]);
+                          }
+                        }}
+                        className={cn(
+                          "flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border text-[11px] font-bold transition-all duration-200 cursor-pointer",
+                          isSelected
+                            ? "bg-indigo-50/80 border-indigo-200 text-indigo-700 shadow-3xs ring-1 ring-indigo-200/50"
+                            : "bg-white border-slate-200 text-slate-650 hover:bg-slate-50 hover:border-slate-300 shadow-3xs"
+                        )}
+                      >
+                        <div className={cn("h-5.5 w-5.5 rounded-full flex items-center justify-center text-[8px] text-white font-black shadow-3xs shrink-0", member.bg || 'bg-indigo-500')}>
+                          {member.initials || member.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                        </div>
+                        <span>{member.name}</span>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <p className="text-xs text-slate-400 font-medium italic">No team members assigned to this project.</p>
+                )}
               </div>
             </div>
           </div>

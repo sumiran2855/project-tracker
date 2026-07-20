@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, usePermission } from '@/contexts/UserContext';
+import { getProjectsAction } from '@/actions/projects';
 
 // Interfaces
 interface Member {
@@ -66,197 +67,6 @@ interface MilestoneItem {
   assignedTo?: string;
 }
 
-// Fallback seed projects if none found
-const defaultProjectsSeed: Project[] = [
-  {
-    id: '1',
-    name: 'SaaS Onboarding Flow',
-    description: 'Redesign and polish the signup and onboarding screens to reduce user drop-offs.',
-    status: 'In Progress',
-    progress: 65,
-    tags: ['Design', 'UX Research'],
-    tasksCount: 12,
-    completedTasks: 8,
-    commentsCount: 24,
-    attachmentsCount: 4,
-    dueDate: '2026-07-25',
-    startDate: '2026-06-15',
-    targetQuarter: 'Q3 2026',
-    priority: 'High',
-    techStack: ['React', 'Figma', 'Mixpanel', 'Tailwind'],
-    budget: '$15,000',
-    repositoryUrl: 'https://github.com/my-org/saas-onboarding',
-    slackChannel: '#proj-onboarding',
-    members: [
-      { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
-      { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
-      { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
-    ],
-  },
-  {
-    id: '2',
-    name: 'API Authentication V2',
-    description: 'Implement JWT tokens, OAuth, and custom session middleware for protected endpoints.',
-    status: 'In Review',
-    progress: 90,
-    tags: ['Backend', 'Security'],
-    tasksCount: 18,
-    completedTasks: 16,
-    commentsCount: 18,
-    attachmentsCount: 6,
-    dueDate: '2026-07-18',
-    startDate: '2026-06-01',
-    targetQuarter: 'Q3 2026',
-    priority: 'Critical',
-    techStack: ['Node.js', 'Redis', 'JWT', 'PostgreSQL'],
-    budget: '$25,000',
-    repositoryUrl: 'https://github.com/my-org/auth-v2',
-    slackChannel: '#sec-auth',
-    members: [
-      { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
-      { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
-    ],
-  },
-  {
-    id: '3',
-    name: 'Corporate Marketing Site',
-    description: 'Build and launch the new Tailwind-based marketing website with responsive assets.',
-    status: 'In Progress',
-    progress: 40,
-    tags: ['Marketing', 'Frontend'],
-    tasksCount: 10,
-    completedTasks: 4,
-    commentsCount: 8,
-    attachmentsCount: 2,
-    dueDate: '2026-08-05',
-    startDate: '2026-07-01',
-    targetQuarter: 'Q3 2026',
-    priority: 'Medium',
-    techStack: ['Next.js', 'TailwindCSS', 'Framer Motion'],
-    budget: '$8,000',
-    repositoryUrl: 'https://github.com/my-org/marketing-site',
-    slackChannel: '#marketing-web',
-    members: [
-      { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
-      { name: 'Emma Watson', initials: 'EW', bg: 'bg-rose-500' },
-    ],
-  },
-  {
-    id: '4',
-    name: 'Mobile App Wireframes',
-    description: 'Create low-fidelity layout plans for the React Native iOS/Android clients.',
-    status: 'Completed',
-    progress: 100,
-    tags: ['UX Design', 'Mobile'],
-    tasksCount: 8,
-    completedTasks: 8,
-    commentsCount: 32,
-    attachmentsCount: 12,
-    dueDate: '2026-06-30',
-    startDate: '2026-05-15',
-    targetQuarter: 'Q2 2026',
-    priority: 'Low',
-    techStack: ['Figma', 'React Native'],
-    budget: '$5,000',
-    members: [
-      { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
-      { name: 'Emma Watson', initials: 'EW', bg: 'bg-rose-500' },
-      { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
-    ],
-  },
-  {
-    id: '5',
-    name: 'Billing & Stripe Integration',
-    description: 'Integrate Stripe subscriptions, webhooks, and invoice generation flows.',
-    status: 'Planning',
-    progress: 15,
-    tags: ['Backend', 'Finance'],
-    tasksCount: 20,
-    completedTasks: 3,
-    commentsCount: 2,
-    attachmentsCount: 1,
-    dueDate: '2026-10-20',
-    startDate: '2026-09-01',
-    targetQuarter: 'Q4 2026',
-    priority: 'High',
-    techStack: ['React', 'Node.js', 'Stripe', 'PostgreSQL'],
-    budget: '$20,000',
-    repositoryUrl: 'https://github.com/my-org/stripe-billing',
-    slackChannel: '#fin-stripe',
-    members: [
-      { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
-      { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
-    ],
-  },
-  {
-    id: '6',
-    name: 'Realtime Analytics Dash',
-    description: 'Setup Postgres timescaledb queries and display charts for active workspace metrics.',
-    status: 'Planning',
-    progress: 0,
-    tags: ['Core API', 'Analytics'],
-    tasksCount: 6,
-    completedTasks: 0,
-    commentsCount: 0,
-    attachmentsCount: 0,
-    dueDate: '2026-11-10',
-    startDate: '2026-10-01',
-    targetQuarter: 'Q4 2026',
-    priority: 'Medium',
-    techStack: ['TimescaleDB', 'GraphQL', 'React', 'D3.js'],
-    budget: '$18,000',
-    repositoryUrl: 'https://github.com/my-org/analytics-dash',
-    slackChannel: '#analytics-dev',
-    members: [
-      { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
-    ],
-  },
-];
-
-// Fallback seed milestones
-const defaultMilestonesSeed: MilestoneItem[] = [
-  {
-    id: 'm1',
-    title: 'Onboarding Wireframe Signoff',
-    description: 'Obtain stakeholder approval on the low-fidelity wireframes.',
-    dueDate: '2026-07-12',
-    projectId: '1',
-    completed: true,
-  },
-  {
-    id: 'm2',
-    title: 'A/B Test Configuration Staging Deploy',
-    description: 'Deploy the LaunchDarkly flags to staging environments.',
-    dueDate: '2026-07-15',
-    projectId: '1',
-    completed: false,
-  },
-  {
-    id: 'm3',
-    title: 'SSO Google & GitHub Auth Live',
-    description: 'Complete registration and test SSO routes on production.',
-    dueDate: '2026-07-18',
-    projectId: '2',
-    completed: false,
-  },
-  {
-    id: 'm4',
-    title: 'Site Assets Optimization',
-    description: 'Compress marketing website image assets and deploy Tailwind build.',
-    dueDate: '2026-08-01',
-    projectId: '3',
-    completed: false,
-  },
-  {
-    id: 'm5',
-    title: 'Mobile Wireframe Figma Export',
-    description: 'Export all frames and handoff to the mobile dev team.',
-    dueDate: '2026-06-30',
-    projectId: '4',
-    completed: true,
-  },
-];
-
 // 6 months timeline parameters
 const TIMELINE_START = new Date('2026-06-01');
 const TIMELINE_END = new Date('2026-11-30');
@@ -296,84 +106,81 @@ export default function RoadmapPage() {
   const [editDueDate, setEditDueDate] = useState('');
   const [editQuarter, setEditQuarter] = useState<Project['targetQuarter']>('Future');
 
-  // Initialize data from LocalStorage
+  // Initialize data from backend API
   useEffect(() => {
-    // 1. Load Projects
-    const storedProjects = localStorage.getItem('pwt_projects');
-    let loadedProjects: Project[] = [];
-    if (storedProjects) {
-      try {
-        loadedProjects = JSON.parse(storedProjects);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    if (loadedProjects.length === 0) {
-      loadedProjects = defaultProjectsSeed;
-      localStorage.setItem('pwt_projects', JSON.stringify(defaultProjectsSeed));
-    }
+    async function loadData() {
+      const res = await getProjectsAction();
+      let loadedProjects: Project[] = [];
 
-    // Enforce timeline fields (migration)
-    const migratedProjects = loadedProjects.map(proj => {
-      let updated = false;
-      const copy = { ...proj };
-
-      if (!copy.startDate) {
-        // Default start date is 30 days before due date (if due date is set)
-        if (copy.dueDate && copy.dueDate !== 'No Due Date') {
+      if (res.success && res.data) {
+        loadedProjects = res.data as any[];
+      } else {
+        const storedProjects = localStorage.getItem('pwt_projects');
+        if (storedProjects) {
           try {
-            const due = new Date(copy.dueDate);
-            due.setDate(due.getDate() - 30);
-            copy.startDate = due.toISOString().split('T')[0];
-          } catch {
-            copy.startDate = '2026-07-01';
+            loadedProjects = JSON.parse(storedProjects);
+          } catch (e) {
+            console.error(e);
           }
-        } else {
-          copy.startDate = '2026-07-01';
         }
-        updated = true;
       }
 
-      if (!copy.targetQuarter) {
-        if (copy.dueDate && copy.dueDate !== 'No Due Date') {
-          try {
-            const date = new Date(copy.dueDate);
-            const month = date.getMonth();
-            const year = date.getFullYear();
-            if (month >= 3 && month <= 5) copy.targetQuarter = `Q2 ${year}` as any;
-            else if (month >= 6 && month <= 8) copy.targetQuarter = `Q3 ${year}` as any;
-            else if (month >= 9 && month <= 11) copy.targetQuarter = `Q4 ${year}` as any;
-            else copy.targetQuarter = 'Future';
-          } catch {
+      // Filter out any lingering hardcoded seed projects if user has real backend data
+      const migratedProjects = loadedProjects.map((proj) => {
+        const copy = { ...proj };
+
+        if (!copy.startDate) {
+          if (copy.dueDate && copy.dueDate !== 'No Due Date') {
+            try {
+              const due = new Date(copy.dueDate);
+              due.setDate(due.getDate() - 30);
+              copy.startDate = due.toISOString().split('T')[0];
+            } catch {
+              copy.startDate = new Date().toISOString().split('T')[0];
+            }
+          } else {
+            copy.startDate = new Date().toISOString().split('T')[0];
+          }
+        }
+
+        if (!copy.targetQuarter) {
+          if (copy.dueDate && copy.dueDate !== 'No Due Date') {
+            try {
+              const date = new Date(copy.dueDate);
+              const month = date.getMonth();
+              const year = date.getFullYear();
+              if (month >= 3 && month <= 5) copy.targetQuarter = `Q2 ${year}` as any;
+              else if (month >= 6 && month <= 8) copy.targetQuarter = `Q3 ${year}` as any;
+              else if (month >= 9 && month <= 11) copy.targetQuarter = `Q4 ${year}` as any;
+              else copy.targetQuarter = 'Future';
+            } catch {
+              copy.targetQuarter = 'Future';
+            }
+          } else {
             copy.targetQuarter = 'Future';
           }
-        } else {
-          copy.targetQuarter = 'Future';
         }
-        updated = true;
+
+        return copy;
+      });
+
+      setProjects(migratedProjects);
+      localStorage.setItem('pwt_projects', JSON.stringify(migratedProjects));
+
+      // 2. Load Milestones
+      const storedMilestones = localStorage.getItem('pwt_milestones');
+      let loadedMilestones: MilestoneItem[] = [];
+      if (storedMilestones) {
+        try {
+          loadedMilestones = JSON.parse(storedMilestones);
+        } catch (e) {
+          console.error(e);
+        }
       }
-
-      return copy;
-    });
-
-    setProjects(migratedProjects);
-    localStorage.setItem('pwt_projects', JSON.stringify(migratedProjects));
-
-    // 2. Load Milestones
-    const storedMilestones = localStorage.getItem('pwt_milestones');
-    let loadedMilestones: MilestoneItem[] = [];
-    if (storedMilestones) {
-      try {
-        loadedMilestones = JSON.parse(storedMilestones);
-      } catch (e) {
-        console.error(e);
-      }
+      setMilestones(loadedMilestones);
     }
-    if (loadedMilestones.length === 0) {
-      loadedMilestones = defaultMilestonesSeed;
-      localStorage.setItem('pwt_milestones', JSON.stringify(defaultMilestonesSeed));
-    }
-    setMilestones(loadedMilestones);
+
+    loadData();
   }, []);
 
   // Save states back
@@ -1000,7 +807,7 @@ export default function RoadmapPage() {
                                 </div>
 
                                 <div className="flex -space-x-1.5 overflow-hidden">
-                                  {project.members.map((member, i) => (
+                                  {project.members.filter((m: any) => m.role?.toLowerCase() !== 'admin').map((member, i) => (
                                     <div key={i} className={cn("h-5 w-5 rounded-md text-[7px] font-bold text-white flex items-center justify-center ring-2 ring-white shadow-3xs shrink-0", member.bg)} title={member.name}>
                                       {member.initials}
                                     </div>

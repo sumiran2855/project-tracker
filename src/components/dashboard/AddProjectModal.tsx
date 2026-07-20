@@ -46,7 +46,13 @@ export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, 
         setNewProjSlackChannel(projectToEdit.slackChannel || '');
         setNewProjRepositoryUrl(projectToEdit.repositoryUrl || '');
         setNewProjTags(projectToEdit.tags ? projectToEdit.tags.join(', ') : '');
-        setNewProjMembers(projectToEdit.members ? projectToEdit.members.map((m: any) => m.name || m.userId) : []);
+        setNewProjMembers(
+          projectToEdit.members
+            ? projectToEdit.members
+                .filter((m: any) => m.role?.toLowerCase() !== 'admin')
+                .map((m: any) => m.name || m.userId)
+            : []
+        );
       } else {
         setNewProjName('');
         setNewProjDesc('');
@@ -73,12 +79,14 @@ export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, 
     setErrorMsg('');
 
     const selectedMembers = availableMembers
+      .filter((m) => m.role?.toLowerCase() !== 'admin')
       .filter((m) => newProjMembers.some((nameOrId) => nameOrId === m.name || nameOrId === m.id))
       .map((m) => ({
         userId: m.id,
         name: m.name,
         initials: m.initials || m.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
         bg: m.bg || 'bg-indigo-100 text-indigo-750',
+        role: m.role,
       }));
 
     const tagsArray = newProjTags ? newProjTags.split(',').map((t) => t.trim()).filter(Boolean) : [];
@@ -351,7 +359,7 @@ export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, 
               <div className="space-y-2.5">
                 <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Assign Team Members</label>
                 <div className="flex flex-wrap gap-2.5">
-                  {availableMembers.map((member) => {
+                  {availableMembers.filter((m) => m.role?.toLowerCase() !== 'admin').map((member) => {
                     const isSelected = newProjMembers.some((nameOrId) => nameOrId === member.name || nameOrId === member.id);
                     return (
                       <button

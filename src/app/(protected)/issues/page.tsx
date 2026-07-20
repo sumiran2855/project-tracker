@@ -33,83 +33,16 @@ interface Project {
   name: string;
 }
 
-const defaultProjects: Project[] = [
-  { id: '1', name: 'SaaS Onboarding Flow' },
-  { id: '2', name: 'API Authentication V2' },
-  { id: '3', name: 'Corporate Marketing Site' },
-  { id: '4', name: 'Mobile App Wireframes' },
-];
+const defaultProjects: Project[] = [];
 
-const fallbackIssues: Issue[] = [
-  {
-    id: 'iss-1',
-    title: 'Signup validation fails for long passwords',
-    description: 'When users input password > 72 chars, the bcrypt hashing function throws an offset error.',
-    status: 'In Progress',
-    priority: 'Critical',
-    type: 'Bug',
-    projectId: '1',
-    projectName: 'SaaS Onboarding Flow',
-    dueDate: '2026-07-15',
-    assignees: [
-      { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
-      { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
-    ],
-    commentsCount: 5,
-  },
-  {
-    id: 'iss-2',
-    title: 'OAuth signature mismatch on mobile clients',
-    description: 'iOS clients send an incorrect redirect URI leading to standard OAuth validation failures.',
-    status: 'Open',
-    priority: 'High',
-    type: 'Security',
-    projectId: '2',
-    projectName: 'API Authentication V2',
-    dueDate: '2026-07-18',
-    assignees: [
-      { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
-    ],
-    commentsCount: 12,
-  },
-  {
-    id: 'iss-3',
-    title: 'Responsive navigation overlaps on tablet viewports',
-    description: 'Header menus overlap logo elements at widths between 768px and 1024px.',
-    status: 'Resolved',
-    priority: 'Medium',
-    type: 'Bug',
-    projectId: '3',
-    projectName: 'Corporate Marketing Site',
-    dueDate: '2026-07-10',
-    assignees: [
-      { name: 'Emma Watson', initials: 'EW', bg: 'bg-rose-500' },
-    ],
-    commentsCount: 2,
-  },
-  {
-    id: 'iss-4',
-    title: 'Missing dark mode colors on dashboard settings modal',
-    description: 'Background stays white in dark theme configuration rendering text completely invisible.',
-    status: 'Closed',
-    priority: 'Low',
-    type: 'Improvement',
-    projectId: '1',
-    projectName: 'SaaS Onboarding Flow',
-    dueDate: '2026-07-28',
-    assignees: [
-      { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
-    ],
-    commentsCount: 0,
-  }
-];
+const fallbackIssues: Issue[] = [];
 
 export default function IssuesPage() {
   const { user } = useUser();
   const canDeleteIssue = usePermission('issue:delete');
 
   const [issues, setIssues] = useState<Issue[]>([]);
-  const [projects, setProjects] = useState<Project[]>(defaultProjects);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [availableMembers, setAvailableMembers] = useState<Employee[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [projectFilter, setProjectFilter] = useState('All');
@@ -133,7 +66,7 @@ export default function IssuesPage() {
     async function loadProjects() {
       const res = await getProjectsAction();
       if (res.success && res.data) {
-        setProjects(res.data.map((p: any) => ({ id: p.id, name: p.name })));
+        setProjects(res.data);
         
         // Fetch issues for all loaded projects
         const issuesPromises = res.data.map((p: any) => getIssuesByProjectAction(p.id));
@@ -151,7 +84,7 @@ export default function IssuesPage() {
           try {
             const parsed = JSON.parse(storedProjects);
             if (parsed.length > 0) {
-              setProjects(parsed.map((p: any) => ({ id: p.id, name: p.name })));
+              setProjects(parsed);
             }
           } catch (e) {
             console.error(e);
@@ -174,7 +107,7 @@ export default function IssuesPage() {
     async function loadEmployees() {
       const res = await getEmployeesAction();
       if (res.success && res.data) {
-        setAvailableMembers(res.data);
+        setAvailableMembers(res.data.filter(e => e.role?.toLowerCase() !== 'admin'));
       } else {
         setAvailableMembers(
           [

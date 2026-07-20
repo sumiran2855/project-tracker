@@ -27,6 +27,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 
 import { useUser } from '@/contexts/UserContext';
 import { hasPermission } from '@/lib/auth/permissions';
+import { getProjectsAction } from '@/actions/projects';
+import { getAllTasksAction } from '@/actions/tasks';
 
 interface SidebarProps {
   user?: {
@@ -45,19 +47,22 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
   const router = useRouter();
   const { user } = useUser();
 
+  const [projectsCount, setProjectsCount] = useState<number | null>(null);
+  const [tasksCount, setTasksCount] = useState<number | null>(null);
+
   const navigationGroups = [
     {
       title: 'General',
       items: [
         { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, active: pathname === '/dashboard' },
-        { label: 'Projects', href: '/projects', icon: Folder, active: pathname === '/projects', badge: '12' },
+        { label: 'Projects', href: '/projects', icon: Folder, active: pathname === '/projects', badge: projectsCount !== null ? String(projectsCount) : undefined },
       ],
     },
     {
       title: 'Planning',
       items: [
         { label: 'Roadmap', href: '/roadmap', icon: Map, active: pathname === '/roadmap' },
-        { label: 'Board', href: '/tasks', icon: CheckSquare, active: pathname === '/tasks', badge: '48' },
+        { label: 'Board', href: '/tasks', icon: CheckSquare, active: pathname === '/tasks', badge: tasksCount !== null ? String(tasksCount) : undefined },
       ],
     },
     {
@@ -79,6 +84,23 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
   const offset = circumference - (progress / 100) * circumference;
 
   useEffect(() => {
+    async function loadLiveCounts() {
+      try {
+        const [pRes, tRes] = await Promise.all([
+          getProjectsAction(),
+          getAllTasksAction()
+        ]);
+        if (pRes.success && pRes.data) {
+          setProjectsCount(pRes.data.length);
+        }
+        if (tRes.success && tRes.data) {
+          setTasksCount(tRes.data.length);
+        }
+      } catch (err) {
+        console.error("Error loading sidebar counts", err);
+      }
+    }
+
     async function calculateSprintProgress() {
       try {
         const { tasks, issues } = await fetchAllSprintData();
@@ -101,9 +123,11 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
       }
     }
     
+    loadLiveCounts();
     calculateSprintProgress();
     
     const handleStorageChange = () => {
+      loadLiveCounts();
       calculateSprintProgress();
     };
     window.addEventListener('storage', handleStorageChange);
@@ -113,7 +137,7 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('pwt_update', handleStorageChange);
     };
-  }, []);
+  }, [pathname]);
 
   return (
     <aside

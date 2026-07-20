@@ -8,16 +8,31 @@ import {
   TrendingUp, 
   Folder, 
   CheckSquare, 
-  Clock, 
   AlertCircle,
-  FileText,
   Printer,
   RefreshCw,
-  Users,
-  Calendar,
   Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+import { getProjectsAction } from '@/actions/projects';
+import { getAllTasksAction } from '@/actions/tasks';
+import { getIssuesByProjectAction } from '@/actions/issues';
+
+const PROJECT_COLOR_PALETTE = [
+  { bg: 'bg-indigo-500', text: 'text-indigo-500', hex: '#6366f1' },
+  { bg: 'bg-emerald-500', text: 'text-emerald-500', hex: '#10b981' },
+  { bg: 'bg-violet-500', text: 'text-violet-500', hex: '#8b5cf6' },
+  { bg: 'bg-amber-500', text: 'text-amber-500', hex: '#f59e0b' },
+  { bg: 'bg-rose-500', text: 'text-rose-500', hex: '#f43f5e' },
+  { bg: 'bg-cyan-500', text: 'text-cyan-500', hex: '#06b6d4' },
+  { bg: 'bg-purple-500', text: 'text-purple-500', hex: '#a855f7' },
+];
+
+function getProjColor(projName: string, allProjNames: string[]) {
+  const idx = allProjNames.indexOf(projName);
+  return PROJECT_COLOR_PALETTE[(idx >= 0 ? idx : 0) % PROJECT_COLOR_PALETTE.length];
+}
 
 // Types
 interface Member {
@@ -67,14 +82,7 @@ interface TeamStats {
 }
 
 // Fallbacks
-const defaultProjects: Project[] = [
-  { id: '1', name: 'SaaS Onboarding Flow', dueDate: '2026-07-25', members: [], status: 'In Progress' },
-  { id: '2', name: 'API Authentication V2', dueDate: '2026-07-18', members: [], status: 'In Review' },
-  { id: '3', name: 'Corporate Marketing Site', dueDate: '2026-08-05', members: [], status: 'In Progress' },
-  { id: '4', name: 'Mobile App Wireframes', dueDate: '2026-06-30', members: [], status: 'Completed' },
-  { id: '5', name: 'Billing & Stripe Integration', dueDate: '2026-08-20', members: [], status: 'Planning' },
-  { id: '6', name: 'Realtime Analytics Dash', dueDate: '2026-09-10', members: [], status: 'Planning' },
-];
+const defaultProjects: Project[] = [];
 
 const fallbackTasks: Record<string, Task[]> = {
   '1': [
@@ -122,98 +130,156 @@ export default function ReportsPage() {
   const [overdueTasksCount, setOverdueTasksCount] = useState(0);
   const [completionRate, setCompletionRate] = useState(0);
   
+function getCurrentWeekDays() {
+  const now = new Date();
+  const day = now.getDay();
+  const diffToMon = now.getDate() - (day === 0 ? 6 : day - 1);
+  const monday = new Date(now);
+  monday.setDate(diffToMon);
+  monday.setHours(0, 0, 0, 0);
+
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const fullDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  return days.map((dayName, idx) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + idx);
+    const dayNum = String(d.getDate()).padStart(2, '0');
+    const monthNum = String(d.getMonth() + 1).padStart(2, '0');
+    const yearNum = d.getFullYear();
+    const dateFormatted = `${dayNum}-${monthNum}-${yearNum}`;
+    const shortLabel = `${dayName} (${dayNum}/${monthNum})`;
+    const fullLabel = `${fullDays[idx]} (${dateFormatted})`;
+    return {
+      dayName,
+      shortLabel,
+      fullLabel,
+      dateFormatted,
+      dateObj: d,
+    };
+  });
+}
+
+  interface DayLog {
+    day: string;
+    fullDayLabel?: string;
+    dateFormatted?: string;
+    hours: number;
+    projects: { projectName: string; hours: number }[];
+  }
+
   // Chart states
   const [projectStatsList, setProjectStatsList] = useState<ProjectStats[]>([]);
   const [priorityStatsList, setPriorityStatsList] = useState<PriorityStats[]>([]);
   const [teamStatsList, setTeamStatsList] = useState<TeamStats[]>([]);
-  const [timeLogs, setTimeLogs] = useState(defaultHours);
+  const [weeklyTimeLogs, setWeeklyTimeLogs] = useState<DayLog[]>([]);
+  const [dailyCapacity, setDailyCapacity] = useState(8);
+  const [weeklyCapacity, setWeeklyCapacity] = useState(40);
 
-  // Load from local storage and compute report metrics
-  const loadReportData = () => {
-    // 1. Get Projects
-    let loadedProjects: Project[] = [];
-    const storedProjects = localStorage.getItem('pwt_projects');
-    if (storedProjects) {
-      try {
-        loadedProjects = JSON.parse(storedProjects);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    if (loadedProjects.length === 0) {
-      loadedProjects = defaultProjects;
-    }
-    setProjectsCount(loadedProjects.length);
+  // Load project & task data from backend / local storage and compute report metrics
+  const loadReportData = async () => {
+    let loadedProjects: any[] = [];
+    let allTasks: any[] = [];
 
-    // 2. Loop and compile tasks
-    let totalTasks = 0;
-    let completedTasks = 0;
-    let overdueTasks = 0;
-    const projectStats: ProjectStats[] = [];
+    const [projRes, tasksRes] = await Promise.all([getProjectsAction(), getAllTasksAction()]);
 
-    // Priority accumulation
-    let urgent = 0, high = 0, medium = 0, low = 0;
-
-    // Team allocation accumulation
-    const memberTaskMap: Record<string, { initials: string; bg: string; count: number }> = {};
-    const today = new Date().toISOString().split('T')[0];
-
-    loadedProjects.forEach(proj => {
-      const storedTasksKey = `pwt_tasks_project_${proj.id}`;
-      const storedTasksStr = localStorage.getItem(storedTasksKey);
-      let projTasks: Task[] = [];
-      
-      if (storedTasksStr) {
+    if (projRes.success && projRes.data) {
+      loadedProjects = projRes.data;
+    } else {
+      const storedProjects = localStorage.getItem('pwt_projects');
+      if (storedProjects) {
         try {
-          projTasks = JSON.parse(storedTasksStr);
+          loadedProjects = JSON.parse(storedProjects);
         } catch (e) {
           console.error(e);
         }
-      } else {
-        projTasks = fallbackTasks[proj.id] || [];
+      }
+    }
+
+    if (tasksRes.success && tasksRes.data && tasksRes.data.length > 0) {
+      allTasks = tasksRes.data;
+    } else {
+      // Fallback from localStorage project task buckets if API returned empty
+      loadedProjects.forEach(proj => {
+        const storedTasksKey = `pwt_tasks_project_${proj.id || proj._id}`;
+        const storedTasksStr = localStorage.getItem(storedTasksKey);
+        if (storedTasksStr) {
+          try {
+            const parsed = JSON.parse(storedTasksStr);
+            allTasks.push(...parsed);
+          } catch (e) {}
+        } else if (fallbackTasks[proj.id || proj._id]) {
+          allTasks.push(...fallbackTasks[proj.id || proj._id]);
+        }
+      });
+    }
+
+    // Also fetch issues across projects to capture issue logged hours
+    const issuesPromises = loadedProjects.map(p => getIssuesByProjectAction(p.id || p._id));
+    const issuesResults = await Promise.all(issuesPromises);
+    const allIssues: any[] = [];
+    issuesResults.forEach(r => {
+      if (r.success && r.data) {
+        allIssues.push(...r.data);
+      }
+    });
+
+    setProjectsCount(loadedProjects.length);
+
+    let totalTasks = allTasks.length;
+    let completedTasks = 0;
+    let overdueTasks = 0;
+
+    let urgent = 0, high = 0, medium = 0, low = 0;
+    const memberTaskMap: Record<string, { initials: string; bg: string; count: number }> = {};
+    const today = new Date().toISOString().split('T')[0];
+
+    // Priority accumulation
+    allTasks.forEach((task: any) => {
+      const priorityStr = (task.priority || '').toString().toLowerCase();
+      if (priorityStr === 'urgent') urgent++;
+      else if (priorityStr === 'high') high++;
+      else if (priorityStr === 'medium') medium++;
+      else if (priorityStr === 'low') low++;
+      else medium++; // default to medium if unspecified
+
+      if (task.status === 'Done') {
+        completedTasks++;
+      } else if (task.dueDate && task.dueDate !== 'No Due Date' && task.dueDate < today) {
+        overdueTasks++;
       }
 
-      const projTotal = projTasks.length;
-      const projCompleted = projTasks.filter(t => t.status === 'Done').length;
-      
-      totalTasks += projTotal;
-      completedTasks += projCompleted;
+      const assignees = Array.isArray(task.assignees) ? task.assignees : [];
+      assignees.forEach((assignee: any) => {
+        const name = typeof assignee === 'string' ? assignee : (assignee.name || 'Unassigned');
+        const initials = typeof assignee === 'object' && assignee.initials ? assignee.initials : name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+        const bg = typeof assignee === 'object' && assignee.bg ? assignee.bg : 'bg-indigo-500';
 
-      // Project stats
-      projectStats.push({
-        id: proj.id,
+        if (memberTaskMap[name]) {
+          memberTaskMap[name].count++;
+        } else {
+          memberTaskMap[name] = {
+            initials,
+            bg,
+            count: 1
+          };
+        }
+      });
+    });
+
+    // Project stats computation
+    const projectStats: ProjectStats[] = loadedProjects.map((proj: any) => {
+      const projId = proj.id || proj._id;
+      const projTasks = allTasks.filter((t: any) => t.projectId === projId);
+      const projTotal = projTasks.length;
+      const projCompleted = projTasks.filter((t: any) => t.status === 'Done').length;
+      return {
+        id: projId,
         name: proj.name,
         totalTasks: projTotal,
         completedTasks: projCompleted,
-        progress: projTotal > 0 ? Math.round((projCompleted / projTotal) * 100) : 0
-      });
-
-      // Task attributes
-      projTasks.forEach(task => {
-        // Priority
-        if (task.priority === 'Urgent') urgent++;
-        else if (task.priority === 'High') high++;
-        else if (task.priority === 'Medium') medium++;
-        else low++;
-
-        // Overdue status (not completed and past due date)
-        if (task.status !== 'Done' && task.dueDate && task.dueDate !== 'No Due Date' && task.dueDate < today) {
-          overdueTasks++;
-        }
-
-        // Assignees workload
-        task.assignees.forEach(assignee => {
-          if (memberTaskMap[assignee.name]) {
-            memberTaskMap[assignee.name].count++;
-          } else {
-            memberTaskMap[assignee.name] = {
-              initials: assignee.initials,
-              bg: assignee.bg,
-              count: 1
-            };
-          }
-        });
-      });
+        progress: projTotal > 0 ? Math.round((projCompleted / projTotal) * 100) : (proj.progress || 0)
+      };
     });
 
     setTasksCount(totalTasks);
@@ -231,7 +297,7 @@ export default function ReportsPage() {
       { name: 'Low', value: low, color: 'stroke-slate-400 fill-slate-400 text-slate-400', percentage: prioritySum > 0 ? Math.round((low / prioritySum) * 100) : 0 },
     ]);
 
-    // Calculate team allocation load (assuming max task capacity = 8 tasks)
+    // Calculate team allocation load
     const teamStats: TeamStats[] = [];
     Object.keys(memberTaskMap).forEach(name => {
       const info = memberTaskMap[name];
@@ -244,6 +310,110 @@ export default function ReportsPage() {
       });
     });
     setTeamStatsList(teamStats.sort((a, b) => b.taskCount - a.taskCount));
+
+    // Calculate Logged Hours per day & per project with role filtering
+    const DAY_ORDER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const weekDays = getCurrentWeekDays();
+    const dayMap: Record<string, { total: number; projects: Record<string, number>; fullLabel: string; dateFormatted: string }> = {};
+    weekDays.forEach(w => {
+      dayMap[w.dayName] = { total: 0, projects: {}, fullLabel: w.fullLabel, dateFormatted: w.dateFormatted };
+    });
+
+    const allWorkItems = [...allTasks, ...allIssues];
+
+    allWorkItems.forEach((item: any) => {
+      // Role-based filtering
+      if (user?.role === 'employee') {
+        const assignees = Array.isArray(item.assignees) ? item.assignees : [];
+        const isAssigned = assignees.some((a: any) => {
+          const aName = typeof a === 'string' ? a : a.name;
+          const aId = typeof a === 'object' ? a.id || a.userId : null;
+          return (aName && user?.name && aName.toLowerCase() === user.name.toLowerCase()) ||
+                 (aId && user?.id && aId === user.id);
+        });
+        if (!isAssigned) return;
+      } else if (user?.role === 'client') {
+        const projId = item.projectId;
+        const isClientProj = loadedProjects.some(p => (p.id || p._id) === projId);
+        if (!isClientProj) return;
+      }
+
+      const itemActual = Number(item.actualHours) || 0;
+      const projName = item.projectName || 'Project Workspace';
+
+      const logsToProcess: { hours: number; date: Date }[] = [];
+      if (Array.isArray(item.workLogs) && item.workLogs.length > 0) {
+        const totalLogHrs = item.workLogs.reduce((acc: number, wl: any) => acc + (Number(wl.hours) || 0), 0);
+        const ratio = (totalLogHrs > 0 && itemActual >= 0) ? (itemActual / totalLogHrs) : 1;
+
+        item.workLogs.forEach((wl: any) => {
+          const rawH = Number(wl.hours) || 0;
+          const scaledH = totalLogHrs > 0 ? rawH * ratio : rawH;
+          logsToProcess.push({
+            hours: scaledH,
+            date: new Date(wl.date || wl.createdAt || item.updatedAt || item.createdAt),
+          });
+        });
+      } else if (itemActual > 0) {
+        logsToProcess.push({
+          hours: itemActual,
+          date: new Date(item.updatedAt || item.createdAt || item.dueDate || item.startDate),
+        });
+      }
+
+      logsToProcess.forEach(log => {
+        if (log.hours <= 0) return;
+
+        let matchedDay = weekDays.find(w => {
+          return w.dateObj.getFullYear() === log.date.getFullYear() &&
+                 w.dateObj.getMonth() === log.date.getMonth() &&
+                 w.dateObj.getDate() === log.date.getDate();
+        });
+
+        if (!matchedDay) {
+          const dayIndex = (log.date.getDay() + 6) % 7;
+          matchedDay = weekDays[dayIndex];
+        }
+
+        if (matchedDay) {
+          const dKey = matchedDay.dayName;
+          dayMap[dKey].total += log.hours;
+          dayMap[dKey].projects[projName] = (dayMap[dKey].projects[projName] || 0) + log.hours;
+        }
+      });
+    });
+
+    const calculatedLogs = weekDays.map(w => {
+      const data = dayMap[w.dayName];
+      const projects = Object.entries(data.projects).map(([projectName, hours]) => ({
+        projectName,
+        hours
+      }));
+      return {
+        day: w.shortLabel,
+        fullDayLabel: w.fullLabel,
+        dateFormatted: w.dateFormatted,
+        hours: data.total,
+        projects
+      };
+    });
+
+    const userRole = (user?.role || '').toLowerCase();
+    let dailyCap = 8;
+    let weeklyCap = 40;
+
+    if (userRole === 'employee') {
+      dailyCap = 8;
+      weeklyCap = 40;
+    } else if (userRole === 'admin' || userRole === 'manager' || userRole === 'client') {
+      const empCount = Math.max(1, Object.keys(memberTaskMap).length || 1);
+      dailyCap = empCount * 8;
+      weeklyCap = empCount * 40;
+    }
+
+    setDailyCapacity(dailyCap);
+    setWeeklyCapacity(weeklyCap);
+    setWeeklyTimeLogs(calculatedLogs);
   };
 
   useEffect(() => {
@@ -425,30 +595,33 @@ export default function ReportsPage() {
             {/* SVG Donut */}
             <svg width="150" height="150" viewBox="0 0 150 150" className="rotate-270">
               <circle cx="75" cy="75" r="50" fill="transparent" stroke="#f1f5f9" strokeWidth="18" />
-              {priorityStatsList.map((stat, idx) => {
-                const radius = 50;
-                const circumference = 2 * Math.PI * radius; // ~314.16
-                const strokeDash = (stat.percentage / 100) * circumference;
-                const strokeOffset = circumference - (accumulatedPercent / 100) * circumference;
-                
-                // Accumulate percentage for the next offset
-                accumulatedPercent += stat.percentage;
+              {(() => {
+                let accumulatedPercent = 0;
+                return priorityStatsList.map((stat, idx) => {
+                  const radius = 50;
+                  const circumference = 2 * Math.PI * radius; // ~314.16
+                  const strokeDash = (stat.percentage / 100) * circumference;
+                  const strokeOffset = circumference - (accumulatedPercent / 100) * circumference;
+                  
+                  // Accumulate percentage for the next offset
+                  accumulatedPercent += stat.percentage;
 
-                return (
-                  <circle
-                    key={idx}
-                    cx="75"
-                    cy="75"
-                    r={radius}
-                    fill="transparent"
-                    className={cn("transition-all duration-500", stat.color.split(' ')[0])}
-                    strokeWidth="18"
-                    strokeDasharray={`${strokeDash} ${circumference}`}
-                    strokeDashoffset={strokeOffset}
-                    strokeLinecap={stat.percentage > 0 ? "round" : "butt"}
-                  />
-                );
-              })}
+                  return (
+                    <circle
+                      key={idx}
+                      cx="75"
+                      cy="75"
+                      r={radius}
+                      fill="transparent"
+                      className={cn("transition-all duration-500", stat.color.split(' ')[0])}
+                      strokeWidth="18"
+                      strokeDasharray={`${strokeDash} ${circumference}`}
+                      strokeDashoffset={strokeOffset}
+                      strokeLinecap={stat.percentage > 0 ? "round" : "butt"}
+                    />
+                  );
+                });
+              })()}
             </svg>
             
             {/* Center Label */}
@@ -470,31 +643,91 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* 3. Timesheet Logs (Vertical Bar Graph) */}
+        {/* 3. Timesheet Logs (Vertical Bar Graph with Project Breakdown) */}
         <div className="lg:col-span-2 bg-white border border-slate-200 rounded-3xl p-6 shadow-xs flex flex-col justify-between">
           <div>
             <h3 className="text-sm font-black text-slate-800">Logged Hours</h3>
-            <p className="text-[10px] text-slate-400 font-bold mt-0.5">Workspace team activity log hours per day</p>
+            <p className="text-[10px] text-slate-400 font-bold mt-0.5">
+              Workspace activity log ({weeklyTimeLogs.reduce((acc, d) => acc + d.hours, 0)}h / {weeklyCapacity}h weekly capacity - {Math.round((weeklyTimeLogs.reduce((acc, d) => acc + d.hours, 0) / (weeklyCapacity || 1)) * 100)}%)
+            </p>
           </div>
 
-          <div className="flex items-end justify-between gap-3 h-48 mt-8 border-b border-slate-150 pb-2">
-            {timeLogs.map((log, idx) => {
-              const maxHours = Math.max(...timeLogs.map(t => t.hours));
-              const heightPercent = maxHours > 0 ? (log.hours / maxHours) * 100 : 0;
+          <div className="flex items-end justify-between gap-3 h-48 mt-6 border-b border-slate-150 pb-2">
+            {weeklyTimeLogs.map((d) => {
+              const maxHours = Math.max(dailyCapacity, ...weeklyTimeLogs.map(t => t.hours));
+              const uniqueLoggedProjects = Array.from(new Set(weeklyTimeLogs.flatMap(item => item.projects.map(p => p.projectName))));
+
               return (
-                <div key={idx} className="flex flex-1 flex-col items-center gap-2 h-full justify-end">
-                  <span className="text-[9px] font-black text-slate-700">{log.hours}h</span>
-                  <div className="w-full bg-slate-50 border border-slate-150 rounded-t-lg h-36 flex items-end overflow-hidden">
-                    <div 
-                      className="w-full bg-gradient-to-t from-indigo-500 to-indigo-650 rounded-t-lg transition-all duration-500"
-                      style={{ height: `${heightPercent}%` }}
-                    />
+                <div key={d.day} className="group relative flex flex-1 flex-col items-center gap-2 h-full justify-end">
+                  {/* Detailed Tooltip on Hover */}
+                  <div className="absolute bottom-[105%] left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] py-2 px-3 rounded-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 shadow-xl whitespace-nowrap z-20 min-w-[140px] border border-slate-700">
+                    <div className="font-black text-slate-200 border-b border-slate-700/80 pb-1 mb-1 flex items-center justify-between gap-3">
+                      <span>{d.fullDayLabel || d.day}</span>
+                      <span className="text-indigo-400 font-extrabold">{d.hours}h / {dailyCapacity}h ({Math.round((d.hours / (dailyCapacity || 1)) * 100)}%)</span>
+                    </div>
+                    {d.projects.length > 0 ? (
+                      d.projects.map((p) => {
+                        const color = getProjColor(p.projectName, uniqueLoggedProjects);
+                        return (
+                          <div key={p.projectName} className="flex items-center justify-between gap-3 font-semibold text-[10px]">
+                            <span className="flex items-center gap-1.5 text-slate-300">
+                              <span className={cn("h-2 w-2 rounded-full shrink-0", color.bg)} />
+                              <span>{p.projectName}</span>
+                            </span>
+                            <span className="font-bold text-white ml-auto">{p.hours}h</span>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-slate-400 italic text-[9px]">No hours logged</div>
+                    )}
                   </div>
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">{log.day}</span>
+
+                  <span className="text-[9px] font-black text-slate-700">{d.hours}h / {dailyCapacity}h</span>
+
+                  <div className="w-full bg-slate-50 border border-slate-150 rounded-t-lg h-36 flex flex-col-reverse justify-start overflow-hidden cursor-pointer hover:bg-slate-100/70 transition-colors p-0.5">
+                    {d.projects.length > 0 ? (
+                      d.projects.map((p) => {
+                        const color = getProjColor(p.projectName, uniqueLoggedProjects);
+                        const segmentPercent = maxHours > 0 ? (p.hours / maxHours) * 100 : 0;
+                        return (
+                          <div
+                            key={p.projectName}
+                            className={cn("w-full transition-all duration-500 rounded-xs border-t border-white/20 first:border-0", color.bg)}
+                            style={{ height: `${segmentPercent}%` }}
+                          />
+                        );
+                      })
+                    ) : (
+                      <div className="w-full h-full bg-slate-200/40 rounded-t-lg" />
+                    )}
+                  </div>
+
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">{d.day}</span>
                 </div>
               );
             })}
           </div>
+
+          {/* Project Color Legend */}
+          {(() => {
+            const uniqueLoggedProjects = Array.from(new Set(weeklyTimeLogs.flatMap(item => item.projects.map(p => p.projectName))));
+            if (uniqueLoggedProjects.length === 0) return null;
+            return (
+              <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-slate-100 text-[10px]">
+                <span className="font-bold text-slate-400 uppercase tracking-wider text-[9px]">Projects:</span>
+                {uniqueLoggedProjects.map((pName) => {
+                  const color = getProjColor(pName, uniqueLoggedProjects);
+                  return (
+                    <div key={pName} className="flex items-center gap-1.5 font-bold text-slate-700">
+                      <span className={cn("h-2.5 w-2.5 rounded-full", color.bg)} />
+                      <span>{pName}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
 
         {/* 4. Team Workload Capacity */}

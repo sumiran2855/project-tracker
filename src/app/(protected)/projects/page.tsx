@@ -52,151 +52,7 @@ interface Project {
   targetQuarter?: 'Q2 2026' | 'Q3 2026' | 'Q4 2026' | 'Future';
 }
 
-const defaultProjects: Project[] = [
-  {
-    id: '1',
-    name: 'SaaS Onboarding Flow',
-    description: 'Redesign and polish the signup and onboarding screens to reduce user drop-offs.',
-    status: 'In Progress',
-    progress: 65,
-    tags: ['Design', 'UX Research'],
-    tasksCount: 12,
-    completedTasks: 8,
-    commentsCount: 24,
-    attachmentsCount: 4,
-    dueDate: '2026-07-25',
-    startDate: '2026-07-01',
-    priority: 'High',
-    techStack: ['React', 'Figma', 'Mixpanel', 'Tailwind'],
-    budget: '$15,000',
-    repositoryUrl: 'https://github.com/my-org/saas-onboarding',
-    slackChannel: '#proj-onboarding',
-    targetQuarter: 'Q3 2026',
-    members: [
-      { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
-      { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
-      { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
-    ],
-  },
-  {
-    id: '2',
-    name: 'API Authentication V2',
-    description: 'Implement JWT tokens, OAuth, and custom session middleware for protected endpoints.',
-    status: 'In Review',
-    progress: 90,
-    tags: ['Backend', 'Security'],
-    tasksCount: 18,
-    completedTasks: 16,
-    commentsCount: 18,
-    attachmentsCount: 6,
-    dueDate: '2026-07-18',
-    startDate: '2026-07-05',
-    priority: 'Critical',
-    techStack: ['Node.js', 'Redis', 'JWT', 'PostgreSQL'],
-    budget: '$25,000',
-    repositoryUrl: 'https://github.com/my-org/auth-v2',
-    slackChannel: '#sec-auth',
-    targetQuarter: 'Q3 2026',
-    members: [
-      { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
-      { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
-    ],
-  },
-  {
-    id: '3',
-    name: 'Corporate Marketing Site',
-    description: 'Build and launch the new Tailwind-based marketing website with responsive assets.',
-    status: 'In Progress',
-    progress: 40,
-    tags: ['Marketing', 'Frontend'],
-    tasksCount: 10,
-    completedTasks: 4,
-    commentsCount: 8,
-    attachmentsCount: 2,
-    dueDate: '2026-08-05',
-    startDate: '2026-07-10',
-    priority: 'Medium',
-    techStack: ['Next.js', 'TailwindCSS', 'Framer Motion'],
-    budget: '$8,000',
-    repositoryUrl: 'https://github.com/my-org/marketing-site',
-    slackChannel: '#marketing-web',
-    targetQuarter: 'Q3 2026',
-    members: [
-      { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
-      { name: 'Emma Watson', initials: 'EW', bg: 'bg-rose-500' },
-    ],
-  },
-  {
-    id: '4',
-    name: 'Mobile App Wireframes',
-    description: 'Create low-fidelity layout plans for the React Native iOS/Android clients.',
-    status: 'Completed',
-    progress: 100,
-    tags: ['UX Design', 'Mobile'],
-    tasksCount: 8,
-    completedTasks: 8,
-    commentsCount: 32,
-    attachmentsCount: 12,
-    dueDate: '2026-06-30',
-    startDate: '2026-06-01',
-    priority: 'Low',
-    techStack: ['Figma', 'React Native'],
-    budget: '$5,000',
-    targetQuarter: 'Q2 2026',
-    members: [
-      { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
-      { name: 'Emma Watson', initials: 'EW', bg: 'bg-rose-500' },
-      { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
-    ],
-  },
-  {
-    id: '5',
-    name: 'Billing & Stripe Integration',
-    description: 'Integrate Stripe subscriptions, webhooks, and invoice generation flows.',
-    status: 'Planning',
-    progress: 15,
-    tags: ['Backend', 'Finance'],
-    tasksCount: 20,
-    completedTasks: 3,
-    commentsCount: 2,
-    attachmentsCount: 1,
-    dueDate: '2026-08-20',
-    startDate: '2026-08-01',
-    priority: 'High',
-    techStack: ['React', 'Node.js', 'Stripe', 'PostgreSQL'],
-    budget: '$20,000',
-    repositoryUrl: 'https://github.com/my-org/stripe-billing',
-    slackChannel: '#fin-stripe',
-    targetQuarter: 'Q3 2026',
-    members: [
-      { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
-      { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
-    ],
-  },
-  {
-    id: '6',
-    name: 'Realtime Analytics Dash',
-    description: 'Setup Postgres timescaledb queries and display charts for active workspace metrics.',
-    status: 'Planning',
-    progress: 0,
-    tags: ['Core API', 'Analytics'],
-    tasksCount: 6,
-    completedTasks: 0,
-    commentsCount: 0,
-    attachmentsCount: 0,
-    dueDate: '2026-09-10',
-    startDate: '2026-09-01',
-    priority: 'Medium',
-    techStack: ['TimescaleDB', 'GraphQL', 'React', 'D3.js'],
-    budget: '$18,000',
-    repositoryUrl: 'https://github.com/my-org/analytics-dash',
-    slackChannel: '#analytics-dev',
-    targetQuarter: 'Q4 2026',
-    members: [
-      { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
-    ],
-  },
-];
+const defaultProjects: Project[] = [];
 
 const staticAvailableMembers: Member[] = [
   { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
@@ -227,6 +83,7 @@ export default function ProjectsPage() {
       const projRes = await getProjectsAction();
       if (projRes.success && projRes.data) {
         setProjects(projRes.data as any[]);
+        localStorage.setItem('pwt_projects', JSON.stringify(projRes.data));
       } else {
         const stored = localStorage.getItem('pwt_projects');
         if (stored) {
@@ -234,15 +91,16 @@ export default function ProjectsPage() {
             setProjects(JSON.parse(stored));
           } catch (e) {
             console.error('Failed to parse projects from localStorage', e);
+            setProjects([]);
           }
         } else {
-          setProjects(defaultProjects);
+          setProjects([]);
         }
       }
 
       const empRes = await getEmployeesAction();
       if (empRes.success && empRes.data) {
-        setAvailableMembers(empRes.data);
+        setAvailableMembers(empRes.data.filter(e => e.role?.toLowerCase() !== 'admin'));
       } else {
         setAvailableMembers(
           staticAvailableMembers.map((m, i) => ({
@@ -608,7 +466,7 @@ export default function ProjectsPage() {
                 <div className="flex items-center justify-between">
                   {/* Avatars */}
                   <div className="flex -space-x-2 overflow-hidden">
-                    {project.members.map((member, i) => (
+                    {project.members.filter((m: any) => m.role?.toLowerCase() !== 'admin').map((member, i) => (
                       <div
                         key={i}
                         className={cn(

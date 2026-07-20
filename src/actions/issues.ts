@@ -4,6 +4,14 @@ import { getSession } from '@/lib/auth/dal';
 import { apiClient } from '@/lib/api/apiClient';
 import { Member } from './projects';
 
+export interface WorkLog {
+  id?: string;
+  userId?: string;
+  userName?: string;
+  hours: number;
+  date: string;
+}
+
 export interface Issue {
   id: string;
   title: string;
@@ -17,6 +25,7 @@ export interface Issue {
   assignees: Member[];
   commentsCount: number;
   actualHours?: number;
+  workLogs?: WorkLog[];
   createdAt?: string;
   updatedAt?: string;
 }

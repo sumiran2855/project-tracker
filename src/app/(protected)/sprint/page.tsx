@@ -30,6 +30,7 @@ import { updateTaskAction, deleteTaskAction, Task, Subtask, Comment } from '@/ac
 import { updateIssueAction, deleteIssueAction, Issue } from '@/actions/issues';
 import { fetchAllSprintData } from '@/lib/sprintLoader';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { EmployeeDetailModal } from '@/components/dashboard/EmployeeDetailModal';
 
 interface SprintItem {
   id: string;
@@ -81,6 +82,9 @@ export default function SprintPage() {
   const [newCommentText, setNewCommentText] = useState('');
   const [newSubtaskText, setNewSubtaskText] = useState('');
 
+  // Employee Detail Modal State
+  const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
+
   // Current Week Bounds
   const { monday, sunday } = getCurrentWeekBounds();
   const weekRangeStr = `${monday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${sunday.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
@@ -94,8 +98,25 @@ export default function SprintPage() {
       setProjects(allProjs);
       
       const empRes = await getEmployeesAction();
-      if (empRes.success && empRes.data) {
+      if (empRes.success && empRes.data && empRes.data.length > 0) {
         setMembers(empRes.data);
+      } else {
+        const uniqueAssigneesMap = new Map<string, any>();
+        allTasks.concat(allIssues as any[]).forEach(item => {
+          (item.assignees || []).forEach((a: any) => {
+            if (a.name && !uniqueAssigneesMap.has(a.name)) {
+              uniqueAssigneesMap.set(a.name, {
+                id: a.userId || a.id || a.name,
+                name: a.name,
+                email: `${a.name.toLowerCase().replace(/\s+/g, '.')}@company.com`,
+                role: 'Employee',
+                initials: a.initials || a.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
+                bg: a.bg || 'bg-indigo-600'
+              });
+            }
+          });
+        });
+        setMembers(Array.from(uniqueAssigneesMap.values()));
       }
     } catch (err) {
       console.error("Error loading sprint page data", err);
@@ -462,18 +483,75 @@ export default function SprintPage() {
   };
 
   // Members analytics data
-  const memberAnalytics = members.map(m => {
+  let memberAnalytics = members.map(m => {
     const assignedItems = sprintItems.filter(item => 
-      item.assignees.some(a => a.name === m.name || a.userId === m.id)
+      item.assignees.some(a => a.name === m.name || a.userId === m.id || a.id === m.id)
     );
-    const completed = assignedItems.filter(item => item.status === 'Done').length;
+    const completed = assignedItems.filter(item => item.status === 'Done' || item.status === 'Closed' || item.status === 'Resolved').length;
     return {
       ...m,
       assignedCount: assignedItems.length,
       completedCount: completed,
-      pct: assignedItems.length > 0 ? Math.round((completed / assignedItems.length) * 100) : 100
+      pct: assignedItems.length > 0 ? Math.round((completed / assignedItems.length) * 100) : 0
     };
-  }).filter(m => m.assignedCount > 0);
+  });
+
+  // Always exclude Admin accounts from the employee workload distribution list
+  memberAnalytics = memberAnalytics.filter(m => m.role?.toLowerCase() !== 'admin');
+
+  // Role-based workload distribution visibility:
+  // Admin / Manager -> All non-admin employees
+  // Client -> Employees working on their project(s)
+  // Employee -> Only their own card
+  if (user?.role === 'Employee') {
+    memberAnalytics = memberAnalytics.filter(m => 
+      m.name === user.name || m.email === user.email || m.id === user.id
+    );
+    // Fallback if logged-in employee card is missing from members list
+    if (memberAnalytics.length === 0 && user) {
+      const userAssignedItems = sprintItems.filter(item =>
+        item.assignees.some(a => a.name === user.name || a.userId === user.id)
+      );
+      const userCompleted = userAssignedItems.filter(item => item.status === 'Done' || item.status === 'Closed' || item.status === 'Resolved').length;
+      memberAnalytics = [{
+        id: user.id,
+        name: user.name || 'Me',
+        email: user.email,
+        role: user.role || 'Employee',
+        initials: user.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'ME',
+        bg: 'bg-indigo-600',
+        assignedCount: userAssignedItems.length,
+        completedCount: userCompleted,
+        pct: userAssignedItems.length > 0 ? Math.round((userCompleted / userAssignedItems.length) * 100) : 0
+      }];
+    }
+  } else if (user?.role === 'Client') {
+    const clientEmployeeIdentifiers = new Set<string>();
+
+    sprintItems.forEach(item => {
+      (item.assignees || []).forEach((a: any) => {
+        if (a.name) clientEmployeeIdentifiers.add(a.name);
+        if (a.userId) clientEmployeeIdentifiers.add(a.userId);
+        if (a.id) clientEmployeeIdentifiers.add(a.id);
+      });
+    });
+
+    projects.forEach(p => {
+      (p.members || []).forEach((m: any) => {
+        if (m.name) clientEmployeeIdentifiers.add(m.name);
+        if (m.userId) clientEmployeeIdentifiers.add(m.userId);
+        if (m.id) clientEmployeeIdentifiers.add(m.id);
+      });
+    });
+
+    memberAnalytics = memberAnalytics.filter(m => 
+      clientEmployeeIdentifiers.has(m.name) || clientEmployeeIdentifiers.has(m.id)
+    );
+  }
+
+  const selectedEmployeeItems = selectedEmployee ? sprintItems.filter(item => 
+    item.assignees.some(a => a.name === selectedEmployee.name || a.userId === selectedEmployee.id || a.id === selectedEmployee.id)
+  ) : [];
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-8xl mx-auto space-y-6">
@@ -771,8 +849,12 @@ export default function SprintPage() {
                             <div
                               key={idx}
                               title={a.name}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedEmployee(a);
+                              }}
                               className={cn(
-                                "h-5.5 w-5.5 rounded-full border border-white flex items-center justify-center text-[7px] text-white font-extrabold shadow-3xs",
+                                "h-5.5 w-5.5 rounded-full border border-white flex items-center justify-center text-[7px] text-white font-extrabold shadow-3xs cursor-pointer hover:scale-110 transition-transform",
                                 a.bg || "bg-indigo-600"
                               )}
                             >
@@ -903,14 +985,18 @@ export default function SprintPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {memberAnalytics.map((m, idx) => (
-              <div key={idx} className="border border-slate-150 rounded-2xl p-4 bg-slate-50/50 flex flex-col justify-between">
+              <div 
+                key={idx} 
+                onClick={() => setSelectedEmployee(m)}
+                className="border border-slate-150 rounded-2xl p-4 bg-slate-50/50 hover:bg-white hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between group active:scale-98"
+              >
                 <div className="flex items-center gap-3">
-                  <div className={cn("h-8 w-8 rounded-xl flex items-center justify-center text-xs text-white font-extrabold shadow-3xs", m.bg || "bg-indigo-600")}>
+                  <div className={cn("h-8 w-8 rounded-xl flex items-center justify-center text-xs text-white font-extrabold shadow-3xs group-hover:scale-105 transition-transform", m.bg || "bg-indigo-600")}>
                     {m.initials}
                   </div>
                   <div>
-                    <h4 className="text-xs font-black text-slate-800 tracking-tight">{m.name}</h4>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{m.role || 'Contributor'}</p>
+                    <h4 className="text-xs font-black text-slate-800 tracking-tight group-hover:text-indigo-650 transition-colors">{m.name}</h4>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{m.role || 'Employee'}</p>
                   </div>
                 </div>
 
@@ -921,7 +1007,7 @@ export default function SprintPage() {
                   </div>
                   <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <div 
-                      className={cn("h-full", m.pct === 100 ? "bg-emerald-500" : "bg-indigo-500")}
+                      className={cn("h-full transition-all duration-300", m.pct === 100 ? "bg-emerald-500" : "bg-indigo-500")}
                       style={{ width: `${m.pct}%` }}
                     />
                   </div>
@@ -1274,6 +1360,15 @@ export default function SprintPage() {
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Employee Details Modal */}
+      <EmployeeDetailModal
+        isOpen={!!selectedEmployee}
+        onClose={() => setSelectedEmployee(null)}
+        employee={selectedEmployee}
+        assignedItems={selectedEmployeeItems}
+        onSelectWorkItem={(item) => handleItemClick(item)}
+      />
 
     </div>
   );

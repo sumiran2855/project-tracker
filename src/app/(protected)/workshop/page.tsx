@@ -79,57 +79,7 @@ interface Project {
   targetQuarter?: 'Q2 2026' | 'Q3 2026' | 'Q4 2026' | 'Future';
 }
 
-const defaultProjects: Project[] = [
-  {
-    id: '1',
-    name: 'SaaS Onboarding Flow',
-    description: 'Redesign and polish the signup and onboarding screens to reduce user drop-offs.',
-    status: 'In Progress',
-    progress: 65,
-    tags: ['Design', 'UX Research'],
-    tasksCount: 5,
-    completedTasks: 3,
-    commentsCount: 24,
-    attachmentsCount: 4,
-    dueDate: '2026-07-25',
-    startDate: '2026-07-01',
-    priority: 'High',
-    techStack: ['React', 'Figma', 'Mixpanel', 'Tailwind'],
-    budget: '150 hours',
-    repositoryUrl: 'https://github.com/my-org/saas-onboarding',
-    slackChannel: '#proj-onboarding',
-    targetQuarter: 'Q3 2026',
-    members: [
-      { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
-      { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
-      { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
-    ],
-  },
-  {
-    id: '2',
-    name: 'API Authentication V2',
-    description: 'Implement JWT tokens, OAuth, and custom session middleware for protected endpoints.',
-    status: 'In Review',
-    progress: 90,
-    tags: ['Backend', 'Security'],
-    tasksCount: 3,
-    completedTasks: 2,
-    commentsCount: 18,
-    attachmentsCount: 6,
-    dueDate: '2026-07-18',
-    startDate: '2026-07-05',
-    priority: 'Critical',
-    techStack: ['Node.js', 'Redis', 'JWT', 'PostgreSQL'],
-    budget: '80 hours',
-    repositoryUrl: 'https://github.com/my-org/auth-v2',
-    slackChannel: '#sec-auth',
-    targetQuarter: 'Q3 2026',
-    members: [
-      { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
-      { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
-    ],
-  },
-];
+const defaultProjects: Project[] = [];
 
 const fallbackTasks: Record<string, Task[]> = {
   '1': [
@@ -293,22 +243,23 @@ export default function WorkshopDashboard() {
     const projRes = await getProjectsAction();
     if (projRes.success && projRes.data) {
       setProjects(projRes.data as any[]);
+      localStorage.setItem('pwt_projects', JSON.stringify(projRes.data));
     } else {
       const stored = localStorage.getItem('pwt_projects');
       if (stored) {
         try {
           setProjects(JSON.parse(stored));
         } catch {
-          setProjects(defaultProjects);
+          setProjects([]);
         }
       } else {
-        setProjects(defaultProjects);
+        setProjects([]);
       }
     }
 
     const empRes = await getEmployeesAction();
     if (empRes.success && empRes.data) {
-      setEmployees(empRes.data);
+      setEmployees(empRes.data.filter(e => e.role?.toLowerCase() !== 'admin'));
     } else {
       setEmployees([]);
     }
@@ -1275,22 +1226,27 @@ export default function WorkshopDashboard() {
                         {/* Team Members */}
                         {visibleColumns.team && (
                           <td className="py-4 px-4 border-r border-slate-150">
-                            <div className="flex -space-x-1.5 overflow-hidden">
-                              {project.members?.slice(0, 4).map((m, index) => (
-                                <div
-                                  key={index}
-                                  title={m.name}
-                                  className={cn("h-5.5 w-5.5 rounded-full flex items-center justify-center text-[8px] text-white font-extrabold ring-2 ring-white shadow-2xs shrink-0", m.bg)}
-                                >
-                                  {m.initials}
+                            {(() => {
+                              const nonAdminMembers = (project.members || []).filter((m: any) => m.role?.toLowerCase() !== 'admin');
+                              return (
+                                <div className="flex -space-x-1.5 overflow-hidden">
+                                  {nonAdminMembers.slice(0, 4).map((m, index) => (
+                                    <div
+                                      key={index}
+                                      title={m.name}
+                                      className={cn("h-5.5 w-5.5 rounded-full flex items-center justify-center text-[8px] text-white font-extrabold ring-2 ring-white shadow-2xs shrink-0", m.bg)}
+                                    >
+                                      {m.initials}
+                                    </div>
+                                  ))}
+                                  {nonAdminMembers.length > 4 && (
+                                    <div className="h-5.5 w-5.5 rounded-full flex items-center justify-center text-[7px] text-slate-400 font-extrabold bg-slate-50 ring-2 ring-white border border-slate-200">
+                                      +{nonAdminMembers.length - 4}
+                                    </div>
+                                  )}
                                 </div>
-                              ))}
-                              {project.members && project.members.length > 4 && (
-                                <div className="h-5.5 w-5.5 rounded-full flex items-center justify-center text-[7px] text-slate-400 font-extrabold bg-slate-50 ring-2 ring-white border border-slate-200">
-                                  +{project.members.length - 4}
-                                </div>
-                              )}
-                            </div>
+                              );
+                            })()}
                           </td>
                         )}
 

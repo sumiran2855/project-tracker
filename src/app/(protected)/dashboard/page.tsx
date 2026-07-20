@@ -32,81 +32,22 @@ const stats = [
 ];
 
 
-const weeklyHours = [
-  { day: 'Mon', hours: 6.5 },
-  { day: 'Tue', hours: 8 },
-  { day: 'Wed', hours: 5 },
-  { day: 'Thu', hours: 7.5 },
-  { day: 'Fri', hours: 9 },
-  { day: 'Sat', hours: 2 },
-  { day: 'Sun', hours: 0.5 },
+const PROJECT_COLOR_PALETTE = [
+  { bg: 'bg-indigo-500', text: 'text-indigo-500', hex: '#6366f1' },
+  { bg: 'bg-emerald-500', text: 'text-emerald-500', hex: '#10b981' },
+  { bg: 'bg-violet-500', text: 'text-violet-500', hex: '#8b5cf6' },
+  { bg: 'bg-amber-500', text: 'text-amber-500', hex: '#f59e0b' },
+  { bg: 'bg-rose-500', text: 'text-rose-500', hex: '#f43f5e' },
+  { bg: 'bg-cyan-500', text: 'text-cyan-500', hex: '#06b6d4' },
+  { bg: 'bg-purple-500', text: 'text-purple-500', hex: '#a855f7' },
 ];
-const maxHours = Math.max(...weeklyHours.map((d) => d.hours));
 
-const recentProjects = [
-  {
-    id: '1',
-    name: 'E-Commerce Platform',
-    category: 'Web Application',
-    status: 'In Progress',
-    progress: 68,
-    due: 'Jul 20',
-    bar: '#6366f1',
-    tasks: { completed: 24, total: 35 },
-    team: [
-      { initials: 'AC', name: 'Ava Chen', bg: 'bg-indigo-100 text-indigo-700' },
-      { initials: 'MD', name: 'Marco Diaz', bg: 'bg-emerald-100 text-emerald-700' },
-      { initials: 'SO', name: 'Sam Okafor', bg: 'bg-orange-100 text-orange-700' },
-    ],
-    updatedAt: '2h ago',
-  },
-  {
-    id: '2',
-    name: 'Mobile App Redesign',
-    category: 'UI/UX Design',
-    status: 'Review',
-    progress: 90,
-    due: 'Jul 12',
-    bar: '#8b5cf6',
-    tasks: { completed: 45, total: 50 },
-    team: [
-      { initials: 'SO', name: 'Sam Okafor', bg: 'bg-orange-100 text-orange-700' },
-      { initials: 'AC', name: 'Ava Chen', bg: 'bg-indigo-100 text-indigo-700' },
-    ],
-    updatedAt: '10m ago',
-  },
-  {
-    id: '3',
-    name: 'API Gateway v2',
-    category: 'Backend Services',
-    status: 'Planning',
-    progress: 25,
-    due: 'Aug 1',
-    bar: '#06b6d4',
-    tasks: { completed: 5, total: 20 },
-    team: [
-      { initials: 'MD', name: 'Marco Diaz', bg: 'bg-emerald-100 text-emerald-700' },
-      { initials: 'PR', name: 'Priya Rao', bg: 'bg-rose-100 text-rose-700' },
-    ],
-    updatedAt: '1d ago',
-  },
-  {
-    id: '4',
-    name: 'Analytics Dashboard',
-    category: 'Data Analytics',
-    status: 'Done',
-    progress: 100,
-    due: 'Completed',
-    bar: '#10b981',
-    tasks: { completed: 30, total: 30 },
-    team: [
-      { initials: 'PR', name: 'Priya Rao', bg: 'bg-rose-100 text-rose-700' },
-      { initials: 'AC', name: 'Ava Chen', bg: 'bg-indigo-100 text-indigo-700' },
-      { initials: 'SO', name: 'Sam Okafor', bg: 'bg-orange-100 text-orange-700' },
-    ],
-    updatedAt: '3h ago',
-  },
-];
+function getProjColor(projName: string, allProjNames: string[]) {
+  const idx = allProjNames.indexOf(projName);
+  return PROJECT_COLOR_PALETTE[(idx >= 0 ? idx : 0) % PROJECT_COLOR_PALETTE.length];
+}
+
+const recentProjects: any[] = [];
 
 
 
@@ -168,6 +109,36 @@ function parseHoursFromBudget(budget: string | undefined): number {
   return 0;
 }
 
+function getCurrentWeekDays() {
+  const now = new Date();
+  const day = now.getDay();
+  const diffToMon = now.getDate() - (day === 0 ? 6 : day - 1);
+  const monday = new Date(now);
+  monday.setDate(diffToMon);
+  monday.setHours(0, 0, 0, 0);
+
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const fullDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  return days.map((dayName, idx) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + idx);
+    const dayNum = String(d.getDate()).padStart(2, '0');
+    const monthNum = String(d.getMonth() + 1).padStart(2, '0');
+    const yearNum = d.getFullYear();
+    const dateFormatted = `${dayNum}-${monthNum}-${yearNum}`;
+    const shortLabel = `${dayName} (${dayNum}/${monthNum})`;
+    const fullLabel = `${fullDays[idx]} (${dateFormatted})`;
+    return {
+      dayName,
+      shortLabel,
+      fullLabel,
+      dateFormatted,
+      dateObj: d,
+    };
+  });
+}
+
 export default async function DashboardPage() {
   const user = await getCurrentUser();
   const canViewWorkload = hasPermission(user?.role, 'dashboard:view-team-workload');
@@ -178,6 +149,12 @@ export default async function DashboardPage() {
   let recentActivity: { text: string; time: string; dot: string }[] = [];
   let workloadData: { name: string; role: string; load: number; initials: string; bg?: string }[] = team;
   let allEmployees: any[] = [];
+
+  let weeklyHoursList: { day: string; fullDayLabel: string; dateFormatted: string; hours: number; projects: { projectName: string; hours: number }[] }[] = [];
+  let maxHours = 8;
+  let uniqueLoggedProjects: string[] = [];
+  let dailyCapacity = 8;
+  let weeklyCapacity = 40;
 
   const dynamicStats = [
     { label: 'Active Projects', value: '0',   change: '+2',   iconName: 'Folder',       tint: '#6366f1', positive: true  },
@@ -341,10 +318,134 @@ export default async function DashboardPage() {
 
       const remainingHours = Math.max(0, totalAssignedHours - totalActualHours);
 
+      // Compute role-filtered weekly hours with project breakdowns
+
+      const allWorkItems: any[] = [];
+      tasksResList.forEach(tRes => {
+        if (tRes.success && tRes.data) {
+          allWorkItems.push(...tRes.data);
+        }
+      });
+      issuesResList.forEach(iRes => {
+        if (iRes.success && iRes.data) {
+          allWorkItems.push(...iRes.data);
+        }
+      });
+
+      const weekDays = getCurrentWeekDays();
+      const dayMap: Record<string, { total: number; projects: Record<string, number>; fullLabel: string; dateFormatted: string }> = {};
+      weekDays.forEach(w => {
+        dayMap[w.dayName] = { total: 0, projects: {}, fullLabel: w.fullLabel, dateFormatted: w.dateFormatted };
+      });
+
+      let roleFilteredTotalActualHours = 0;
+
+      allWorkItems.forEach((item: any) => {
+        // Role-based filtering
+        if (user?.role === 'employee') {
+          const assignees = Array.isArray(item.assignees) ? item.assignees : [];
+          const isAssigned = assignees.some((a: any) => {
+            const aName = typeof a === 'string' ? a : a.name;
+            const aId = typeof a === 'object' ? a.id || a.userId : null;
+            return (aName && user?.name && aName.toLowerCase() === user.name.toLowerCase()) ||
+                   (aId && user?.id && aId === user.id);
+          });
+          if (!isAssigned) return;
+        } else if (user?.role === 'client') {
+          const projId = item.projectId;
+          const isClientProj = activeProjects.some(p => p.id === projId || (p as any)._id === projId);
+          if (!isClientProj) return;
+        }
+
+        const itemActual = Number(item.actualHours) || 0;
+        roleFilteredTotalActualHours += itemActual;
+
+        const projName = item.projectName || 'Project Workspace';
+
+        const logsToProcess: { hours: number; date: Date }[] = [];
+        if (Array.isArray(item.workLogs) && item.workLogs.length > 0) {
+          const totalLogHrs = item.workLogs.reduce((acc: number, wl: any) => acc + (Number(wl.hours) || 0), 0);
+          const ratio = (totalLogHrs > 0 && itemActual >= 0) ? (itemActual / totalLogHrs) : 1;
+
+          item.workLogs.forEach((wl: any) => {
+            const rawH = Number(wl.hours) || 0;
+            const scaledH = totalLogHrs > 0 ? rawH * ratio : rawH;
+            logsToProcess.push({
+              hours: scaledH,
+              date: new Date(wl.date || wl.createdAt || item.updatedAt || item.createdAt),
+            });
+          });
+        } else if (itemActual > 0) {
+          logsToProcess.push({
+            hours: itemActual,
+            date: new Date(item.updatedAt || item.createdAt || item.dueDate || item.startDate),
+          });
+        }
+
+        logsToProcess.forEach(log => {
+          if (log.hours <= 0) return;
+
+          let matchedDay = weekDays.find(w => {
+            return w.dateObj.getFullYear() === log.date.getFullYear() &&
+                   w.dateObj.getMonth() === log.date.getMonth() &&
+                   w.dateObj.getDate() === log.date.getDate();
+          });
+
+          if (!matchedDay) {
+            const dayIndex = (log.date.getDay() + 6) % 7;
+            matchedDay = weekDays[dayIndex];
+          }
+
+          if (matchedDay) {
+            const dKey = matchedDay.dayName;
+            dayMap[dKey].total += log.hours;
+            dayMap[dKey].projects[projName] = (dayMap[dKey].projects[projName] || 0) + log.hours;
+          }
+        });
+      });
+
+      weeklyHoursList = weekDays.map(w => {
+        const data = dayMap[w.dayName];
+        const projects = Object.entries(data.projects).map(([projectName, hours]) => ({
+          projectName,
+          hours
+        }));
+        return {
+          day: w.shortLabel,
+          fullDayLabel: w.fullLabel,
+          dateFormatted: w.dateFormatted,
+          hours: data.total,
+          projects
+        };
+      });
+
+      const userRole = (user?.role || '').toLowerCase();
+      if (userRole === 'employee') {
+        dailyCapacity = 8;
+        weeklyCapacity = 40;
+      } else if (userRole === 'admin' || userRole === 'manager') {
+        const empCount = Math.max(1, (allEmployees || []).filter((e: any) => e.role?.toLowerCase() === 'employee').length || 1);
+        dailyCapacity = empCount * 8;
+        weeklyCapacity = empCount * 40;
+      } else if (userRole === 'client') {
+        const clientMembers = new Set();
+        activeProjects.forEach(p => {
+          (p.members || []).forEach((m: any) => clientMembers.add(m.name || m.id));
+        });
+        const memberCount = Math.max(1, clientMembers.size || 1);
+        dailyCapacity = memberCount * 8;
+        weeklyCapacity = memberCount * 40;
+      }
+
+      maxHours = Math.max(dailyCapacity, ...weeklyHoursList.map(d => d.hours));
+      uniqueLoggedProjects = Array.from(new Set(weeklyHoursList.flatMap(d => d.projects.map(p => p.projectName))));
+
+      const roleFilteredRemainingHours = Math.max(0, totalAssignedHours - roleFilteredTotalActualHours);
+
       dynamicStats[1].value = String(openTasksCount);
       dynamicStats[2].value = String(openBugsCount);
-      dynamicStats[3].value = `${totalActualHours}h`;
-      dynamicStats[3].change = `${remainingHours}h left`;
+      dynamicStats[3].value = `${roleFilteredTotalActualHours}h`;
+      dynamicStats[3].change = `+${roleFilteredRemainingHours}h left`;
 
       deadlines = gatheredDeadlines
         .sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime())
@@ -460,10 +561,11 @@ export default async function DashboardPage() {
       due: p.dueDate || 'No Due Date',
       bar: barColors[p.status] || '#6366f1',
       tasks: { completed: p.completedTasks || 0, total: p.tasksCount || 0 },
-      team: p.members.map((m: any) => ({
+      team: p.members.filter((m: any) => m.role?.toLowerCase() !== 'admin').map((m: any) => ({
         initials: m.initials,
         name: m.name,
-        bg: m.bg
+        bg: m.bg,
+        role: m.role
       })),
       updatedAt: 'Just now',
     };
@@ -509,33 +611,88 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
 
         {/* Weekly hours chart — spans 2 or 3 depending on workload visibility */}
-        <div className={cn("rounded-2xl border border-slate-200 bg-white p-6 shadow-xs", canViewWorkload ? "lg:col-span-2" : "lg:col-span-3")}>
-          <div className="flex items-center justify-between mb-6">
+        <div className={cn("rounded-2xl border border-slate-200 bg-white p-6 shadow-xs flex flex-col justify-between", canViewWorkload ? "lg:col-span-2" : "lg:col-span-3")}>
+          <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-base font-bold text-slate-800">Hours Logged This Week</h2>
-              <p className="text-xs text-slate-450 mt-0.5">38.5h total · avg 5.5h/day</p>
+              <p className="text-xs text-slate-450 mt-0.5">
+                {weeklyHoursList.reduce((acc, d) => acc + d.hours, 0)}h / {weeklyCapacity}h weekly capacity ({Math.round((weeklyHoursList.reduce((acc, d) => acc + d.hours, 0) / (weeklyCapacity || 1)) * 100)}%)
+              </p>
             </div>
             <button className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-50 cursor-pointer transition-colors">
               <MoreHorizontal className="h-4 w-4" />
             </button>
           </div>
-          <div className="flex items-end justify-between gap-3 h-40">
-            {weeklyHours.map((d) => (
-              <div key={d.day} className="group relative flex flex-1 flex-col items-center gap-2">
-                {/* Tooltip */}
-                <div className="absolute bottom-[105%] left-1/2 -translate-x-1/2 bg-slate-850 text-white text-[10px] font-bold py-1 px-2 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 shadow-md whitespace-nowrap z-10">
-                  {d.hours} hrs logged
+
+          <div className="flex items-end justify-between gap-3 h-44 mt-2">
+            {weeklyHoursList.map((d) => (
+              <div key={d.day} className="group relative flex flex-1 flex-col items-center gap-1.5 h-full justify-end">
+                {/* Detailed Tooltip on Hover */}
+                <div className="absolute bottom-[105%] left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] py-2 px-3 rounded-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 shadow-xl whitespace-nowrap z-20 min-w-[140px] border border-slate-700">
+                  <div className="font-black text-slate-200 border-b border-slate-700/80 pb-1 mb-1 flex items-center justify-between gap-3">
+                    <span>{d.fullDayLabel || d.day}</span>
+                    <span className="text-indigo-400 font-extrabold">{d.hours}h / {dailyCapacity}h ({Math.round((d.hours / (dailyCapacity || 1)) * 100)}%)</span>
+                  </div>
+                  {d.projects.length > 0 ? (
+                    d.projects.map((p) => {
+                      const color = getProjColor(p.projectName, uniqueLoggedProjects);
+                      return (
+                        <div key={p.projectName} className="flex items-center justify-between gap-3 font-semibold text-[10px]">
+                          <span className="flex items-center gap-1.5 text-slate-300">
+                            <span className={cn("h-2 w-2 rounded-full shrink-0", color.bg)} />
+                            <span>{p.projectName}</span>
+                          </span>
+                          <span className="font-bold text-white ml-auto">{p.hours}h</span>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-slate-400 italic text-[9px]">No hours logged</div>
+                  )}
                 </div>
-                <div className="w-full h-32 flex items-end rounded-lg bg-slate-50 overflow-hidden cursor-pointer hover:bg-slate-100/70 transition-colors">
-                  <div
-                    className="w-full rounded-lg bg-gradient-to-t from-indigo-500 to-indigo-600 transition-all duration-550 group-hover:from-indigo-600 group-hover:to-indigo-700"
-                    style={{ height: `${(d.hours / maxHours) * 100}%` }}
-                  />
+
+                {/* Total hours label showing out of max capacity */}
+                <span className="text-[9px] font-black text-slate-700">{d.hours}h / {dailyCapacity}h</span>
+
+                {/* Stacked Project Bar */}
+                <div className="w-full h-32 flex flex-col-reverse justify-start rounded-xl bg-slate-50 border border-slate-150 overflow-hidden cursor-pointer hover:bg-slate-100/70 transition-colors p-0.5">
+                  {d.projects.length > 0 ? (
+                    d.projects.map((p) => {
+                      const color = getProjColor(p.projectName, uniqueLoggedProjects);
+                      const segmentPercent = maxHours > 0 ? (p.hours / maxHours) * 100 : 0;
+                      return (
+                        <div
+                          key={p.projectName}
+                          className={cn("w-full transition-all duration-500 rounded-xs border-t border-white/20 first:border-0", color.bg)}
+                          style={{ height: `${segmentPercent}%` }}
+                        />
+                      );
+                    })
+                  ) : (
+                    <div className="w-full h-full bg-slate-200/40 rounded-lg" />
+                  )}
                 </div>
-                <span className="text-[10px] font-bold text-slate-400">{d.day}</span>
+
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{d.day}</span>
               </div>
             ))}
           </div>
+
+          {/* Project Color Legend */}
+          {uniqueLoggedProjects.length > 0 && (
+            <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-slate-100 text-[10px]">
+              <span className="font-bold text-slate-400 uppercase tracking-wider text-[9px]">Projects:</span>
+              {uniqueLoggedProjects.map((pName) => {
+                const color = getProjColor(pName, uniqueLoggedProjects);
+                return (
+                  <div key={pName} className="flex items-center gap-1.5 font-bold text-slate-700">
+                    <span className={cn("h-2.5 w-2.5 rounded-full", color.bg)} />
+                    <span>{pName}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Team workload */}

@@ -44,6 +44,23 @@ export interface Employee {
   bg: string;
 }
 
+function filterAdminMembersFromProjects(projects: Project[], employees?: Employee[]): Project[] {
+  const adminNames = new Set(
+    (employees || [])
+      .filter((e) => e.role?.toLowerCase() === 'admin')
+      .map((e) => e.name.toLowerCase())
+  );
+
+  return projects.map((p) => ({
+    ...p,
+    members: (p.members || []).filter((m: any) => {
+      if (m.role?.toLowerCase() === 'admin') return false;
+      if (m.name && adminNames.has(m.name.toLowerCase())) return false;
+      return true;
+    }),
+  }));
+}
+
 export async function getProjectsAction(): Promise<{ success: boolean; data?: Project[]; error?: string }> {
   try {
     const session = await getSession();
@@ -51,12 +68,15 @@ export async function getProjectsAction(): Promise<{ success: boolean; data?: Pr
       return { success: false, error: 'Unauthorized' };
     }
 
-    const res = await apiClient.get<{ success: boolean; data: { projects: Project[] } }>(
-      'projects',
-      { token: session.token }
-    );
+    const [res, empRes] = await Promise.all([
+      apiClient.get<{ success: boolean; data: { projects: Project[] } }>('projects', { token: session.token }),
+      apiClient.get<{ success: boolean; data: { employees: Employee[] } }>('auth/employees', { token: session.token }).catch(() => null),
+    ]);
 
-    return { success: true, data: res.data.projects };
+    const employees = empRes?.data?.employees || [];
+    const projects = filterAdminMembersFromProjects(res.data.projects || [], employees);
+
+    return { success: true, data: projects };
   } catch (error: any) {
     return { success: false, error: error?.message || 'Failed to fetch projects' };
   }
@@ -69,12 +89,15 @@ export async function getProjectByIdAction(id: string): Promise<{ success: boole
       return { success: false, error: 'Unauthorized' };
     }
 
-    const res = await apiClient.get<{ success: boolean; data: { project: Project } }>(
-      `projects/${id}`,
-      { token: session.token }
-    );
+    const [res, empRes] = await Promise.all([
+      apiClient.get<{ success: boolean; data: { project: Project } }>(`projects/${id}`, { token: session.token }),
+      apiClient.get<{ success: boolean; data: { employees: Employee[] } }>('auth/employees', { token: session.token }).catch(() => null),
+    ]);
 
-    return { success: true, data: res.data.project };
+    const employees = empRes?.data?.employees || [];
+    const project = filterAdminMembersFromProjects([res.data.project], employees)[0];
+
+    return { success: true, data: project };
   } catch (error: any) {
     return { success: false, error: error?.message || 'Failed to fetch project' };
   }
@@ -165,13 +188,16 @@ export async function getSprintSummaryAction(): Promise<{
       return { success: false, error: 'Unauthorized' };
     }
 
-    const [projectsRes, tasksRes, issuesRes] = await Promise.all([
+    const [projectsRes, tasksRes, issuesRes, empRes] = await Promise.all([
       apiClient.get<{ success: boolean; data: { projects: Project[] } }>('projects', { token: session.token }).catch(() => null),
       apiClient.get<{ success: boolean; data: { tasks: any[] } }>('tasks', { token: session.token }).catch(() => null),
-      apiClient.get<{ success: boolean; data: { issues: any[] } }>('issues', { token: session.token }).catch(() => null)
+      apiClient.get<{ success: boolean; data: { issues: any[] } }>('issues', { token: session.token }).catch(() => null),
+      apiClient.get<{ success: boolean; data: { employees: Employee[] } }>('auth/employees', { token: session.token }).catch(() => null)
     ]);
 
-    const projects = projectsRes?.data?.projects || [];
+    const employees = empRes?.data?.employees || [];
+    const rawProjects = projectsRes?.data?.projects || [];
+    const projects = filterAdminMembersFromProjects(rawProjects, employees);
     const tasks = tasksRes?.data?.tasks || [];
     const issues = issuesRes?.data?.issues || [];
 

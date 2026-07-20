@@ -18,6 +18,14 @@ export interface Comment {
   time: string;
 }
 
+export interface WorkLog {
+  id?: string;
+  userId?: string;
+  userName?: string;
+  hours: number;
+  date: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -33,6 +41,7 @@ export interface Task {
   projectName?: string;
   attachmentsCount?: number;
   actualHours?: number;
+  workLogs?: WorkLog[];
   createdAt?: string;
   updatedAt?: string;
 }

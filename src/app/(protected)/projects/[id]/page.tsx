@@ -69,58 +69,7 @@ interface Project {
 }
 
 
-// Fallbacks if not in local storage
-const defaultProjects: Project[] = [
-  {
-    id: '1',
-    name: 'SaaS Onboarding Flow',
-    description: 'Redesign and polish the signup and onboarding screens to reduce user drop-offs.',
-    status: 'In Progress',
-    progress: 65,
-    tags: ['Design', 'UX Research'],
-    tasksCount: 5,
-    completedTasks: 3,
-    commentsCount: 24,
-    attachmentsCount: 4,
-    dueDate: '2026-07-25',
-    startDate: '2026-07-01',
-    priority: 'High',
-    techStack: ['React', 'Figma', 'Mixpanel', 'Tailwind'],
-    budget: '$15,000',
-    repositoryUrl: 'https://github.com/my-org/saas-onboarding',
-    slackChannel: '#proj-onboarding',
-    targetQuarter: 'Q3 2026',
-    members: [
-      { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
-      { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
-      { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
-    ],
-  },
-  {
-    id: '2',
-    name: 'API Authentication V2',
-    description: 'Implement JWT tokens, OAuth, and custom session middleware for protected endpoints.',
-    status: 'In Review',
-    progress: 90,
-    tags: ['Backend', 'Security'],
-    tasksCount: 3,
-    completedTasks: 2,
-    commentsCount: 18,
-    attachmentsCount: 6,
-    dueDate: '2026-07-18',
-    startDate: '2026-07-05',
-    priority: 'Critical',
-    techStack: ['Node.js', 'Redis', 'JWT', 'PostgreSQL'],
-    budget: '$25,000',
-    repositoryUrl: 'https://github.com/my-org/auth-v2',
-    slackChannel: '#sec-auth',
-    targetQuarter: 'Q3 2026',
-    members: [
-      { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
-      { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
-    ],
-  },
-];
+const defaultProjects: Project[] = [];
 
 // Seed Tasks per Project ID
 const initialTasksData: Record<string, Task[]> = {
@@ -353,7 +302,7 @@ export default function ProjectDetailPage() {
         }
 
         if (!currentProj) {
-          currentProj = defaultProjects.find(p => p.id === projectId) || {
+          currentProj = {
             id: projectId,
             name: `Project Workspace #${projectId}`,
             description: 'No detailed description found. Start organizing your team tasks.',
@@ -394,7 +343,7 @@ export default function ProjectDetailPage() {
     async function loadEmployees() {
       const res = await getEmployeesAction();
       if (res.success && res.data) {
-        setAvailableMembers(res.data);
+        setAvailableMembers(res.data.filter(e => e.role?.toLowerCase() !== 'admin'));
       } else {
         setAvailableMembers(
           defaultMembers.map((m, i) => ({
@@ -919,7 +868,7 @@ export default function ProjectDetailPage() {
                 <p className="text-sm font-black text-slate-800 mt-0.5">{project.completedTasks} / {project.tasksCount} Tasks Done</p>
                 
                 <div className="flex -space-x-1.5 mt-2">
-                  {project.members.map((member, i) => (
+                  {project.members.filter((m: any) => m.role?.toLowerCase() !== 'admin').map((member, i) => (
                     <div key={i} className={cn("h-6 w-6 rounded-lg text-[8px] font-extrabold text-white flex items-center justify-center ring-2 ring-white", member.bg)} title={member.name}>
                       {member.initials}
                     </div>
@@ -1616,7 +1565,7 @@ export default function ProjectDetailPage() {
               <div className="space-y-2.5">
                 <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Assign Task To</label>
                 <div className="flex flex-wrap gap-2">
-                  {((project && project.members && project.members.length > 0) ? project.members : availableMembers).map((member) => {
+                  {((project && project.members && project.members.length > 0) ? project.members : availableMembers).filter((m: any) => m.role?.toLowerCase() !== 'admin').map((member) => {
                     const isSelected = newTaskAssignees.includes(member.name);
                     return (
                       <button
