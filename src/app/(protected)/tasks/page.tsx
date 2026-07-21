@@ -167,9 +167,45 @@ export default function GlobalTasksPage() {
   const [availableMembers, setAvailableMembers] = useState<Employee[]>([]);
 
   const isEmployee = user?.role === 'Employee';
-  const displayTasks = isEmployee
-    ? tasks.filter(t => t.assignees.some(a => a.name === user?.name))
-    : tasks;
+  const isClient = user?.role === 'Client';
+
+  const isAssignedToUser = (task: GlobalTask) => {
+    if (!user) return false;
+    const assignees = Array.isArray(task.assignees) ? task.assignees : [];
+    return assignees.some((a: any) => {
+      if (!a) return false;
+      const aName = typeof a === 'string' ? a : a.name;
+      const aId = typeof a === 'object' ? a.id || a.userId : null;
+      const aEmail = typeof a === 'object' ? a.email : null;
+
+      const matchName = aName && user.name && aName.toLowerCase().trim() === user.name.toLowerCase().trim();
+      const matchId = aId && user.id && String(aId) === String(user.id);
+      const matchEmail = aEmail && user.email && aEmail.toLowerCase().trim() === user.email.toLowerCase().trim();
+
+      return matchName || matchId || matchEmail;
+    });
+  };
+
+  const clientProjectIds = new Set(
+    projects
+      .filter(p => (p.members || []).some((m: any) => {
+        const mName = m.name;
+        const mId = m.userId || m.id;
+        return (mName && user?.name && mName.toLowerCase().trim() === user.name.toLowerCase().trim()) ||
+               (mId && user?.id && String(mId) === String(user.id));
+      }))
+      .map(p => p.id)
+  );
+
+  const displayTasks = tasks.filter(t => {
+    if (isEmployee) {
+      return isAssignedToUser(t);
+    }
+    if (isClient && clientProjectIds.size > 0 && t.projectId) {
+      return clientProjectIds.has(t.projectId);
+    }
+    return true;
+  });
 
   const [activeTab, setActiveTab] = useState<'board' | 'list' | 'calendar'>('board');
 

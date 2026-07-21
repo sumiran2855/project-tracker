@@ -139,12 +139,44 @@ export default function SprintPage() {
     };
   }, []);
 
+  // Helper to check if item is assigned to current user
+  const isAssignedToUser = (item: any) => {
+    if (!user) return false;
+    const assignees = Array.isArray(item.assignees) ? item.assignees : [];
+    return assignees.some((a: any) => {
+      if (!a) return false;
+      const aName = typeof a === 'string' ? a : a.name;
+      const aId = typeof a === 'object' ? a.id || a.userId : null;
+      const aEmail = typeof a === 'object' ? a.email : null;
+
+      const matchName = aName && user.name && aName.toLowerCase().trim() === user.name.toLowerCase().trim();
+      const matchId = aId && user.id && String(aId) === String(user.id);
+      const matchEmail = aEmail && user.email && aEmail.toLowerCase().trim() === user.email.toLowerCase().trim();
+
+      return matchName || matchId || matchEmail;
+    });
+  };
+
+  const isEmployeeRole = user?.role === 'Employee';
+  const isClientRole = user?.role === 'Client';
+
+  const clientProjectIds = new Set(
+    projects
+      .filter(p => (p.members || []).some((m: any) => {
+        const mName = m.name;
+        const mId = m.userId || m.id;
+        return (mName && user?.name && mName.toLowerCase().trim() === user.name.toLowerCase().trim()) ||
+               (mId && user?.id && String(mId) === String(user.id));
+      }))
+      .map(p => p.id)
+  );
+
   // Filter tasks and issues down to just sprint items
   const sprintTasks = tasks.filter(t => isItemInSprint(t.dueDate, t.status));
   const sprintIssues = issues.filter(i => isItemInSprint(i.dueDate, i.status));
 
   // Convert tasks and issues into a unified SprintItem array
-  const sprintItems: SprintItem[] = [
+  const rawSprintItems: SprintItem[] = [
     ...sprintTasks.map(t => ({
       id: t.id,
       title: t.title,
@@ -192,6 +224,17 @@ export default function SprintPage() {
       };
     })
   ];
+
+  // Role-filtered sprint items
+  const sprintItems = rawSprintItems.filter(item => {
+    if (isEmployeeRole) {
+      return isAssignedToUser(item);
+    }
+    if (isClientRole && clientProjectIds.size > 0 && item.projectId) {
+      return clientProjectIds.has(item.projectId);
+    }
+    return true;
+  });
 
   // Apply project, type & search filters
   const filteredSprintItems = sprintItems.filter(item => {

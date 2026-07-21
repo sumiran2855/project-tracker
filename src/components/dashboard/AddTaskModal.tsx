@@ -86,7 +86,7 @@ export function AddTaskModal({
     setLoading(true);
     setErrorMsg('');
 
-    const targetProj = projects.find((p) => p.id === newProject);
+    const targetProj = projects.find((p) => p.id === newProject || (p as any)._id === newProject);
     if (!targetProj) {
       setErrorMsg('Please select a destination project.');
       setLoading(false);
@@ -96,8 +96,10 @@ export function AddTaskModal({
     const combinedMembers = [...availableMembers, ...(targetProj.members || [])];
     const selectedAssignees = newAssignees.map((name) => {
       const found = combinedMembers.find((m) => m.name === name);
+      const memberId = found?.id || found?.userId || '';
       return {
-        userId: found?.id || found?.userId || '',
+        id: memberId,
+        userId: memberId,
         name: name,
         initials: found?.initials || name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
         bg: found?.bg || 'bg-indigo-100 text-indigo-750',

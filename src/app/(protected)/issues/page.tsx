@@ -330,8 +330,46 @@ export default function IssuesPage() {
     }
   };
 
+  const isEmployeeRole = user?.role === 'Employee';
+  const isClientRole = user?.role === 'Client';
+
+  const isAssignedToUser = (item: any) => {
+    if (!user) return false;
+    const assignees = Array.isArray(item.assignees) ? item.assignees : [];
+    return assignees.some((a: any) => {
+      if (!a) return false;
+      const aName = typeof a === 'string' ? a : a.name;
+      const aId = typeof a === 'object' ? a.id || a.userId : null;
+      const aEmail = typeof a === 'object' ? a.email : null;
+
+      const matchName = aName && user.name && aName.toLowerCase().trim() === user.name.toLowerCase().trim();
+      const matchId = aId && user.id && String(aId) === String(user.id);
+      const matchEmail = aEmail && user.email && aEmail.toLowerCase().trim() === user.email.toLowerCase().trim();
+
+      return matchName || matchId || matchEmail;
+    });
+  };
+
+  const clientProjectIds = new Set(
+    projects
+      .filter(p => (p as any).members?.some((m: any) => {
+        const mName = m.name;
+        const mId = m.userId || m.id;
+        return (mName && user?.name && mName.toLowerCase().trim() === user.name.toLowerCase().trim()) ||
+               (mId && user?.id && String(mId) === String(user.id));
+      }))
+      .map(p => p.id)
+  );
+
   // Filter Issues
   const filteredIssues = issues.filter(iss => {
+    if (isEmployeeRole && !isAssignedToUser(iss)) {
+      return false;
+    }
+    if (isClientRole && clientProjectIds.size > 0 && iss.projectId && !clientProjectIds.has(iss.projectId)) {
+      return false;
+    }
+
     const matchesSearch = iss.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       iss.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesProject = projectFilter === 'All' || iss.projectId === projectFilter;

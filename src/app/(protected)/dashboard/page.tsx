@@ -149,10 +149,10 @@ export default async function DashboardPage() {
   let recentActivity: { text: string; time: string; dot: string }[] = [];
   let workloadData: { name: string; role: string; load: number; initials: string; bg?: string }[] = team;
   let allEmployees: any[] = [];
-
-  let weeklyHoursList: { day: string; fullDayLabel: string; dateFormatted: string; hours: number; projects: { projectName: string; hours: number }[] }[] = [];
+  let weeklyHoursList: { day: string; fullDayLabel: string; dateFormatted: string; hours: number; projects: { projectName: string; hours: number }[]; employees: { employeeName: string; hours: number }[] }[] = [];
   let maxHours = 8;
   let uniqueLoggedProjects: string[] = [];
+  let uniqueLoggedEmployees: string[] = [];
   let dailyCapacity = 8;
   let weeklyCapacity = 40;
 
@@ -318,8 +318,6 @@ export default async function DashboardPage() {
 
       const remainingHours = Math.max(0, totalAssignedHours - totalActualHours);
 
-      // Compute role-filtered weekly hours with project breakdowns
-
       const allWorkItems: any[] = [];
       tasksResList.forEach(tRes => {
         if (tRes.success && tRes.data) {
@@ -333,36 +331,49 @@ export default async function DashboardPage() {
       });
 
       const weekDays = getCurrentWeekDays();
-      const dayMap: Record<string, { total: number; projects: Record<string, number>; fullLabel: string; dateFormatted: string }> = {};
+      const dayMap: Record<string, { total: number; projects: Record<string, number>; employees: Record<string, number>; fullLabel: string; dateFormatted: string }> = {};
       weekDays.forEach(w => {
-        dayMap[w.dayName] = { total: 0, projects: {}, fullLabel: w.fullLabel, dateFormatted: w.dateFormatted };
+        dayMap[w.dayName] = { total: 0, projects: {}, employees: {}, fullLabel: w.fullLabel, dateFormatted: w.dateFormatted };
       });
+
+      const currentUserRole = (user?.role || '').toLowerCase();
+      const isEmployeeUser = currentUserRole === 'employee';
+      const isClientUser = currentUserRole === 'client';
 
       let roleFilteredTotalActualHours = 0;
 
       allWorkItems.forEach((item: any) => {
+        const assignees = Array.isArray(item.assignees) ? item.assignees : [];
+        const isAssignedToUser = assignees.some((a: any) => {
+          const aName = typeof a === 'string' ? a : a.name;
+          const aId = typeof a === 'object' ? a.id || a.userId : null;
+          return (aName && user?.name && aName.toLowerCase().trim() === user.name.toLowerCase().trim()) ||
+                 (aId && user?.id && String(aId) === String(user.id));
+        });
+
         // Role-based filtering
-        if (user?.role === 'employee') {
-          const assignees = Array.isArray(item.assignees) ? item.assignees : [];
-          const isAssigned = assignees.some((a: any) => {
-            const aName = typeof a === 'string' ? a : a.name;
-            const aId = typeof a === 'object' ? a.id || a.userId : null;
-            return (aName && user?.name && aName.toLowerCase() === user.name.toLowerCase()) ||
-                   (aId && user?.id && aId === user.id);
+        if (isEmployeeUser) {
+          const hasUserWorkLog = Array.isArray(item.workLogs) && item.workLogs.some((wl: any) => {
+            const wlName = wl.userName || wl.author || wl.name;
+            const wlId = wl.userId || wl.id;
+            return (wlName && user?.name && wlName.toLowerCase().trim() === user.name.toLowerCase().trim()) ||
+                   (wlId && user?.id && String(wlId) === String(user.id));
           });
-          if (!isAssigned) return;
-        } else if (user?.role === 'client') {
+          if (!isAssignedToUser && !hasUserWorkLog) return;
+        } else if (isClientUser) {
           const projId = item.projectId;
           const isClientProj = activeProjects.some(p => p.id === projId || (p as any)._id === projId);
           if (!isClientProj) return;
         }
 
         const itemActual = Number(item.actualHours) || 0;
-        roleFilteredTotalActualHours += itemActual;
-
         const projName = item.projectName || 'Project Workspace';
 
-        const logsToProcess: { hours: number; date: Date }[] = [];
+        const primaryAssigneeName = assignees.length > 0
+          ? (typeof assignees[0] === 'string' ? assignees[0] : assignees[0].name)
+          : (typeof item.assignee === 'string' ? item.assignee : (item.assignee?.name || item.updatedByUserName || item.createdByUserName));
+
+        const logsToProcess: { hours: number; date: Date; userName?: string; userId?: string }[] = [];
         if (Array.isArray(item.workLogs) && item.workLogs.length > 0) {
           const totalLogHrs = item.workLogs.reduce((acc: number, wl: any) => acc + (Number(wl.hours) || 0), 0);
           const ratio = (totalLogHrs > 0 && itemActual >= 0) ? (itemActual / totalLogHrs) : 1;
@@ -370,20 +381,51 @@ export default async function DashboardPage() {
           item.workLogs.forEach((wl: any) => {
             const rawH = Number(wl.hours) || 0;
             const scaledH = totalLogHrs > 0 ? rawH * ratio : rawH;
+
+            let resolvedUserName = wl.userName || wl.author || wl.name;
+            const logUserId = wl.userId || wl.id;
+
+            if (!resolvedUserName && logUserId) {
+              if (user?.id && String(user.id) === String(logUserId)) {
+                resolvedUserName = user.name || undefined;
+              } else if (Array.isArray(allEmployees)) {
+                const matchedEmp = allEmployees.find((e: any) => String(e.id || e._id) === String(logUserId));
+                if (matchedEmp) resolvedUserName = matchedEmp.name;
+              }
+            }
+
+            if (!resolvedUserName) {
+              resolvedUserName = primaryAssigneeName;
+            }
+
             logsToProcess.push({
               hours: scaledH,
               date: new Date(wl.date || wl.createdAt || item.updatedAt || item.createdAt),
+              userName: resolvedUserName,
+              userId: logUserId,
             });
           });
         } else if (itemActual > 0) {
           logsToProcess.push({
             hours: itemActual,
             date: new Date(item.updatedAt || item.createdAt || item.dueDate || item.startDate),
+            userName: primaryAssigneeName
           });
         }
 
         logsToProcess.forEach(log => {
           if (log.hours <= 0) return;
+
+          // If current logged-in user is an employee, filter out worklogs created by other users
+          if (isEmployeeUser) {
+            if (log.userName || log.userId) {
+              const isMyLog = (log.userName && user?.name && log.userName.toLowerCase().trim() === user.name.toLowerCase().trim()) ||
+                              (log.userId && user?.id && String(log.userId) === String(user.id));
+              if (!isMyLog) return;
+            }
+          }
+
+          roleFilteredTotalActualHours += log.hours;
 
           let matchedDay = weekDays.find(w => {
             return w.dateObj.getFullYear() === log.date.getFullYear() &&
@@ -398,8 +440,30 @@ export default async function DashboardPage() {
 
           if (matchedDay) {
             const dKey = matchedDay.dayName;
+            let empName = log.userName ? log.userName.trim() : '';
+
+            if (!empName || empName.toLowerCase() === 'team member') {
+              if (log.userId && user?.id && String(log.userId) === String(user.id)) {
+                empName = user.name || '';
+              } else if (log.userId && Array.isArray(allEmployees)) {
+                const matchedEmp = allEmployees.find((e: any) => String(e.id || e._id) === String(log.userId));
+                if (matchedEmp) empName = matchedEmp.name || '';
+              }
+            }
+
+            if (!empName || empName.toLowerCase() === 'team member') {
+              if (primaryAssigneeName) {
+                empName = primaryAssigneeName;
+              } else if (isEmployeeUser && user?.name) {
+                empName = user.name;
+              } else {
+                empName = 'Employee';
+              }
+            }
+
             dayMap[dKey].total += log.hours;
             dayMap[dKey].projects[projName] = (dayMap[dKey].projects[projName] || 0) + log.hours;
+            dayMap[dKey].employees[empName] = (dayMap[dKey].employees[empName] || 0) + log.hours;
           }
         });
       });
@@ -410,12 +474,17 @@ export default async function DashboardPage() {
           projectName,
           hours
         }));
+        const employees = Object.entries(data.employees).map(([employeeName, hours]) => ({
+          employeeName,
+          hours
+        }));
         return {
           day: w.shortLabel,
           fullDayLabel: w.fullLabel,
           dateFormatted: w.dateFormatted,
           hours: data.total,
-          projects
+          projects,
+          employees
         };
       });
 
@@ -437,15 +506,14 @@ export default async function DashboardPage() {
         weeklyCapacity = memberCount * 40;
       }
 
-      maxHours = Math.max(dailyCapacity, ...weeklyHoursList.map(d => d.hours));
+      maxHours = Math.max(isEmployeeUser ? dailyCapacity : 1, ...weeklyHoursList.map(d => d.hours));
       uniqueLoggedProjects = Array.from(new Set(weeklyHoursList.flatMap(d => d.projects.map(p => p.projectName))));
-
-      const roleFilteredRemainingHours = Math.max(0, totalAssignedHours - roleFilteredTotalActualHours);
+      uniqueLoggedEmployees = Array.from(new Set(weeklyHoursList.flatMap(d => d.employees.map(e => e.employeeName))));
 
       dynamicStats[1].value = String(openTasksCount);
       dynamicStats[2].value = String(openBugsCount);
       dynamicStats[3].value = `${roleFilteredTotalActualHours}h`;
-      dynamicStats[3].change = `+${roleFilteredRemainingHours}h left`;
+      dynamicStats[3].change = `+${remainingHours}h left`;
 
       deadlines = gatheredDeadlines
         .sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime())
@@ -571,6 +639,8 @@ export default async function DashboardPage() {
     };
   }) : recentProjects;
 
+  const isEmployeeRole = (user?.role || '').toLowerCase() === 'employee';
+
   return (
     <div className="min-h-full bg-slate-50 p-6 md:p-8 lg:p-10">
       {/* Hero banner */}
@@ -616,7 +686,11 @@ export default async function DashboardPage() {
             <div>
               <h2 className="text-base font-bold text-slate-800">Hours Logged This Week</h2>
               <p className="text-xs text-slate-450 mt-0.5">
-                {weeklyHoursList.reduce((acc, d) => acc + d.hours, 0)}h / {weeklyCapacity}h weekly capacity ({Math.round((weeklyHoursList.reduce((acc, d) => acc + d.hours, 0) / (weeklyCapacity || 1)) * 100)}%)
+                {isEmployeeRole ? (
+                  <>{weeklyHoursList.reduce((acc, d) => acc + d.hours, 0)}h / {weeklyCapacity}h weekly capacity ({Math.round((weeklyHoursList.reduce((acc, d) => acc + d.hours, 0) / (weeklyCapacity || 1)) * 100)}%)</>
+                ) : (
+                  <>{weeklyHoursList.reduce((acc, d) => acc + d.hours, 0)}h total logged across team this week</>
+                )}
               </p>
             </div>
             <button className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-50 cursor-pointer transition-colors">
@@ -631,45 +705,86 @@ export default async function DashboardPage() {
                 <div className="absolute bottom-[105%] left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] py-2 px-3 rounded-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 shadow-xl whitespace-nowrap z-20 min-w-[140px] border border-slate-700">
                   <div className="font-black text-slate-200 border-b border-slate-700/80 pb-1 mb-1 flex items-center justify-between gap-3">
                     <span>{d.fullDayLabel || d.day}</span>
-                    <span className="text-indigo-400 font-extrabold">{d.hours}h / {dailyCapacity}h ({Math.round((d.hours / (dailyCapacity || 1)) * 100)}%)</span>
+                    <span className="text-indigo-400 font-extrabold">
+                      {isEmployeeRole ? `${d.hours}h / ${dailyCapacity}h (${Math.round((d.hours / (dailyCapacity || 1)) * 100)}%)` : `${d.hours}h logged`}
+                    </span>
                   </div>
-                  {d.projects.length > 0 ? (
-                    d.projects.map((p) => {
-                      const color = getProjColor(p.projectName, uniqueLoggedProjects);
-                      return (
-                        <div key={p.projectName} className="flex items-center justify-between gap-3 font-semibold text-[10px]">
-                          <span className="flex items-center gap-1.5 text-slate-300">
-                            <span className={cn("h-2 w-2 rounded-full shrink-0", color.bg)} />
-                            <span>{p.projectName}</span>
-                          </span>
-                          <span className="font-bold text-white ml-auto">{p.hours}h</span>
-                        </div>
-                      );
-                    })
+                  {isEmployeeRole ? (
+                    d.projects.length > 0 ? (
+                      d.projects.map((p) => {
+                        const color = getProjColor(p.projectName, uniqueLoggedProjects);
+                        return (
+                          <div key={p.projectName} className="flex items-center justify-between gap-3 font-semibold text-[10px]">
+                            <span className="flex items-center gap-1.5 text-slate-300">
+                              <span className={cn("h-2 w-2 rounded-full shrink-0", color.bg)} />
+                              <span>{p.projectName}</span>
+                            </span>
+                            <span className="font-bold text-white ml-auto">{p.hours}h</span>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-slate-400 italic text-[9px]">No hours logged</div>
+                    )
                   ) : (
-                    <div className="text-slate-400 italic text-[9px]">No hours logged</div>
+                    d.employees.length > 0 ? (
+                      d.employees.map((e) => {
+                        const color = getProjColor(e.employeeName, uniqueLoggedEmployees);
+                        return (
+                          <div key={e.employeeName} className="flex items-center justify-between gap-3 font-semibold text-[10px]">
+                            <span className="flex items-center gap-1.5 text-slate-300">
+                              <span className={cn("h-2 w-2 rounded-full shrink-0", color.bg)} />
+                              <span>{e.employeeName}</span>
+                            </span>
+                            <span className="font-bold text-white ml-auto">{e.hours}h</span>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-slate-400 italic text-[9px]">No hours logged</div>
+                    )
                   )}
                 </div>
 
                 {/* Total hours label showing out of max capacity */}
-                <span className="text-[9px] font-black text-slate-700">{d.hours}h / {dailyCapacity}h</span>
+                <span className="text-[9px] font-black text-slate-700">
+                  {isEmployeeRole ? `${d.hours}h / ${dailyCapacity}h` : `${d.hours}h`}
+                </span>
 
-                {/* Stacked Project Bar */}
+                {/* Stacked Project / Employee Bar */}
                 <div className="w-full h-32 flex flex-col-reverse justify-start rounded-xl bg-slate-50 border border-slate-150 overflow-hidden cursor-pointer hover:bg-slate-100/70 transition-colors p-0.5">
-                  {d.projects.length > 0 ? (
-                    d.projects.map((p) => {
-                      const color = getProjColor(p.projectName, uniqueLoggedProjects);
-                      const segmentPercent = maxHours > 0 ? (p.hours / maxHours) * 100 : 0;
-                      return (
-                        <div
-                          key={p.projectName}
-                          className={cn("w-full transition-all duration-500 rounded-xs border-t border-white/20 first:border-0", color.bg)}
-                          style={{ height: `${segmentPercent}%` }}
-                        />
-                      );
-                    })
+                  {isEmployeeRole ? (
+                    d.projects.length > 0 ? (
+                      d.projects.map((p) => {
+                        const color = getProjColor(p.projectName, uniqueLoggedProjects);
+                        const segmentPercent = maxHours > 0 ? (p.hours / maxHours) * 100 : 0;
+                        return (
+                          <div
+                            key={p.projectName}
+                            className={cn("w-full transition-all duration-500 rounded-xs border-t border-white/20 first:border-0", color.bg)}
+                            style={{ height: `${segmentPercent}%` }}
+                          />
+                        );
+                      })
+                    ) : (
+                      <div className="w-full h-full bg-slate-200/40 rounded-lg" />
+                    )
                   ) : (
-                    <div className="w-full h-full bg-slate-200/40 rounded-lg" />
+                    d.employees.length > 0 ? (
+                      d.employees.map((e) => {
+                        const color = getProjColor(e.employeeName, uniqueLoggedEmployees);
+                        const segmentPercent = maxHours > 0 ? (e.hours / maxHours) * 100 : 0;
+                        return (
+                          <div
+                            key={e.employeeName}
+                            className={cn("w-full transition-all duration-500 rounded-xs border-t border-white/20 first:border-0", color.bg)}
+                            style={{ height: `${segmentPercent}%` }}
+                          />
+                        );
+                      })
+                    ) : (
+                      <div className="w-full h-full bg-slate-200/40 rounded-lg" />
+                    )
                   )}
                 </div>
 
@@ -678,20 +793,37 @@ export default async function DashboardPage() {
             ))}
           </div>
 
-          {/* Project Color Legend */}
-          {uniqueLoggedProjects.length > 0 && (
-            <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-slate-100 text-[10px]">
-              <span className="font-bold text-slate-400 uppercase tracking-wider text-[9px]">Projects:</span>
-              {uniqueLoggedProjects.map((pName) => {
-                const color = getProjColor(pName, uniqueLoggedProjects);
-                return (
-                  <div key={pName} className="flex items-center gap-1.5 font-bold text-slate-700">
-                    <span className={cn("h-2.5 w-2.5 rounded-full", color.bg)} />
-                    <span>{pName}</span>
-                  </div>
-                );
-              })}
-            </div>
+          {/* Color Legend */}
+          {isEmployeeRole ? (
+            uniqueLoggedProjects.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-slate-100 text-[10px]">
+                <span className="font-bold text-slate-400 uppercase tracking-wider text-[9px]">Projects:</span>
+                {uniqueLoggedProjects.map((pName) => {
+                  const color = getProjColor(pName, uniqueLoggedProjects);
+                  return (
+                    <div key={pName} className="flex items-center gap-1.5 font-bold text-slate-700">
+                      <span className={cn("h-2.5 w-2.5 rounded-full", color.bg)} />
+                      <span>{pName}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null
+          ) : (
+            uniqueLoggedEmployees.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-slate-100 text-[10px]">
+                <span className="font-bold text-slate-400 uppercase tracking-wider text-[9px]">Employees:</span>
+                {uniqueLoggedEmployees.map((eName) => {
+                  const color = getProjColor(eName, uniqueLoggedEmployees);
+                  return (
+                    <div key={eName} className="flex items-center gap-1.5 font-bold text-slate-700">
+                      <span className={cn("h-2.5 w-2.5 rounded-full", color.bg)} />
+                      <span>{eName}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : null
           )}
         </div>
 

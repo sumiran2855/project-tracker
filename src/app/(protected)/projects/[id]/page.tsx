@@ -236,8 +236,26 @@ export default function ProjectDetailPage() {
   const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
   
   const isEmployee = user?.role === 'Employee';
+
+  const isAssignedToUser = (item: any) => {
+    if (!user) return false;
+    const assignees = Array.isArray(item.assignees) ? item.assignees : [];
+    return assignees.some((a: any) => {
+      if (!a) return false;
+      const aName = typeof a === 'string' ? a : a.name;
+      const aId = typeof a === 'object' ? a.id || a.userId : null;
+      const aEmail = typeof a === 'object' ? a.email : null;
+
+      const matchName = aName && user.name && aName.toLowerCase().trim() === user.name.toLowerCase().trim();
+      const matchId = aId && user.id && String(aId) === String(user.id);
+      const matchEmail = aEmail && user.email && aEmail.toLowerCase().trim() === user.email.toLowerCase().trim();
+
+      return matchName || matchId || matchEmail;
+    });
+  };
+
   const displayTasks = isEmployee
-    ? tasks.filter(t => t.assignees.some(a => a.name === user?.name))
+    ? tasks.filter(t => isAssignedToUser(t))
     : tasks;
 
   const parseHoursFromBudget = (budgetVal: string | undefined): number => {
