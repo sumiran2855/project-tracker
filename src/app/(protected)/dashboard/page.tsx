@@ -642,7 +642,7 @@ export default async function DashboardPage() {
   const isEmployeeRole = (user?.role || '').toLowerCase() === 'employee';
 
   return (
-    <div className="min-h-full bg-slate-50 p-6 md:p-8 lg:p-10">
+    <div className="min-h-full bg-slate-50 p-4 sm:p-6 md:p-8 lg:p-10">
       {/* Hero banner */}
       <div className="relative mb-6 overflow-hidden rounded-3xl bg-[#1F4D3E] px-7 py-7 md:px-9 md:py-8">
         <div className="absolute -right-10 -top-16 h-56 w-56 rounded-full bg-[#F4A340]/10 blur-3xl" />
@@ -681,7 +681,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
 
         {/* Weekly hours chart — spans 2 or 3 depending on workload visibility */}
-        <div className={cn("rounded-2xl border border-slate-200 bg-white p-6 shadow-xs flex flex-col justify-between", canViewWorkload ? "lg:col-span-2" : "lg:col-span-3")}>
+        <div className={cn("rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-xs flex flex-col justify-between", canViewWorkload ? "lg:col-span-2" : "lg:col-span-3")}>
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-base font-bold text-slate-800">Hours Logged This Week</h2>
@@ -698,7 +698,7 @@ export default async function DashboardPage() {
             </button>
           </div>
 
-          <div className="flex items-end justify-between gap-3 h-44 mt-2">
+          <div className="flex items-end justify-between gap-1.5 sm:gap-3 h-44 mt-2">
             {weeklyHoursList.map((d) => (
               <div key={d.day} className="group relative flex flex-1 flex-col items-center gap-1.5 h-full justify-end">
                 {/* Detailed Tooltip on Hover */}
@@ -747,8 +747,15 @@ export default async function DashboardPage() {
                 </div>
 
                 {/* Total hours label showing out of max capacity */}
-                <span className="text-[9px] font-black text-slate-700">
-                  {isEmployeeRole ? `${d.hours}h / ${dailyCapacity}h` : `${d.hours}h`}
+                <span className="text-[9px] font-black text-slate-700 whitespace-nowrap text-center">
+                  {isEmployeeRole ? (
+                    <>
+                      <span className="inline sm:hidden">{d.hours}h</span>
+                      <span className="hidden sm:inline">{d.hours}h / {dailyCapacity}h</span>
+                    </>
+                  ) : (
+                    <>{d.hours}h</>
+                  )}
                 </span>
 
                 {/* Stacked Project / Employee Bar */}
@@ -788,7 +795,10 @@ export default async function DashboardPage() {
                   )}
                 </div>
 
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{d.day}</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider text-center">
+                  <span className="inline sm:hidden">{d.day.split(' ')[0]}</span>
+                  <span className="hidden sm:inline">{d.day}</span>
+                </span>
               </div>
             ))}
           </div>

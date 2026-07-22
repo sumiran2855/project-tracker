@@ -3,15 +3,13 @@ import 'server-only';
 import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { decrypt } from '@/lib/auth/session';
+import { getOrRefreshSession } from '@/lib/auth/session';
 import type { SafeUser, VerifiedSession } from '@/types/auth.types';
 import { AUTH_COOKIE_NAME, LOGIN_ROUTE } from '@/constants/routes';
 import { apiClient } from '@/lib/api/apiClient';
 
 export const getSession = cache(async () => {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
-  return decrypt(token);
+  return getOrRefreshSession();
 });
 
 export const verifySession = cache(async (): Promise<VerifiedSession> => {

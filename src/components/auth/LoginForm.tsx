@@ -2,6 +2,7 @@
 
 import { useActionState, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { toast } from 'react-toastify';
 import { loginAction } from '@/actions/auth';
 import type { LoginActionState } from '@/types/auth.types';
 import { Mail, Lock, AlertCircle, CheckCircle2 } from 'lucide-react';
@@ -19,6 +20,16 @@ export function LoginForm() {
 
   const searchParams = useSearchParams();
   const resetSuccess = searchParams.get('resetSuccess') === 'true';
+  const expired = searchParams.get('expired') === 'true';
+
+  // Show session expired toast if query parameter exists
+  useEffect(() => {
+    if (expired) {
+      toast.warn('Your session has expired. Please log in again.');
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [expired]);
 
   // Load remembered credentials on mount
   useEffect(() => {

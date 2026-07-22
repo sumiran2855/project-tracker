@@ -10,6 +10,7 @@ export interface SessionPayload {
   name: string | null;
   role: string;
   token?: string;
+  refreshToken?: string;
   expiresAt: Date;
 }
 

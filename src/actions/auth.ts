@@ -37,12 +37,12 @@ export async function loginAction(
   let user: SafeUser | null = null;
 
   try {
-    const res = await apiClient.post<{ success: boolean; data: { user: SafeUser; token: string } }>(
+    const res = await apiClient.post<{ success: boolean; data: { user: SafeUser; accessToken: string; refreshToken: string } }>(
       'auth/login',
       { email, password }
     );
     user = res.data.user;
-    await createSession(res.data.user, res.data.token, remember);
+    await createSession(res.data.user, res.data.accessToken, res.data.refreshToken, remember);
   } catch (error) {
     if (error instanceof ApiError) {
       return { message: error.message };
@@ -74,12 +74,12 @@ export async function signupAction(
   let user: SafeUser | null = null;
 
   try {
-    const res = await apiClient.post<{ success: boolean; data: { user: SafeUser; token: string } }>(
+    const res = await apiClient.post<{ success: boolean; data: { user: SafeUser; accessToken: string; refreshToken: string } }>(
       'auth/register',
       { name: fullName, email, password }
     );
     user = res.data.user;
-    await createSession(res.data.user, res.data.token, false);
+    await createSession(res.data.user, res.data.accessToken, res.data.refreshToken, false);
   } catch (error) {
     if (error instanceof ApiError) {
       return { message: error.message };
@@ -92,6 +92,19 @@ export async function signupAction(
 }
 
 export async function logoutAction(): Promise<never> {
+  const { getSession } = await import('@/lib/auth/dal');
+  try {
+    const session = await getSession();
+    if (session?.token && session?.refreshToken) {
+      await apiClient.post(
+        'auth/logout',
+        { refreshToken: session.refreshToken },
+        { token: session.token }
+      );
+    }
+  } catch (error) {
+    // Ignore logout request errors to prevent blocking local logout
+  }
   await deleteSession();
   redirect(LOGIN_ROUTE);
 }
@@ -171,7 +184,7 @@ export async function updateUserRoleAction(role: string): Promise<{ success: boo
       { token: session.token }
     );
     
-    await createSession(res.data.user, session.token, false);
+    await createSession(res.data.user, session.token, session.refreshToken, false);
     
     return { success: true };
   } catch (error: any) {
@@ -198,7 +211,7 @@ export async function updateNotificationStateAction(
     );
 
     // Update local next.js session too so that next.js session cookie is up to date
-    await createSession(res.data.user, session.token, false);
+    await createSession(res.data.user, session.token, session.refreshToken, false);
 
     return { success: true, data: res.data.user };
   } catch (error: any) {
@@ -230,7 +243,7 @@ export async function updateProfileAction(profileData: {
     );
 
     // Update local next.js session too so that next.js session cookie is up to date
-    await createSession(res.data.user, session.token, false);
+    await createSession(res.data.user, session.token, session.refreshToken, false);
 
     return { success: true, data: res.data.user };
   } catch (error: any) {
@@ -260,7 +273,7 @@ export async function inviteCollaboratorAction(inviteeData: {
     );
 
     // Update local next.js session too so that next.js session cookie is up to date
-    await createSession(res.data.user, session.token, false);
+    await createSession(res.data.user, session.token, session.refreshToken, false);
 
     return { success: true, data: res.data.user };
   } catch (error: any) {
@@ -283,7 +296,7 @@ export async function removeCollaboratorAction(email: string): Promise<{ success
     );
 
     // Update local next.js session too so that next.js session cookie is up to date
-    await createSession(res.data.user, session.token, false);
+    await createSession(res.data.user, session.token, session.refreshToken, false);
 
     return { success: true, data: res.data.user };
   } catch (error: any) {
@@ -309,7 +322,7 @@ export async function updatePreferencesAction(prefs: {
       { token: session.token }
     );
 
-    await createSession(res.data.user, session.token, false);
+    await createSession(res.data.user, session.token, session.refreshToken, false);
 
     return { success: true, data: res.data.user };
   } catch (error: any) {
