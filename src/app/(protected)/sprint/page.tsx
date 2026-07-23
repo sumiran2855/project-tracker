@@ -839,7 +839,7 @@ export default function SprintPage() {
                   </span>
                 </div>
 
-                <div className="flex-1 space-y-3.5 overflow-y-auto no-scrollbar">
+                <div className="flex-1 space-y-3.5">
                   {colItems.map(item => (
                     <div
                       key={item.id}

@@ -737,7 +737,7 @@ export default function RoadmapPage() {
                     </div>
 
                     {/* Cards container */}
-                    <div className="space-y-4 flex-1 overflow-y-auto max-h-[65vh] pr-1.5 scrollbar-thin mt-2">
+                    <div className="space-y-4 flex-1 pr-1.5 mt-2">
                       {columnProjects.length === 0 ? (
                         <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-slate-200/80 rounded-2xl text-slate-350 text-[10px] font-extrabold text-center h-32 select-none">
                           Drag Projects Here

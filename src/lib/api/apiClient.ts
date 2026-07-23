@@ -23,11 +23,15 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     headers.set('Authorization', `Bearer ${token}`);
   }
 
+  const url = `${BASE_URL}/${path.replace(/^\//, '')}`;
+  console.log(`[API Request] ${options.method || 'GET'} ${url}`);
+
   try {
-    const response = await fetch(`${BASE_URL}/${path.replace(/^\//, '')}`, {
+    const response = await fetch(url, {
       ...restOptions,
       headers,
     });
+    console.log(`[API Response] ${response.status} ${url}`);
 
     let data: any;
     const contentType = response.headers.get('content-type');

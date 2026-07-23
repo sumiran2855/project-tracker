@@ -888,7 +888,7 @@ export default function GlobalTasksPage() {
                   </div>
 
                   {/* Tasks List */}
-                  <div className="space-y-3.5 flex-1 overflow-y-auto max-h-[60vh] pr-1.5 scrollbar-thin">
+                  <div className="space-y-3.5 flex-1 pr-1.5">
                     {colTasks.length === 0 ? (
                       <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200/80 rounded-2xl text-slate-350 text-[10px] font-bold text-center h-28 select-none">
                         Drop Tasks Here
@@ -1387,7 +1387,7 @@ export default function GlobalTasksPage() {
           
           <div className="relative w-full max-w-xl h-full bg-white shadow-2xl border-l border-slate-200 flex flex-col justify-between animate-slideIn">
             
-            <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
+            <div className="flex-1 overflow-y-auto no-scrollbar p-6 sm:p-8 space-y-6">
               
               {/* Header */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -1425,7 +1425,7 @@ export default function GlobalTasksPage() {
                     <select
                       value={selectedTask.status}
                       onChange={(e) => handleUpdateTask({ ...selectedTask, status: e.target.value as Task['status'] })}
-                      className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white cursor-pointer pr-8 focus:outline-none"
+                      className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white cursor-pointer pr-8 focus:outline-none appearance-none"
                     >
                       <option value="To Do">To Do</option>
                       <option value="In Progress">In Progress</option>
@@ -1443,7 +1443,7 @@ export default function GlobalTasksPage() {
                     <select
                       value={selectedTask.priority}
                       onChange={(e) => handleUpdateTask({ ...selectedTask, priority: e.target.value as Task['priority'] })}
-                      className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white cursor-pointer pr-8 focus:outline-none"
+                      className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white cursor-pointer pr-8 focus:outline-none appearance-none"
                     >
                       <option value="Low">Low</option>
                       <option value="Medium">Medium</option>
@@ -1455,21 +1455,19 @@ export default function GlobalTasksPage() {
                 </div>
 
                 {/* Hours Spent */}
-                {selectedTask.status === 'Done' && (
-                  <div className="col-span-2 border-t border-slate-100 pt-3.5 space-y-1.5 animate-fadeIn">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Hours Spent (Actual)</span>
-                    <input
-                      type="number"
-                      min={0}
-                      value={selectedTask.actualHours || 0}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value, 10) || 0;
-                        handleUpdateTask({ ...selectedTask, actualHours: val });
-                      }}
-                      className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                    />
-                  </div>
-                )}
+                <div className="col-span-2 border-t border-slate-100 pt-3.5 space-y-1.5 animate-fadeIn">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Hours Spent (Actual)</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={selectedTask.actualHours || 0}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10) || 0;
+                      handleUpdateTask({ ...selectedTask, actualHours: val });
+                    }}
+                    className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  />
+                </div>
 
                 {/* Dates */}
                 <div className="col-span-2 grid grid-cols-2 gap-4 border-t border-slate-100 pt-3.5">
@@ -1585,13 +1583,17 @@ export default function GlobalTasksPage() {
                   onSubmit={(e) => {
                     e.preventDefault();
                     if (!newCommentText.trim()) return;
-                    const newComm = { id: `comm_${Date.now()}`, author: 'Dev User', initials: 'DU', text: newCommentText, time: 'Just now' };
+                    const currentUserInitials = user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2) : 'DU';
+                    const currentUserName = user?.name || 'Dev User';
+                    const newComm = { id: `comm_${Date.now()}`, author: currentUserName, initials: currentUserInitials, text: newCommentText, time: 'Just now' };
                     handleUpdateTask({ ...selectedTask, comments: [newComm, ...selectedTask.comments] });
                     setNewCommentText('');
                   }}
                   className="flex gap-3"
                 >
-                  <div className="h-7 w-7 rounded-lg bg-indigo-600 text-[9px] font-bold text-white flex items-center justify-center shrink-0">DU</div>
+                  <div className="h-7 w-7 rounded-lg bg-indigo-600 text-[9px] font-bold text-white flex items-center justify-center shrink-0">
+                    {user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2) : 'DU'}
+                  </div>
                   <div className="flex-1 space-y-2">
                     <textarea
                       rows={2}

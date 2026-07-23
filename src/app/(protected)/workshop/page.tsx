@@ -1428,7 +1428,7 @@ export default function WorkshopDashboard() {
                     </div>
 
                     {/* Cards Container */}
-                    <div className="flex-1 overflow-y-auto space-y-2.5 max-h-[70vh] no-scrollbar">
+                    <div className="flex-1 space-y-2.5">
                       {totalCount === 0 ? (
                         <div className="py-12 text-center text-slate-400 font-semibold text-[10px] border border-dashed border-slate-200 rounded-xl bg-white/40">
                           Drop cards here

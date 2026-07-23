@@ -9,6 +9,7 @@ import {
   MoreHorizontal,
   CalendarDays,
   Calendar,
+  FolderOpen,
 } from 'lucide-react';
 import { ProjectCard } from '@/components/dashboard/ProjectCard';
 import { StatCard } from '@/components/dashboard/StatCard';
@@ -88,13 +89,6 @@ function isDeadlineUrgent(dateStr: string | undefined): boolean {
   return diffDays <= 3;
 }
 
-const team = [
-  { name: 'Ava Chen', role: 'Frontend', load: 82, initials: 'AC' },
-  { name: 'Marco Diaz', role: 'Backend', load: 64, initials: 'MD' },
-  { name: 'Priya Rao', role: 'QA', load: 91, initials: 'PR' },
-  { name: 'Sam Okafor', role: 'Design', load: 47, initials: 'SO' },
-];
-
 function parseHoursFromBudget(budget: string | undefined): number {
   if (!budget) return 0;
   if (budget.includes('$')) return 0;
@@ -147,7 +141,7 @@ export default async function DashboardPage() {
   let activeProjects: any[] = [];
   let deadlines: { title: string; date: string; urgent: boolean }[] = [];
   let recentActivity: { text: string; time: string; dot: string }[] = [];
-  let workloadData: { name: string; role: string; load: number; initials: string; bg?: string }[] = team;
+  let workloadData: { name: string; role: string; load: number; initials: string; bg?: string }[] = [];
   let allEmployees: any[] = [];
   let weeklyHoursList: { day: string; fullDayLabel: string; dateFormatted: string; hours: number; projects: { projectName: string; hours: number }[]; employees: { employeeName: string; hours: number }[] }[] = [];
   let maxHours = 8;
@@ -843,28 +837,32 @@ export default async function DashboardPage() {
             <h2 className="text-base font-bold text-slate-800 mb-1">Team Workload</h2>
             <p className="text-xs text-slate-400 mb-5">Capacity this sprint</p>
             <div className="space-y-4">
-              {workloadData.map((t) => (
-                <div key={t.name} className="flex items-center gap-3">
-                  <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold border border-slate-100 shadow-3xs", t.bg || "bg-indigo-50 text-indigo-650 border border-indigo-100/50")}>
-                    {t.initials}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-bold text-slate-800 truncate">{t.name}</p>
-                      <span className="text-[10px] font-bold text-slate-400 shrink-0 ml-2">{t.load}%</span>
+              {workloadData.length > 0 ? (
+                workloadData.map((t) => (
+                  <div key={t.name} className="flex items-center gap-3">
+                    <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold border border-slate-100 shadow-3xs", t.bg || "bg-indigo-50 text-indigo-650 border border-indigo-100/50")}>
+                      {t.initials}
                     </div>
-                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${t.load}%`,
-                          backgroundColor: t.load > 85 ? '#ef4444' : t.load > 60 ? '#f59e0b' : '#10b981',
-                        }}
-                      />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-bold text-slate-800 truncate">{t.name}</p>
+                        <span className="text-[10px] font-bold text-slate-400 shrink-0 ml-2">{t.load}%</span>
+                      </div>
+                      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${t.load}%`,
+                            backgroundColor: t.load > 85 ? '#ef4444' : t.load > 60 ? '#f59e0b' : '#10b981',
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-xs text-slate-400 italic text-center py-4">No team members found</p>
+              )}
             </div>
           </div>
         )}
@@ -881,11 +879,18 @@ export default async function DashboardPage() {
             </a>
           </div>
           <div className="max-h-[580px] overflow-y-auto p-6 bg-slate-50/30 flex-1 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {projectsToRender.map((p) => (
-                <ProjectCard key={p.name} p={p} />
-              ))}
-            </div>
+            {projectsToRender.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {projectsToRender.map((p) => (
+                  <ProjectCard key={p.name} p={p} />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-48 text-center">
+                <FolderOpen className="h-8 w-8 text-slate-350 mb-2" />
+                <p className="text-xs text-slate-400 italic font-medium">No projects found. Create a project to get started!</p>
+              </div>
+            )}
           </div>
         </div>
 

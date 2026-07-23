@@ -1069,7 +1069,7 @@ export default function ProjectDetailPage() {
                   </div>
 
                   {/* Task list inside column */}
-                  <div className="space-y-3.5 flex-1 overflow-y-auto no-scrollbar max-h-[60vh] pr-1.5">
+                  <div className="space-y-3.5 flex-1 pr-1.5">
                     {columnTasks.length === 0 ? (
                       <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200/80 rounded-2xl text-slate-350 text-[10px] font-bold text-center h-28 select-none">
                         Drop Tasks Here
@@ -1678,7 +1678,7 @@ export default function ProjectDetailPage() {
                     <select
                       value={selectedTask.status}
                       onChange={(e) => handleMoveTask(selectedTask.id, e.target.value as Task['status'])}
-                      className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white cursor-pointer pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                      className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white cursor-pointer pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 appearance-none"
                     >
                       <option value="To Do">To Do</option>
                       <option value="In Progress">In Progress</option>
@@ -1700,7 +1700,7 @@ export default function ProjectDetailPage() {
                         saveTasks(updated);
                         setSelectedTask({ ...selectedTask, priority: e.target.value as Task['priority'] });
                       }}
-                      className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white cursor-pointer pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                      className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white cursor-pointer pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 appearance-none"
                     >
                       <option value="Low">Low</option>
                       <option value="Medium">Medium</option>
@@ -1712,24 +1712,22 @@ export default function ProjectDetailPage() {
                 </div>
 
                 {/* Hours Spent Column */}
-                {selectedTask.status === 'Done' && (
-                  <div className="col-span-2 border-t border-slate-100 pt-3.5 space-y-1.5 animate-fadeIn">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Hours Spent (Actual)</span>
-                    <input
-                      type="number"
-                      min={0}
-                      value={selectedTask.actualHours || 0}
-                      onChange={async (e) => {
-                        const val = parseInt(e.target.value, 10) || 0;
-                        const updatedTask = { ...selectedTask, actualHours: val };
-                        setSelectedTask(updatedTask);
-                        setTasks(prev => prev.map(t => t.id === selectedTask.id ? updatedTask : t));
-                        await updateTaskAction(selectedTask.id, { actualHours: val });
-                      }}
-                      className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                    />
-                  </div>
-                )}
+                <div className="col-span-2 border-t border-slate-100 pt-3.5 space-y-1.5 animate-fadeIn">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Hours Spent (Actual)</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={selectedTask.actualHours || 0}
+                    onChange={async (e) => {
+                      const val = parseInt(e.target.value, 10) || 0;
+                      const updatedTask = { ...selectedTask, actualHours: val };
+                      setSelectedTask(updatedTask);
+                      setTasks(prev => prev.map(t => t.id === selectedTask.id ? updatedTask : t));
+                      await updateTaskAction(selectedTask.id, { actualHours: val });
+                    }}
+                    className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  />
+                </div>
 
                 {/* Dates */}
                 <div className="col-span-2 grid grid-cols-2 gap-4 border-t border-slate-100 pt-3.5">
@@ -1834,7 +1832,7 @@ export default function ProjectDetailPage() {
                 {/* Add Comment input */}
                 <form onSubmit={handleAddComment} className="flex gap-3">
                   <div className="h-7 w-7 rounded-lg bg-indigo-600 text-[9px] font-bold text-white flex items-center justify-center shrink-0">
-                    DU
+                    {user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2) : 'DU'}
                   </div>
                   <div className="flex-1 space-y-2">
                     <textarea
