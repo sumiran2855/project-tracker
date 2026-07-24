@@ -18,15 +18,28 @@ import {
   Folder,
   Tag,
   ChevronDown,
-  Bookmark
+  Bookmark,
+  UploadCloud,
+  Link
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, usePermission } from '@/contexts/UserContext';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 import { getProjectsAction, getEmployeesAction, type Employee, type Member } from '@/actions/projects';
-import { getIssuesByProjectAction, createIssueAction, updateIssueAction, deleteIssueAction, type Issue } from '@/actions/issues';
+import { getIssuesByProjectAction, createIssueAction, updateIssueAction, deleteIssueAction, uploadIssueAttachmentAction, type Issue } from '@/actions/issues';
+import { getTasksByProjectAction } from '@/actions/tasks';
 import { AddIssueModal } from '@/components/dashboard/AddIssueModal';
+
+function getAttachmentUrl(path: string) {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
+    return path;
+  }
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  const serverBase = apiBase.replace(/\/api$/, '');
+  return `${serverBase}${path.startsWith('/') ? '' : '/'}${path}`;
+}
 
 interface Project {
   id: string;
@@ -59,6 +72,25 @@ export default function IssuesPage() {
   const [tempHours, setTempHours] = useState('0');
   const [isEditingHours, setIsEditingHours] = useState(false);
   const [newCommentText, setNewCommentText] = useState('');
+
+  // Project tasks and uploading image state
+  const [activeProjectTasks, setActiveProjectTasks] = useState<any[]>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Fetch tasks for the project of the active issue details item
+  useEffect(() => {
+    if (activeDetailItem && activeDetailItem.itemType === 'issue' && activeDetailItem.projectId) {
+      getTasksByProjectAction(activeDetailItem.projectId).then((res) => {
+        if (res.success && res.data) {
+          setActiveProjectTasks(res.data);
+        } else {
+          setActiveProjectTasks([]);
+        }
+      });
+    } else {
+      setActiveProjectTasks([]);
+    }
+  }, [activeDetailItem]);
 
   // Load from LocalStorage
   // Load from Backend/LocalStorage
@@ -207,10 +239,82 @@ export default function IssuesPage() {
       assignees: issue.assignees,
       actualHours: (issue as any).actualHours || 0,
       comments: savedComments,
+      relatedTaskId: (issue as any).relatedTaskId || '',
+      relatedTaskTitle: (issue as any).relatedTaskTitle || '',
+      attachments: (issue as any).attachments || [],
+      projectId: issue.projectId,
       itemType: 'issue'
     });
     setTempHours(String((issue as any).actualHours || 0));
     setIsEditingHours(false);
+  };
+  const handleUpdateRelatedTask = async (newTaskId: string) => {
+    if (!activeDetailItem) return;
+    const task = activeProjectTasks.find(t => t.id === newTaskId);
+    const newTitle = task ? task.title : '';
+    
+    const res = await updateIssueAction(activeDetailItem.id, {
+      relatedTaskId: newTaskId || null as any,
+      relatedTaskTitle: newTitle || null as any
+    });
+    
+    if (res.success && res.data) {
+      setActiveDetailItem((prev: any) => prev ? { ...prev, relatedTaskId: newTaskId, relatedTaskTitle: newTitle } : null);
+      setIssues(prev => prev.map(i => i.id === activeDetailItem.id ? { ...i, relatedTaskId: newTaskId, relatedTaskTitle: newTitle } : i));
+    } else {
+      setActiveDetailItem((prev: any) => prev ? { ...prev, relatedTaskId: newTaskId, relatedTaskTitle: newTitle } : null);
+      const updated = issues.map(i => i.id === activeDetailItem.id ? { ...i, relatedTaskId: newTaskId, relatedTaskTitle: newTitle } : i);
+      setIssues(updated);
+      localStorage.setItem('pwt_issues', JSON.stringify(updated));
+    }
+  };
+
+  const handleAddAttachment = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!activeDetailItem) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingImage(true);
+    const nextAttachments = [...(activeDetailItem.attachments || [])];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await uploadIssueAttachmentAction(formData);
+      if (res.success && res.url) {
+        nextAttachments.push(res.url);
+      }
+    }
+
+    const resUpdate = await updateIssueAction(activeDetailItem.id, { attachments: nextAttachments });
+    if (resUpdate.success && resUpdate.data) {
+      setActiveDetailItem((prev: any) => prev ? { ...prev, attachments: nextAttachments } : null);
+      setIssues(prev => prev.map(i => i.id === activeDetailItem.id ? { ...i, attachments: nextAttachments } : i));
+    } else {
+      setActiveDetailItem((prev: any) => prev ? { ...prev, attachments: nextAttachments } : null);
+      const updated = issues.map(i => i.id === activeDetailItem.id ? { ...i, attachments: nextAttachments } : i);
+      setIssues(updated);
+      localStorage.setItem('pwt_issues', JSON.stringify(updated));
+    }
+    setUploadingImage(false);
+  };
+
+  const handleRemoveAttachment = async (urlToRemove: string) => {
+    if (!activeDetailItem) return;
+    const nextAttachments = (activeDetailItem.attachments || []).filter((url: string) => url !== urlToRemove);
+
+    const res = await updateIssueAction(activeDetailItem.id, { attachments: nextAttachments });
+    if (res.success && res.data) {
+      setActiveDetailItem((prev: any) => prev ? { ...prev, attachments: nextAttachments } : null);
+      setIssues(prev => prev.map(i => i.id === activeDetailItem.id ? { ...i, attachments: nextAttachments } : i));
+    } else {
+      setActiveDetailItem((prev: any) => prev ? { ...prev, attachments: nextAttachments } : null);
+      const updated = issues.map(i => i.id === activeDetailItem.id ? { ...i, attachments: nextAttachments } : i);
+      setIssues(updated);
+      localStorage.setItem('pwt_issues', JSON.stringify(updated));
+    }
   };
 
   const handleUpdateStatus = async (newStatus: Issue['status']) => {
@@ -647,6 +751,14 @@ export default function IssuesPage() {
                         <span className="truncate">{issue.projectName}</span>
                       </span>
 
+                      {/* Related Task Tag */}
+                      {issue.relatedTaskTitle && (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-slate-650 bg-slate-100 border border-slate-200 rounded-lg px-2 py-0.5 max-w-[120px]" title={`Related Task: ${issue.relatedTaskTitle}`}>
+                          <Bookmark className="h-2.5 w-2.5 shrink-0 text-slate-500" />
+                          <span className="truncate">{issue.relatedTaskTitle}</span>
+                        </span>
+                      )}
+
                       {/* Status */}
                       <span className={cn(
                         'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold border',
@@ -705,9 +817,21 @@ export default function IssuesPage() {
                         )}>
                           {issue.title}
                         </p>
-                        <p className="text-[10px] text-slate-400 truncate mt-0.5 leading-normal max-w-lg">
-                          {issue.description}
-                        </p>
+                        <div className="flex items-center gap-2 mt-0.5 min-w-0">
+                          {issue.description ? (
+                            <p className="text-[10px] text-slate-400 truncate leading-normal max-w-lg">
+                              {issue.description}
+                            </p>
+                          ) : (
+                            <span className="h-1" />
+                          )}
+                          {issue.relatedTaskTitle && (
+                            <span className="inline-flex items-center gap-1 text-[8px] font-black uppercase text-slate-500 bg-slate-100 border border-slate-200 rounded px-1.5 py-0.2 shrink-0" title={`Related Task: ${issue.relatedTaskTitle}`}>
+                              <Bookmark className="h-2 w-2 shrink-0 text-slate-500" />
+                              <span className="truncate max-w-[100px]">{issue.relatedTaskTitle}</span>
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -956,41 +1080,61 @@ export default function IssuesPage() {
                     </div>
                   </div>
 
-                  {/* Logged Hours */}
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Logged Hours</label>
-                    <div>
-                      {isEditingHours ? (
-                        <div className="flex items-center gap-1.5">
-                          <input
-                            type="number"
-                            value={tempHours}
-                            onChange={(e) => setTempHours(e.target.value)}
-                            className="w-20 border border-slate-200 focus:border-indigo-500 rounded-lg px-2.5 py-1 text-[11px] font-black text-slate-808 outline-none transition-all shadow-3xs bg-white"
-                            step="0.5"
-                            min="0"
-                            autoFocus
-                          />
+                  {/* Logged Hours & Related Task */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Logged Hours */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Logged Hours</label>
+                      <div>
+                        {isEditingHours ? (
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="number"
+                              value={tempHours}
+                              onChange={(e) => setTempHours(e.target.value)}
+                              className="w-full border border-slate-200 focus:border-indigo-500 rounded-lg px-2.5 py-1.5 text-[11px] font-black text-slate-808 outline-none transition-all shadow-3xs bg-white"
+                              step="0.5"
+                              min="0"
+                              autoFocus
+                            />
+                            <button
+                              onClick={handleSaveHoursValue}
+                              className="px-2.5 py-1.5 rounded-lg bg-indigo-650 hover:bg-indigo-755 text-white text-[10px] font-black shadow-3xs transition-all cursor-pointer shrink-0"
+                            >
+                              Save
+                            </button>
+                          </div>
+                        ) : (
                           <button
-                            onClick={handleSaveHoursValue}
-                            className="px-2.5 py-1 rounded-lg bg-indigo-650 hover:bg-indigo-755 text-white text-[10px] font-black shadow-3xs transition-all cursor-pointer"
+                            onClick={() => {
+                              setTempHours(String(activeDetailItem.actualHours || 0));
+                              setIsEditingHours(true);
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-150 bg-white hover:bg-slate-55 text-xs font-bold text-slate-700 shadow-3xs transition-all cursor-pointer w-full text-left select-none"
                           >
-                            Save
+                            <Clock className="h-4 w-4 text-indigo-550 shrink-0" />
+                            <span>{activeDetailItem.actualHours || 0} hours</span>
                           </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setTempHours(String(activeDetailItem.actualHours || 0));
-                            setIsEditingHours(true);
-                          }}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-150 bg-white hover:bg-slate-55 text-xs font-bold text-slate-700 shadow-3xs transition-all cursor-pointer w-36 text-left select-none"
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Related Task */}
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Related Task</label>
+                      <div className="relative">
+                        <select
+                          value={activeDetailItem.relatedTaskId || ''}
+                          onChange={(e) => handleUpdateRelatedTask(e.target.value)}
+                          className="w-full appearance-none rounded-xl border border-slate-150 bg-white hover:bg-slate-55 px-3 py-2.5 text-xs text-slate-700 font-bold focus:outline-none shadow-3xs cursor-pointer pr-8"
                         >
-                          <Clock className="h-4 w-4 text-indigo-550 shrink-0" />
-                          <span>{activeDetailItem.actualHours || 0} hours</span>
-                          <span className="text-[8px] text-slate-400 ml-auto font-bold uppercase tracking-wider">Edit</span>
-                        </button>
-                      )}
+                          <option value="">Not related to any task</option>
+                          {activeProjectTasks.map(t => (
+                            <option key={t.id} value={t.id}>{t.title}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1015,6 +1159,52 @@ export default function IssuesPage() {
                       <span className="text-xs text-slate-400 font-semibold italic">No assignees</span>
                     )}
                   </div>
+                </div>
+
+                {/* Screenshots / Attachments */}
+                <div className="space-y-2 pt-2">
+                  <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Screenshots / Attachments</label>
+                  
+                  {activeDetailItem.attachments && activeDetailItem.attachments.length > 0 && (
+                    <div className="grid grid-cols-4 gap-2 mb-2">
+                      {activeDetailItem.attachments.map((url: string, idx: number) => (
+                        <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50 cursor-pointer">
+                          <img
+                            src={getAttachmentUrl(url)}
+                            alt={`Attachment ${idx + 1}`}
+                            onClick={() => window.open(getAttachmentUrl(url), '_blank')}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                          />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveAttachment(url);
+                            }}
+                            className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/60 hover:bg-red-650 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-white cursor-pointer shadow-sm"
+                            title="Delete screenshot"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <label className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-slate-250 bg-slate-50/50 hover:bg-slate-50 hover:border-indigo-300 transition-all cursor-pointer">
+                    <UploadCloud className="h-4 w-4 text-slate-405" />
+                    <span className="text-[10px] font-bold text-slate-505">
+                      {uploadingImage ? 'Uploading image...' : 'Upload screenshot'}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handleAddAttachment}
+                      disabled={uploadingImage}
+                    />
+                  </label>
                 </div>
 
                 {/* Discussion */}

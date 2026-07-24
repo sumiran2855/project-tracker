@@ -26,8 +26,30 @@ export interface Issue {
   commentsCount: number;
   actualHours?: number;
   workLogs?: WorkLog[];
+  relatedTaskId?: string;
+  relatedTaskTitle?: string;
+  attachments?: string[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+export async function uploadIssueAttachmentAction(formData: FormData): Promise<{ success: boolean; url?: string; error?: string }> {
+  try {
+    const session = await getSession();
+    if (!session?.token) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const res = await apiClient.post<{ success: boolean; data: { url: string } }>(
+      'issues/upload',
+      formData,
+      { token: session.token }
+    );
+
+    return { success: true, url: res.data.url };
+  } catch (error: any) {
+    return { success: false, error: error?.message || 'Failed to upload image' };
+  }
 }
 
 export async function getIssuesByProjectAction(projectId: string): Promise<{ success: boolean; data?: Issue[]; error?: string }> {

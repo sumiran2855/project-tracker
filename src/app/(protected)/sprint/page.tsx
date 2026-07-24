@@ -21,14 +21,25 @@ import {
   Kanban,
   User,
   ExternalLink,
-  FlameKindling
+  FlameKindling,
+  UploadCloud
 } from 'lucide-react';
 import { cn, getCurrentWeekBounds, isItemInSprint } from '@/lib/utils';
 import { useUser } from '@/contexts/UserContext';
 import { getEmployeesAction } from '@/actions/projects';
 import { updateTaskAction, deleteTaskAction, Task, Subtask, Comment } from '@/actions/tasks';
-import { updateIssueAction, deleteIssueAction, Issue } from '@/actions/issues';
+import { updateIssueAction, deleteIssueAction, uploadIssueAttachmentAction, Issue } from '@/actions/issues';
 import { fetchAllSprintData } from '@/lib/sprintLoader';
+
+function getAttachmentUrl(path: string) {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
+    return path;
+  }
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  const serverBase = apiBase.replace(/\/api$/, '');
+  return `${serverBase}${path.startsWith('/') ? '' : '/'}${path}`;
+}
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { EmployeeDetailModal } from '@/components/dashboard/EmployeeDetailModal';
 
@@ -49,6 +60,9 @@ interface SprintItem {
   // Issue specific
   type?: string;
   commentsCount?: number;
+  relatedTaskId?: string;
+  relatedTaskTitle?: string;
+  attachments?: string[];
   // Task specific
   subtasks?: any[];
 }
@@ -220,7 +234,10 @@ export default function SprintPage() {
         projectName: i.projectName,
         itemType: 'issue' as const,
         type: i.type,
-        commentsCount: i.commentsCount || 0
+        commentsCount: i.commentsCount || 0,
+        relatedTaskId: (i as any).relatedTaskId || '',
+        relatedTaskTitle: (i as any).relatedTaskTitle || '',
+        attachments: (i as any).attachments || []
       };
     })
   ];
@@ -277,6 +294,62 @@ export default function SprintPage() {
   const dispatchUpdate = () => {
     window.dispatchEvent(new Event('storage'));
     window.dispatchEvent(new Event('pwt_update'));
+  };
+
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleUpdateRelatedTask = async (newTaskId: string) => {
+    if (!activeDetailItem) return;
+    const task = tasks.find(t => t.id === newTaskId);
+    const newTitle = task ? task.title : '';
+    
+    const res = await updateIssueAction(activeDetailItem.id, {
+      relatedTaskId: newTaskId || null as any,
+      relatedTaskTitle: newTitle || null as any
+    });
+    
+    if (res.success && res.data) {
+      setActiveDetailItem((prev: any) => prev ? { ...prev, relatedTaskId: newTaskId, relatedTaskTitle: newTitle } : null);
+      dispatchUpdate();
+    }
+  };
+
+  const handleAddAttachment = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!activeDetailItem) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingImage(true);
+    const nextAttachments = [...(activeDetailItem.attachments || [])];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await uploadIssueAttachmentAction(formData);
+      if (res.success && res.url) {
+        nextAttachments.push(res.url);
+      }
+    }
+
+    const resUpdate = await updateIssueAction(activeDetailItem.id, { attachments: nextAttachments });
+    if (resUpdate.success && resUpdate.data) {
+      setActiveDetailItem((prev: any) => prev ? { ...prev, attachments: nextAttachments } : null);
+      dispatchUpdate();
+    }
+    setUploadingImage(false);
+  };
+
+  const handleRemoveAttachment = async (urlToRemove: string) => {
+    if (!activeDetailItem) return;
+    const nextAttachments = (activeDetailItem.attachments || []).filter((url: string) => url !== urlToRemove);
+
+    const res = await updateIssueAction(activeDetailItem.id, { attachments: nextAttachments });
+    if (res.success && res.data) {
+      setActiveDetailItem((prev: any) => prev ? { ...prev, attachments: nextAttachments } : null);
+      dispatchUpdate();
+    }
   };
 
   // State update handlers
@@ -848,17 +921,24 @@ export default function SprintPage() {
                       onDragStart={(e) => handleDragStart(e, item.id, item.itemType)}
                       className="bg-white border border-slate-200 hover:border-indigo-400 p-4 rounded-2xl shadow-3xs cursor-pointer select-none transition-all hover:shadow-md hover:-translate-y-0.5 group active:opacity-60"
                     >
-                      <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex flex-wrap items-center gap-1.5 mb-2">
                         <span className={cn(
                           "px-2 py-0.5 rounded-full font-extrabold text-[8px] uppercase tracking-wider",
                           item.itemType === 'task' ? "bg-indigo-50 text-indigo-650 border border-indigo-100/30" : "bg-rose-50 text-rose-600 border border-rose-100/30"
                         )}>
                           {item.itemType === 'task' ? 'Task' : `Issue: ${item.type || 'Bug'}`}
                         </span>
+
+                        {item.itemType === 'issue' && item.relatedTaskTitle && (
+                          <span className="inline-flex items-center gap-0.5 text-[8px] font-black uppercase text-slate-500 bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5 shrink-0" title={`Related Task: ${item.relatedTaskTitle}`}>
+                            <Bookmark className="h-2 w-2 shrink-0 text-slate-500" />
+                            <span className="truncate max-w-[80px]">{item.relatedTaskTitle}</span>
+                          </span>
+                        )}
                         
                         {/* Priority Badge */}
                         <span className={cn(
-                          "text-[9px] font-black uppercase tracking-wider",
+                          "text-[9px] font-black uppercase tracking-wider ml-auto",
                           item.priority === 'Urgent' || item.priority === 'Critical' ? "text-rose-600" :
                           item.priority === 'High' ? "text-amber-500" : "text-slate-400"
                         )}>
@@ -1256,6 +1336,26 @@ export default function SprintPage() {
                   </div>
                 </div>
 
+                {/* Related Task for issues */}
+                {activeDetailItem.itemType === 'issue' && (
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Related Task</label>
+                    <div className="relative">
+                      <select
+                        value={activeDetailItem.relatedTaskId || ''}
+                        onChange={(e) => handleUpdateRelatedTask(e.target.value)}
+                        className="w-full appearance-none rounded-xl border border-slate-150 bg-white hover:bg-slate-55 px-3 py-2.5 text-xs text-slate-700 font-bold focus:outline-none shadow-3xs cursor-pointer pr-8"
+                      >
+                        <option value="">Not related to any task</option>
+                        {tasks.filter(t => t.projectId === activeDetailItem.projectId).map(t => (
+                          <option key={t.id} value={t.id}>{t.title}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                    </div>
+                  </div>
+                )}
+
                 {/* Assignees */}
                 <div className="space-y-2">
                   <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-400">Assignees</h3>
@@ -1274,6 +1374,54 @@ export default function SprintPage() {
                     )}
                   </div>
                 </div>
+
+                {/* Screenshots / Attachments for issues */}
+                {activeDetailItem.itemType === 'issue' && (
+                  <div className="space-y-2 pt-2">
+                    <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Screenshots / Attachments</label>
+                    
+                    {activeDetailItem.attachments && activeDetailItem.attachments.length > 0 && (
+                      <div className="grid grid-cols-4 gap-2 mb-2">
+                        {activeDetailItem.attachments.map((url: string, idx: number) => (
+                          <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50 cursor-pointer">
+                            <img
+                              src={getAttachmentUrl(url)}
+                              alt={`Attachment ${idx + 1}`}
+                              onClick={() => window.open(getAttachmentUrl(url), '_blank')}
+                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                            />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveAttachment(url);
+                              }}
+                              className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/60 hover:bg-red-650 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-white cursor-pointer shadow-sm"
+                              title="Delete screenshot"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <label className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-slate-250 bg-slate-50/50 hover:bg-slate-50 hover:border-indigo-300 transition-all cursor-pointer">
+                      <UploadCloud className="h-4 w-4 text-slate-405" />
+                      <span className="text-[10px] font-bold text-slate-505">
+                        {uploadingImage ? 'Uploading image...' : 'Upload screenshot'}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={handleAddAttachment}
+                        disabled={uploadingImage}
+                      />
+                    </label>
+                  </div>
+                )}
 
                 {/* Subtask Checklist */}
                 {activeDetailItem.itemType === 'task' && (

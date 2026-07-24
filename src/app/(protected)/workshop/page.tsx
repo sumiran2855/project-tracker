@@ -37,12 +37,23 @@ import {
   Trash2,
   Subtitles,
   ChevronDown,
-  Loader2
+  Loader2,
+  UploadCloud
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getProjectsAction, getEmployeesAction, type Employee } from '@/actions/projects';
 import { getTasksByProjectAction, updateTaskAction, deleteTaskAction, type Task, type Subtask, type Comment } from '@/actions/tasks';
-import { getIssuesByProjectAction, updateIssueAction, deleteIssueAction, type Issue } from '@/actions/issues';
+import { getIssuesByProjectAction, updateIssueAction, deleteIssueAction, uploadIssueAttachmentAction, type Issue } from '@/actions/issues';
+
+function getAttachmentUrl(path: string) {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
+    return path;
+  }
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  const serverBase = apiBase.replace(/\/api$/, '');
+  return `${serverBase}${path.startsWith('/') ? '' : '/'}${path}`;
+}
 import { AddProjectModal } from '@/components/dashboard/AddProjectModal';
 import { AddIssueModal } from '@/components/dashboard/AddIssueModal';
 import { AddTaskModal } from '@/components/dashboard/AddTaskModal';
@@ -173,6 +184,10 @@ interface CardDetailItem {
   comments: Comment[];
   subtasks?: Subtask[];
   itemType: 'task' | 'issue';
+  relatedTaskId?: string;
+  relatedTaskTitle?: string;
+  attachments?: string[];
+  projectId?: string;
 }
 
 export default function WorkshopDashboard() {
@@ -530,6 +545,10 @@ export default function WorkshopDashboard() {
           assignees: issue.assignees,
           actualHours: (issue as any).actualHours || 0,
           comments: savedComments,
+          relatedTaskId: (issue as any).relatedTaskId || '',
+          relatedTaskTitle: (issue as any).relatedTaskTitle || '',
+          attachments: (issue as any).attachments || [],
+          projectId: issue.projectId,
           itemType: 'issue'
         });
         setTempHours(String((issue as any).actualHours || 0));
@@ -648,6 +667,68 @@ export default function WorkshopDashboard() {
         const nextList = selectedProjIssues.map(i => i.id === activeDetailItem.id ? { ...i, dueDate: valueToSave } : i);
         localStorage.setItem(`pwt_issues_project_${selectedProject?.id}`, JSON.stringify(nextList));
       }
+    }
+  };
+
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleUpdateRelatedTask = async (newTaskId: string) => {
+    if (!activeDetailItem) return;
+    const task = selectedProjTasks.find(t => t.id === newTaskId);
+    const newTitle = task ? task.title : '';
+    
+    const res = await updateIssueAction(activeDetailItem.id, {
+      relatedTaskId: newTaskId || null as any,
+      relatedTaskTitle: newTitle || null as any
+    });
+    
+    if (res.success) {
+      setActiveDetailItem(prev => prev ? { ...prev, relatedTaskId: newTaskId, relatedTaskTitle: newTitle } : null);
+      setSelectedProjIssues(prev => prev.map(i => i.id === activeDetailItem.id ? { ...i, relatedTaskId: newTaskId, relatedTaskTitle: newTitle } : i));
+      const nextList = selectedProjIssues.map(i => i.id === activeDetailItem.id ? { ...i, relatedTaskId: newTaskId, relatedTaskTitle: newTitle } : i);
+      localStorage.setItem(`pwt_issues_project_${selectedProject?.id}`, JSON.stringify(nextList));
+    }
+  };
+
+  const handleAddAttachment = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!activeDetailItem) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingImage(true);
+    const nextAttachments = [...(activeDetailItem.attachments || [])];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await uploadIssueAttachmentAction(formData);
+      if (res.success && res.url) {
+        nextAttachments.push(res.url);
+      }
+    }
+
+    const resUpdate = await updateIssueAction(activeDetailItem.id, { attachments: nextAttachments });
+    if (resUpdate.success) {
+      setActiveDetailItem(prev => prev ? { ...prev, attachments: nextAttachments } : null);
+      setSelectedProjIssues(prev => prev.map(i => i.id === activeDetailItem.id ? { ...i, attachments: nextAttachments } : i));
+      const nextList = selectedProjIssues.map(i => i.id === activeDetailItem.id ? { ...i, attachments: nextAttachments } : i);
+      localStorage.setItem(`pwt_issues_project_${selectedProject?.id}`, JSON.stringify(nextList));
+    }
+    setUploadingImage(false);
+  };
+
+  const handleRemoveAttachment = async (urlToRemove: string) => {
+    if (!activeDetailItem) return;
+    const nextAttachments = (activeDetailItem.attachments || []).filter((url: string) => url !== urlToRemove);
+
+    const res = await updateIssueAction(activeDetailItem.id, { attachments: nextAttachments });
+    if (res.success) {
+      setActiveDetailItem(prev => prev ? { ...prev, attachments: nextAttachments } : null);
+      setSelectedProjIssues(prev => prev.map(i => i.id === activeDetailItem.id ? { ...i, attachments: nextAttachments } : i));
+      const nextList = selectedProjIssues.map(i => i.id === activeDetailItem.id ? { ...i, attachments: nextAttachments } : i);
+      localStorage.setItem(`pwt_issues_project_${selectedProject?.id}`, JSON.stringify(nextList));
     }
   };
 
@@ -1526,8 +1607,14 @@ export default function WorkshopDashboard() {
                                     </h4>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-1 mt-0.5">
+                                <div className="flex flex-wrap items-center gap-1 mt-0.5">
                                   <Badge className="bg-red-50 text-red-550 border border-red-100 text-[8px] py-px px-1 font-bold shrink-0">{issue.type}</Badge>
+                                  {issue.relatedTaskTitle && (
+                                    <span className="inline-flex items-center gap-0.5 text-[8px] font-black uppercase text-slate-500 bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5 shrink-0" title={`Related Task: ${issue.relatedTaskTitle}`}>
+                                      <Bookmark className="h-2 w-2 shrink-0 text-slate-500" />
+                                      <span className="truncate max-w-[80px]">{issue.relatedTaskTitle}</span>
+                                    </span>
+                                  )}
                                 </div>
                                 <p className="text-[10px] text-slate-455 leading-relaxed font-semibold line-clamp-2 mt-1">
                                   {issue.description}
@@ -1878,6 +1965,26 @@ export default function WorkshopDashboard() {
                   </div>
                 )}
 
+                {/* Related Task for issues */}
+                {activeDetailItem.itemType === 'issue' && (
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Related Task</label>
+                    <div className="relative">
+                      <select
+                        value={activeDetailItem.relatedTaskId || ''}
+                        onChange={(e) => handleUpdateRelatedTask(e.target.value)}
+                        className="w-full appearance-none rounded-xl border border-slate-150 bg-white hover:bg-slate-55 px-3 py-2.5 text-xs text-slate-700 font-bold focus:outline-none shadow-3xs cursor-pointer pr-8"
+                      >
+                        <option value="">Not related to any task</option>
+                        {selectedProjTasks.map(t => (
+                          <option key={t.id} value={t.id}>{t.title}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                    </div>
+                  </div>
+                )}
+
                 {/* Assignees */}
                 <div className="space-y-2">
                   <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Assignees</label>
@@ -1895,6 +2002,54 @@ export default function WorkshopDashboard() {
                     ))}
                   </div>
                 </div>
+
+                {/* Screenshots / Attachments for issues */}
+                {activeDetailItem.itemType === 'issue' && (
+                  <div className="space-y-2 pt-2">
+                    <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Screenshots / Attachments</label>
+                    
+                    {activeDetailItem.attachments && activeDetailItem.attachments.length > 0 && (
+                      <div className="grid grid-cols-4 gap-2 mb-2">
+                        {activeDetailItem.attachments.map((url: string, idx: number) => (
+                          <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50 cursor-pointer">
+                            <img
+                              src={getAttachmentUrl(url)}
+                              alt={`Attachment ${idx + 1}`}
+                              onClick={() => window.open(getAttachmentUrl(url), '_blank')}
+                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                            />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveAttachment(url);
+                              }}
+                              className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/60 hover:bg-red-650 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-white cursor-pointer shadow-sm"
+                              title="Delete screenshot"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <label className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-slate-250 bg-slate-50/50 hover:bg-slate-50 hover:border-indigo-300 transition-all cursor-pointer">
+                      <UploadCloud className="h-4 w-4 text-slate-405" />
+                      <span className="text-[10px] font-bold text-slate-505">
+                        {uploadingImage ? 'Uploading image...' : 'Upload screenshot'}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={handleAddAttachment}
+                        disabled={uploadingImage}
+                      />
+                    </label>
+                  </div>
+                )}
 
                 {/* Subtask Checklist */}
                 {activeDetailItem.itemType === 'task' && (

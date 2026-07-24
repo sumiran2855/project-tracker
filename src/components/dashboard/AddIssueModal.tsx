@@ -1,10 +1,21 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, ChevronDown, Bug, Loader2 } from 'lucide-react';
+import { X, ChevronDown, Bug, Loader2, Trash2, UploadCloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { createIssueAction } from '@/actions/issues';
+import { createIssueAction, uploadIssueAttachmentAction } from '@/actions/issues';
+import { getTasksByProjectAction } from '@/actions/tasks';
 import { Issue } from '@/actions/issues';
+
+function getAttachmentUrl(path: string) {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
+    return path;
+  }
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  const serverBase = apiBase.replace(/\/api$/, '');
+  return `${serverBase}${path.startsWith('/') ? '' : '/'}${path}`;
+}
 
 interface AddIssueModalProps {
   isOpen: boolean;
@@ -27,6 +38,28 @@ export function AddIssueModal({ isOpen, onClose, projects, availableMembers, onS
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  // New fields state
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [selectedTaskId, setSelectedTaskId] = useState('');
+  const [attachments, setAttachments] = useState<string[]>([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Fetch tasks when project changes
+  useEffect(() => {
+    if (newProject) {
+      getTasksByProjectAction(newProject).then((res) => {
+        if (res.success && res.data) {
+          setTasks(res.data);
+        } else {
+          setTasks([]);
+        }
+      });
+    } else {
+      setTasks([]);
+    }
+    setSelectedTaskId('');
+  }, [newProject]);
+
   // Reset state when modal closes/opens
   useEffect(() => {
     if (isOpen) {
@@ -44,6 +77,8 @@ export function AddIssueModal({ isOpen, onClose, projects, availableMembers, onS
       setNewAssignees([]);
       setErrorMsg('');
       setLoading(false);
+      setAttachments([]);
+      setSelectedTaskId('');
     }
   }, [isOpen, projects, defaultType]);
 
@@ -95,6 +130,8 @@ export function AddIssueModal({ isOpen, onClose, projects, availableMembers, onS
       };
     });
 
+    const relatedTask = tasks.find((t) => t.id === selectedTaskId);
+
     const issueData = {
       title: newTitle,
       description: newDesc,
@@ -106,6 +143,9 @@ export function AddIssueModal({ isOpen, onClose, projects, availableMembers, onS
       dueDate: newDueDate || 'No Due Date',
       assignees: selectedAssignees,
       commentsCount: 0,
+      relatedTaskId: selectedTaskId || undefined,
+      relatedTaskTitle: relatedTask ? relatedTask.title : undefined,
+      attachments: attachments,
     };
 
     const res = await createIssueAction(issueData);
@@ -116,6 +156,32 @@ export function AddIssueModal({ isOpen, onClose, projects, availableMembers, onS
       setErrorMsg(res.error || 'Failed to create issue');
       setLoading(false);
     }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingImage(true);
+    setErrorMsg('');
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await uploadIssueAttachmentAction(formData);
+      if (res.success && res.url) {
+        setAttachments((prev) => [...prev, res.url!]);
+      } else {
+        setErrorMsg(res.error || 'Failed to upload image.');
+      }
+    }
+    setUploadingImage(false);
+  };
+
+  const handleRemoveAttachment = (urlToRemove: string) => {
+    setAttachments((prev) => prev.filter((url) => url !== urlToRemove));
   };
 
   if (!isOpen) return null;
@@ -174,6 +240,24 @@ export function AddIssueModal({ isOpen, onClose, projects, availableMembers, onS
                   <option value="" disabled>Select project...</option>
                   {projects.map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Related Task Selection */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Related Task (Optional)</label>
+              <div className="relative">
+                <select
+                  value={selectedTaskId}
+                  onChange={(e) => setSelectedTaskId(e.target.value)}
+                  className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-808 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
+                >
+                  <option value="">Not related to any task</option>
+                  {tasks.map(t => (
+                    <option key={t.id} value={t.id}>{t.title}</option>
                   ))}
                 </select>
                 <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
@@ -307,6 +391,54 @@ export function AddIssueModal({ isOpen, onClose, projects, availableMembers, onS
                   <p className="text-xs text-slate-400 font-medium italic">No team members assigned to this project.</p>
                 )}
               </div>
+            </div>
+
+            {/* Screenshots / Attachments */}
+            <div className="space-y-2 mb-4">
+              <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Screenshots / Attachments (Optional)</label>
+              
+              {/* Attachment Preview Grid */}
+              {attachments.length > 0 && (
+                <div className="grid grid-cols-4 gap-2 mb-2">
+                  {attachments.map((url, idx) => (
+                    <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50 cursor-pointer">
+                      <img
+                        src={getAttachmentUrl(url)}
+                        alt={`Attachment ${idx + 1}`}
+                        onClick={() => window.open(getAttachmentUrl(url), '_blank')}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveAttachment(url);
+                        }}
+                        className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/60 hover:bg-red-650 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-white cursor-pointer shadow-sm"
+                        title="Delete screenshot"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Upload Dropzone */}
+              <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-slate-200 rounded-2xl hover:bg-slate-50/50 hover:border-indigo-300 transition-all cursor-pointer gap-1.5 p-4">
+                <UploadCloud className="h-5 w-5 text-slate-400 group-hover:text-indigo-500" />
+                <span className="text-[10px] font-bold text-slate-505">
+                  {uploadingImage ? 'Uploading image...' : 'Click to upload screenshot(s)'}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleImageUpload}
+                  disabled={uploadingImage}
+                />
+              </label>
             </div>
           </div>
 
