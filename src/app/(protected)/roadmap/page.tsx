@@ -75,7 +75,7 @@ const TOTAL_TIMELINE_DAYS = 183; // Approx days in 6 months (Jun-Nov)
 export default function RoadmapPage() {
   const { user } = useUser();
   const canManageRoadmap = usePermission('roadmap:manage');
-  const isEmployee = user?.role === 'Employee';
+  const isEmployee = user?.role?.toLowerCase() === 'employee';
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [milestones, setMilestones] = useState<MilestoneItem[]>([]);
@@ -628,13 +628,15 @@ export default function RoadmapPage() {
                               <h4 className="text-xs font-black text-slate-800 truncate group-hover:text-indigo-650 transition-colors">
                                 {project.name}
                               </h4>
-                              <button
-                                onClick={() => handleOpenEditProjectModal(project)}
-                                className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-indigo-600 p-1 hover:bg-slate-100 rounded-lg transition-all"
-                                title="Edit Initiative Dates"
-                              >
-                                <Edit2 className="h-3 w-3" />
-                              </button>
+                              {!isEmployee && (
+                                <button
+                                  onClick={() => handleOpenEditProjectModal(project)}
+                                  className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-indigo-600 p-1 hover:bg-slate-100 rounded-lg transition-all"
+                                  title="Edit Initiative Dates"
+                                >
+                                  <Edit2 className="h-3 w-3" />
+                                </button>
+                              )}
                             </div>
 
                             <div className="flex items-center gap-2 mt-1">
@@ -658,10 +660,11 @@ export default function RoadmapPage() {
 
                             {/* Gantt Project Duration Bar */}
                             <div
-                              onClick={() => handleOpenEditProjectModal(project)}
+                              onClick={() => !isEmployee && handleOpenEditProjectModal(project)}
                               className={cn(
-                                "absolute h-6.5 rounded-xl bg-gradient-to-r flex items-center justify-between px-3 text-[9px] font-extrabold text-white cursor-pointer hover:scale-[1.01] hover:brightness-105 active:scale-99 transition-all shadow-xs",
-                                barColor
+                                "absolute h-6.5 rounded-xl bg-gradient-to-r flex items-center justify-between px-3 text-[9px] font-extrabold text-white transition-all shadow-xs",
+                                barColor,
+                                !isEmployee ? "cursor-pointer hover:scale-[1.01] hover:brightness-105 active:scale-99" : "cursor-default"
                               )}
                               style={{
                                 left: `${leftOffsetPercent}%`,
@@ -750,9 +753,12 @@ export default function RoadmapPage() {
                           return (
                             <div
                               key={project.id}
-                              draggable
+                              draggable={!isEmployee}
                               onDragStart={(e) => handleDragStart(e, project.id)}
-                              className="group bg-white border border-slate-200 hover:border-slate-350 rounded-2xl p-4 shadow-3xs hover:shadow-md transition-all duration-200 cursor-grab active:cursor-grabbing relative overflow-hidden"
+                              className={cn(
+                                "group bg-white border border-slate-200 hover:border-slate-350 rounded-2xl p-4 shadow-3xs hover:shadow-md transition-all duration-200 relative overflow-hidden",
+                                !isEmployee ? "cursor-grab active:cursor-grabbing" : "cursor-default"
+                              )}
                             >
                               <span className="absolute -right-8 -top-8 h-16 w-16 rounded-full bg-indigo-500/3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
@@ -762,13 +768,15 @@ export default function RoadmapPage() {
                                   <span className={cn("rounded-md px-2 py-0.5 text-[8px] font-black uppercase tracking-wider border", getStatusStyles(project.status))}>
                                     {project.status}
                                   </span>
-                                  <button
-                                    onClick={() => handleOpenEditProjectModal(project)}
-                                    className="text-slate-400 hover:text-indigo-650 p-1 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
-                                    title="Edit Dates"
-                                  >
-                                    <Edit2 className="h-3 w-3" />
-                                  </button>
+                                  {!isEmployee && (
+                                    <button
+                                      onClick={() => handleOpenEditProjectModal(project)}
+                                      className="text-slate-400 hover:text-indigo-650 p-1 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+                                      title="Edit Dates"
+                                    >
+                                      <Edit2 className="h-3 w-3" />
+                                    </button>
+                                  )}
                                 </div>
 
                                 {/* Project Title */}
@@ -807,7 +815,13 @@ export default function RoadmapPage() {
                                 </div>
 
                                 <div className="flex -space-x-1.5 overflow-hidden">
-                                  {project.members.filter((m: any) => m.role?.toLowerCase() !== 'admin').map((member, i) => (
+                                  {project.members.filter((m: any) => {
+                                    const r = m.role?.toLowerCase();
+                                    if (r === 'admin') return false;
+                                    const nameLower = (m.name || '').toLowerCase();
+                                    if (nameLower.includes('admin')) return false;
+                                    return true;
+                                  }).map((member, i) => (
                                     <div key={i} className={cn("h-5 w-5 rounded-md text-[7px] font-bold text-white flex items-center justify-center ring-2 ring-white shadow-3xs shrink-0", member.bg)} title={member.name}>
                                       {member.initials}
                                     </div>

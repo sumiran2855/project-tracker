@@ -466,7 +466,13 @@ export default function ProjectsPage() {
                 <div className="flex items-center justify-between">
                   {/* Avatars */}
                   <div className="flex -space-x-2 overflow-hidden">
-                    {project.members.filter((m: any) => m.role?.toLowerCase() !== 'admin').map((member, i) => (
+                    {project.members.filter((m: any) => {
+                      const r = m.role?.toLowerCase();
+                      if (r === 'admin') return false;
+                      const nameLower = (m.name || '').toLowerCase();
+                      if (nameLower.includes('admin')) return false;
+                      return true;
+                    }).map((member, i) => (
                       <div
                         key={i}
                         className={cn(

@@ -24,7 +24,7 @@ import {
   FlameKindling,
   UploadCloud
 } from 'lucide-react';
-import { cn, getCurrentWeekBounds, isItemInSprint } from '@/lib/utils';
+import { cn, getCurrentWeekBounds, isItemInSprint, formatCommentTime, getCommentTimestamp } from '@/lib/utils';
 import { useUser } from '@/contexts/UserContext';
 import { getEmployeesAction } from '@/actions/projects';
 import { updateTaskAction, deleteTaskAction, Task, Subtask, Comment } from '@/actions/tasks';
@@ -69,6 +69,8 @@ interface SprintItem {
 
 export default function SprintPage() {
   const { user } = useUser();
+  const isClient = user?.role?.toLowerCase() === 'client';
+  const canEditHours = user?.role?.toLowerCase() === 'team lead' || user?.role?.toLowerCase() === 'employee';
   
   // Data loading states
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -451,9 +453,9 @@ export default function SprintPage() {
       author: user?.name || 'PWT Team Member',
       initials: user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'ME',
       text: newCommentText.trim(),
-      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) + ', Today'
+      time: new Date().toISOString()
     };
-    const nextComments = [...(activeDetailItem.comments || []), newComment];
+    const nextComments = [newComment, ...(activeDetailItem.comments || [])];
 
     if (activeDetailItem.itemType === 'task') {
       const res = await updateTaskAction(activeDetailItem.id, { comments: nextComments });
@@ -524,6 +526,10 @@ export default function SprintPage() {
 
   // Drag & Drop handlers
   const handleDragStart = (e: React.DragEvent, cardId: string, cardType: 'task' | 'issue') => {
+    if (isClient) {
+      e.preventDefault();
+      return;
+    }
     e.dataTransfer.setData('cardId', cardId);
     e.dataTransfer.setData('cardType', cardType);
     e.dataTransfer.effectAllowed = 'move';
@@ -531,6 +537,7 @@ export default function SprintPage() {
 
   const handleDragOver = (e: React.DragEvent, colStatus: string) => {
     e.preventDefault();
+    if (isClient) return;
     setDraggedOverCol(colStatus);
   };
 
@@ -541,6 +548,7 @@ export default function SprintPage() {
   const handleDrop = async (e: React.DragEvent, colStatus: string) => {
     e.preventDefault();
     setDraggedOverCol(null);
+    if (isClient) return;
     const cardId = e.dataTransfer.getData('cardId');
     const cardType = e.dataTransfer.getData('cardType') as 'task' | 'issue';
 
@@ -554,7 +562,7 @@ export default function SprintPage() {
       else if (colStatus === 'Done') targetStatus = 'Closed';
     }
 
-    if (colStatus === 'Done') {
+    if (colStatus === 'Done' && canEditHours) {
       setHoursModalTarget({ id: cardId, type: cardType, newStatus: targetStatus });
       setInputHours('');
       setShowHoursModal(true);
@@ -578,18 +586,20 @@ export default function SprintPage() {
     const hoursVal = parseFloat(inputHours) || 0;
 
     if (hoursModalTarget.type === 'task') {
-      const res = await updateTaskAction(hoursModalTarget.id, { 
-        status: hoursModalTarget.newStatus as any,
-        actualHours: hoursVal
-      });
+      const payload: any = { status: hoursModalTarget.newStatus as any };
+      if (hoursVal > 0) {
+        payload.newWorkLog = { hours: hoursVal };
+      }
+      const res = await updateTaskAction(hoursModalTarget.id, payload);
       if (res.success) {
         dispatchUpdate();
       }
     } else {
-      const res = await updateIssueAction(hoursModalTarget.id, { 
-        status: hoursModalTarget.newStatus as any,
-        actualHours: hoursVal
-      } as any);
+      const payload: any = { status: hoursModalTarget.newStatus as any };
+      if (hoursVal > 0) {
+        payload.newWorkLog = { hours: hoursVal };
+      }
+      const res = await updateIssueAction(hoursModalTarget.id, payload);
       if (res.success) {
         dispatchUpdate();
       }
@@ -917,9 +927,12 @@ export default function SprintPage() {
                     <div
                       key={item.id}
                       onClick={() => handleItemClick(item)}
-                      draggable={true}
+                      draggable={!isClient}
                       onDragStart={(e) => handleDragStart(e, item.id, item.itemType)}
-                      className="bg-white border border-slate-200 hover:border-indigo-400 p-4 rounded-2xl shadow-3xs cursor-pointer select-none transition-all hover:shadow-md hover:-translate-y-0.5 group active:opacity-60"
+                      className={cn(
+                        "bg-white border border-slate-200 hover:border-indigo-400 p-4 rounded-2xl shadow-3xs select-none transition-all hover:shadow-md hover:-translate-y-0.5 group active:opacity-60",
+                        isClient ? "cursor-pointer" : "cursor-grab active:cursor-grabbing"
+                      )}
                     >
                       <div className="flex flex-wrap items-center gap-1.5 mb-2">
                         <span className={cn(
@@ -1237,8 +1250,9 @@ export default function SprintPage() {
                       <div className="relative">
                         <select
                           value={activeDetailItem.status}
+                          disabled={isClient}
                           onChange={(e) => handleUpdateStatus(e.target.value)}
-                          className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-bold text-slate-700 focus:outline-none appearance-none cursor-pointer shadow-3xs"
+                          className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-bold text-slate-700 focus:outline-none appearance-none cursor-pointer shadow-3xs disabled:opacity-75 disabled:cursor-not-allowed"
                         >
                           {activeDetailItem.itemType === 'task' ? (
                             <>
@@ -1266,8 +1280,9 @@ export default function SprintPage() {
                       <div className="relative">
                         <select
                           value={activeDetailItem.priority === 'Critical' ? 'Urgent' : activeDetailItem.priority}
+                          disabled={isClient}
                           onChange={(e) => handleUpdatePriority(e.target.value)}
-                          className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-bold text-slate-700 focus:outline-none appearance-none cursor-pointer shadow-3xs"
+                          className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-bold text-slate-700 focus:outline-none appearance-none cursor-pointer shadow-3xs disabled:opacity-75 disabled:cursor-not-allowed"
                         >
                           <option value="Low">Low</option>
                           <option value="Medium">Medium</option>
@@ -1287,14 +1302,16 @@ export default function SprintPage() {
                         <input
                           type="date"
                           dir="rtl"
+                          disabled={isClient}
                           value={activeDetailItem.dueDate && activeDetailItem.dueDate !== 'No Due Date' ? activeDetailItem.dueDate : ''}
                           onChange={(e) => handleUpdateTargetDate(e.target.value)}
                           onClick={(e) => {
+                            if (isClient) return;
                             try {
                               e.currentTarget.showPicker();
                             } catch (err) {}
                           }}
-                          className="w-full bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs font-bold text-slate-700 focus:outline-none cursor-pointer shadow-3xs h-9"
+                          className="w-full bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs font-bold text-slate-700 focus:outline-none cursor-pointer shadow-3xs h-9 disabled:opacity-75 disabled:cursor-not-allowed"
                         />
                       </div>
                     </div>
@@ -1322,13 +1339,18 @@ export default function SprintPage() {
                           </div>
                         ) : (
                           <button
-                            onClick={() => setIsEditingHours(true)}
-                            className="w-full bg-white hover:bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-3 text-xs font-bold text-slate-700 focus:outline-none shadow-3xs flex items-center justify-between cursor-pointer h-9 transition-colors"
+                            disabled={!canEditHours}
+                            onClick={() => {
+                              if (!canEditHours) return;
+                              setIsEditingHours(true);
+                            }}
+                            className="w-full bg-white hover:bg-slate-55 border border-slate-200 rounded-xl py-1.5 px-3 text-xs font-bold text-slate-700 focus:outline-none shadow-3xs flex items-center justify-between cursor-pointer h-9 transition-colors disabled:opacity-75 disabled:cursor-not-allowed"
                           >
                             <span className="flex items-center gap-1.5 text-slate-650">
                               <Clock className="h-3.5 w-3.5 text-slate-400" />
                               {activeDetailItem.actualHours || 0} hours
                             </span>
+                            {canEditHours && <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Edit</span>}
                           </button>
                         )}
                       </div>
@@ -1390,36 +1412,38 @@ export default function SprintPage() {
                               onClick={() => window.open(getAttachmentUrl(url), '_blank')}
                               className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
                             />
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemoveAttachment(url);
-                              }}
-                              className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/60 hover:bg-red-650 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-white cursor-pointer shadow-sm"
-                              title="Delete screenshot"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
+                            {!isClient && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveAttachment(url);
+                                }}
+                                className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/60 hover:bg-red-650 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-white cursor-pointer shadow-sm"
+                                title="Delete screenshot"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            )}
                           </div>
                         ))}
                       </div>
                     )}
 
-                    <label className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-slate-250 bg-slate-50/50 hover:bg-slate-50 hover:border-indigo-300 transition-all cursor-pointer">
-                      <UploadCloud className="h-4 w-4 text-slate-405" />
-                      <span className="text-[10px] font-bold text-slate-505">
-                        {uploadingImage ? 'Uploading image...' : 'Upload screenshot'}
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        className="hidden"
-                        onChange={handleAddAttachment}
-                        disabled={uploadingImage}
-                      />
-                    </label>
+                      <label className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-dashed border-slate-250 bg-slate-50/50 hover:bg-slate-50 hover:border-indigo-300 transition-all cursor-pointer">
+                        <UploadCloud className="h-4 w-4 text-slate-405" />
+                        <span className="text-[10px] font-bold text-slate-505">
+                          {uploadingImage ? 'Uploading image...' : 'Upload screenshot'}
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={handleAddAttachment}
+                          disabled={uploadingImage}
+                        />
+                      </label>
                   </div>
                 )}
 
@@ -1443,8 +1467,9 @@ export default function SprintPage() {
                               <input
                                 type="checkbox"
                                 checked={sub.completed}
+                                disabled={isClient}
                                 onChange={() => handleToggleSubtask(sub.id)}
-                                className="rounded border-slate-350 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5"
+                                className="rounded border-slate-350 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5 disabled:opacity-75 disabled:cursor-not-allowed"
                               />
                               <span className={cn(
                                 "text-xs font-bold text-slate-700",
@@ -1458,21 +1483,21 @@ export default function SprintPage() {
                       </div>
 
                       {/* Add checklist item */}
-                      <div className="flex gap-2 pt-2 border-t border-slate-100">
-                        <input
-                          type="text"
-                          value={newSubtaskText}
-                          onChange={(e) => setNewSubtaskText(e.target.value)}
-                          placeholder="Add another checklist task item..."
-                          className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-indigo-500 bg-white transition-all placeholder:text-slate-400"
-                        />
-                        <button
-                          onClick={handleAddSubtask}
-                          className="inline-flex items-center justify-center rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-150 text-indigo-650 px-4.5 py-2 text-xs font-black transition-all cursor-pointer shrink-0"
-                        >
-                          Add
-                        </button>
-                      </div>
+                        <div className="flex gap-2 pt-2 border-t border-slate-100">
+                          <input
+                            type="text"
+                            value={newSubtaskText}
+                            onChange={(e) => setNewSubtaskText(e.target.value)}
+                            placeholder="Add another checklist task item..."
+                            className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-indigo-500 bg-white transition-all placeholder:text-slate-400"
+                          />
+                          <button
+                            onClick={handleAddSubtask}
+                            className="inline-flex items-center justify-center rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-150 text-indigo-650 px-4.5 py-2 text-xs font-black transition-all cursor-pointer shrink-0"
+                          >
+                            Add
+                          </button>
+                        </div>
                     </div>
                   </div>
                 )}
@@ -1485,47 +1510,49 @@ export default function SprintPage() {
                   </h3>
 
                   {/* Input comment field */}
-                  <div className="flex gap-3 items-start">
-                    <div className={cn("h-7 w-7 rounded-full flex items-center justify-center text-[9px] text-white font-extrabold shrink-0 shadow-2xs mt-1 bg-indigo-600")}>
-                      {user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : 'DU'}
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <textarea
-                        value={newCommentText}
-                        onChange={(e) => setNewCommentText(e.target.value)}
-                        placeholder="Ask a question or post progress notes..."
-                        rows={2.5}
-                        className="w-full border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-indigo-500 bg-white transition-all resize-none shadow-3xs placeholder:text-slate-400"
-                      />
-                      <div className="flex justify-end">
-                        <button
-                          onClick={handleAddComment}
+                    <div className="flex gap-3 items-start">
+                      <div className={cn("h-7 w-7 rounded-full flex items-center justify-center text-[9px] text-white font-extrabold shrink-0 shadow-2xs mt-1 bg-indigo-600")}>
+                        {user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : 'DU'}
+                      </div>
+                      <div className="flex-1 space-y-3">
+                        <textarea
+                          value={newCommentText}
+                          onChange={(e) => setNewCommentText(e.target.value)}
+                          placeholder="Ask a question or post progress notes..."
+                          rows={2.5}
+                          className="w-full border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-indigo-500 bg-white transition-all resize-none shadow-3xs placeholder:text-slate-400"
+                        />
+                        <div className="flex justify-end">
+                          <button
+                            onClick={handleAddComment}
                           className="inline-flex items-center justify-center rounded-xl bg-indigo-650 hover:bg-indigo-755 text-white px-5 py-2 text-xs font-black transition-all cursor-pointer shadow-3xs"
-                        >
-                          Comment
-                        </button>
+                          >
+                            Comment
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
                   {/* Comment Thread list */}
                   <div className="space-y-3 pt-2">
-                    {activeDetailItem.comments?.map((comment: any) => (
-                      <div key={comment.id} className="flex gap-3 bg-slate-50/65 border border-slate-100 p-3.5 rounded-2xl shadow-3xs">
-                        <div className={cn("h-7 w-7 rounded-full flex items-center justify-center text-[9px] text-white font-extrabold shrink-0 shadow-2xs bg-indigo-600")}>
-                          {comment.initials}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-black text-slate-800">{comment.author}</span>
-                            <span className="text-[9px] text-slate-400 font-bold">{comment.time}</span>
+                    {[...(activeDetailItem.comments || [])]
+                      .sort((a, b) => getCommentTimestamp(b) - getCommentTimestamp(a))
+                      .map((comment: any) => (
+                        <div key={comment.id} className="flex gap-3 bg-slate-50/65 border border-slate-100 p-3.5 rounded-2xl shadow-3xs">
+                          <div className={cn("h-7 w-7 rounded-full flex items-center justify-center text-[9px] text-white font-extrabold shrink-0 shadow-2xs bg-indigo-600")}>
+                            {comment.initials}
                           </div>
-                          <p className="text-xs text-slate-650 font-bold mt-1 leading-normal whitespace-pre-wrap">
-                            {comment.text}
-                          </p>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-black text-slate-800">{comment.author}</span>
+                              <span className="text-[9px] text-slate-400 font-bold">{formatCommentTime(comment.time)}</span>
+                            </div>
+                            <p className="text-xs text-slate-650 font-bold mt-1 leading-normal whitespace-pre-wrap">
+                              {comment.text}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </div>
               </div>

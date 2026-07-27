@@ -59,17 +59,19 @@ export function AddTaskModal({
   let assignableMembers: any[] = [];
   if (selectedProj) {
     const projMembers = selectedProj.members || [];
-    const projMemberNames = new Set(projMembers.map((m: any) => (m.name || '').toLowerCase()));
-    
-    assignableMembers = availableMembers.filter(
-      (m) => m.role?.toLowerCase() !== 'admin' && projMemberNames.has((m.name || '').toLowerCase())
-    );
-    
-    if (assignableMembers.length === 0 && projMembers.length > 0) {
-      assignableMembers = projMembers.filter((m: any) => m.role?.toLowerCase() !== 'admin');
-    }
+    assignableMembers = projMembers.filter((m: any) => {
+      const foundMember = availableMembers.find(
+        (am) => am.id === m.userId || am.id === m.id || am.name?.toLowerCase() === m.name?.toLowerCase()
+      );
+      const roleStr = foundMember?.role || m.role;
+      const r = roleStr?.toLowerCase();
+      return r !== 'admin' && r !== 'client' && r !== 'manager';
+    });
   } else {
-    assignableMembers = availableMembers.filter((m) => m.role?.toLowerCase() !== 'admin');
+    assignableMembers = availableMembers.filter((m) => {
+      const r = m.role?.toLowerCase();
+      return r !== 'admin' && r !== 'client' && r !== 'manager';
+    });
   }
 
   const handleProjectChange = (projId: string) => {

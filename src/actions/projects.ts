@@ -24,6 +24,9 @@ export interface Project {
   attachmentsCount: number;
   dueDate: string;
   members: Member[];
+  managerId?: string;
+  teamLeadId?: string;
+  clientId?: string;
   techStack?: string[];
   priority?: 'Low' | 'Medium' | 'High' | 'Critical';
   budget?: string;

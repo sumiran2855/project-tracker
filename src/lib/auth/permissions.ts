@@ -15,7 +15,8 @@ export type Permission =
   | 'dashboard:view-quick-actions'
   | 'settings:view'
   | 'issue:view'
-  | 'issue:delete';
+  | 'issue:delete'
+  | 'hours:edit';
 
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   Admin: [
@@ -67,13 +68,13 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'settings:view',
     'issue:view',
     'issue:delete',
+    'hours:edit',
   ],
   Client: [
     'project:create',
     'project:view',
     'task:create',
-    'task:assign',
-    'task:update-status',
+    'task:delete',
     'roadmap:manage',
     'roadmap:view',
     'report:view',
@@ -81,6 +82,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'dashboard:view-quick-actions',
     'settings:view',
     'issue:view',
+    'issue:delete',
   ],
   Employee: [
     'project:view',
@@ -88,6 +90,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'roadmap:view',
     'settings:view',
     'issue:view',
+    'hours:edit',
   ],
 };
 

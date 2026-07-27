@@ -52,3 +52,58 @@ export function getDefaultViewRoute(defaultView?: string): string {
   if (val.includes('project')) return '/projects';
   return '/dashboard';
 }
+
+export function formatCommentTime(timeStr: string): string {
+  if (!timeStr) return '';
+  const date = new Date(timeStr);
+  if (isNaN(date.getTime())) {
+    // Return legacy format as-is
+    return timeStr;
+  }
+  
+  const now = new Date();
+  const dDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const dNow = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  const diffTime = dNow.getTime() - dDate.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+  
+  const timeFormatted = date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
+  
+  if (diffDays === 0) {
+    return `${timeFormatted}, Today`;
+  } else if (diffDays === 1) {
+    return `${timeFormatted}, Yesterday`;
+  } else {
+    const dateFormatted = date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+    return `${timeFormatted}, ${dateFormatted}`;
+  }
+}
+
+export function getCommentTimestamp(comment: any): number {
+  if (!comment) return 0;
+  
+  if (comment.time) {
+    const parsed = Date.parse(comment.time);
+    if (!isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  
+  if (comment.id) {
+    const match = comment.id.match(/\d+/);
+    if (match) {
+      return parseInt(match[0], 10);
+    }
+  }
+  
+  return 0;
+}

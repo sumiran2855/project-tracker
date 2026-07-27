@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, ChevronDown, Folder, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createProjectAction, updateProjectAction } from '@/actions/projects';
+import { useUser } from '@/contexts/UserContext';
 
 interface AddProjectModalProps {
   isOpen: boolean;
@@ -14,6 +15,9 @@ interface AddProjectModalProps {
 }
 
 export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, projectToEdit }: AddProjectModalProps) {
+  const { user } = useUser();
+  const userRole = user?.role || '';
+
   const [newProjName, setNewProjName] = useState('');
   const [newProjDesc, setNewProjDesc] = useState('');
   const [newProjStatus, setNewProjStatus] = useState<'Planning' | 'In Progress' | 'In Review' | 'Completed'>('Planning');
@@ -27,6 +31,9 @@ export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, 
   const [newProjRepositoryUrl, setNewProjRepositoryUrl] = useState('');
   const [newProjTags, setNewProjTags] = useState('');
   const [newProjMembers, setNewProjMembers] = useState<string[]>([]);
+  const [newProjManagerId, setNewProjManagerId] = useState('');
+  const [newProjTeamLeadId, setNewProjTeamLeadId] = useState('');
+  const [newProjClientId, setNewProjClientId] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -53,6 +60,9 @@ export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, 
                 .map((m: any) => m.name || m.userId)
             : []
         );
+        setNewProjManagerId(projectToEdit.managerId || '');
+        setNewProjTeamLeadId(projectToEdit.teamLeadId || '');
+        setNewProjClientId(projectToEdit.clientId || '');
       } else {
         setNewProjName('');
         setNewProjDesc('');
@@ -67,6 +77,9 @@ export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, 
         setNewProjRepositoryUrl('');
         setNewProjTags('');
         setNewProjMembers([]);
+        setNewProjManagerId('');
+        setNewProjTeamLeadId('');
+        setNewProjClientId('');
       }
       setErrorMsg('');
       setLoading(false);
@@ -77,6 +90,25 @@ export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, 
     e.preventDefault();
     setLoading(true);
     setErrorMsg('');
+
+    const isTeamLead = userRole.toLowerCase() === 'team lead';
+    const isManager = userRole.toLowerCase() === 'manager';
+
+    if (isTeamLead && !newProjManagerId) {
+      setErrorMsg('Manager is a mandatory field.');
+      setLoading(false);
+      return;
+    }
+    if (isManager && !newProjTeamLeadId) {
+      setErrorMsg('Team Lead is a mandatory field.');
+      setLoading(false);
+      return;
+    }
+    if (!newProjClientId) {
+      setErrorMsg('Client is a mandatory field.');
+      setLoading(false);
+      return;
+    }
 
     const selectedMembers = availableMembers
       .filter((m) => m.role?.toLowerCase() !== 'admin')
@@ -106,6 +138,9 @@ export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, 
       repositoryUrl: newProjRepositoryUrl || undefined,
       tags: tagsArray,
       members: selectedMembers,
+      managerId: (isTeamLead || userRole.toLowerCase() === 'admin') ? (newProjManagerId || undefined) : undefined,
+      teamLeadId: (isManager || userRole.toLowerCase() === 'admin') ? (newProjTeamLeadId || undefined) : undefined,
+      clientId: newProjClientId,
     };
 
     if (!projectToEdit) {
@@ -199,6 +234,86 @@ export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, 
                   onChange={(e) => setNewProjDesc(e.target.value)}
                   className="w-full rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-808 font-semibold placeholder-slate-450 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all resize-none"
                 />
+              </div>
+
+              {/* Project Assignments Section */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                {/* Client Select (Always Displayed & Mandatory) */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Client *</label>
+                  <div className="relative">
+                    <select
+                      value={newProjClientId}
+                      onChange={(e) => setNewProjClientId(e.target.value)}
+                      required
+                      className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-808 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
+                    >
+                      <option value="">Select a Client...</option>
+                      {availableMembers
+                        .filter((m) => m.role?.toLowerCase() === 'client')
+                        .map((client) => (
+                          <option key={client.id} value={client.id}>
+                            {client.name}
+                          </option>
+                        ))}
+                    </select>
+                    <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Manager Select (For Team Lead or Admin) */}
+                {(userRole.toLowerCase() === 'team lead' || userRole.toLowerCase() === 'admin') && (
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      Manager {userRole.toLowerCase() === 'team lead' ? '*' : ''}
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={newProjManagerId}
+                        onChange={(e) => setNewProjManagerId(e.target.value)}
+                        required={userRole.toLowerCase() === 'team lead'}
+                        className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-808 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
+                      >
+                        <option value="">Select a Manager...</option>
+                        {availableMembers
+                          .filter((m) => m.role?.toLowerCase() === 'manager')
+                          .map((manager) => (
+                            <option key={manager.id} value={manager.id}>
+                              {manager.name}
+                            </option>
+                          ))}
+                      </select>
+                      <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Team Lead Select (For Manager or Admin) */}
+                {(userRole.toLowerCase() === 'manager' || userRole.toLowerCase() === 'admin') && (
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      Team Lead {userRole.toLowerCase() === 'manager' ? '*' : ''}
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={newProjTeamLeadId}
+                        onChange={(e) => setNewProjTeamLeadId(e.target.value)}
+                        required={userRole.toLowerCase() === 'manager'}
+                        className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-808 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
+                      >
+                        <option value="">Select a Team Lead...</option>
+                        {availableMembers
+                          .filter((m) => m.role?.toLowerCase() === 'team lead')
+                          .map((lead) => (
+                            <option key={lead.id} value={lead.id}>
+                              {lead.name}
+                            </option>
+                          ))}
+                      </select>
+                      <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -359,7 +474,10 @@ export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, 
               <div className="space-y-2.5">
                 <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Assign Team Members</label>
                 <div className="flex flex-wrap gap-2.5">
-                  {availableMembers.filter((m) => m.role?.toLowerCase() !== 'admin').map((member) => {
+                  {availableMembers.filter((m) => {
+                    const role = m.role?.toLowerCase();
+                    return role !== 'admin' && role !== 'client';
+                  }).map((member) => {
                     const isSelected = newProjMembers.some((nameOrId) => nameOrId === member.name || nameOrId === member.id);
                     return (
                       <button
@@ -373,7 +491,7 @@ export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, 
                           }
                         }}
                         className={cn(
-                          "flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border text-[11px] font-bold transition-all duration-200 cursor-pointer",
+                          "flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 rounded-full border text-[11px] font-bold transition-all duration-200 cursor-pointer",
                           isSelected 
                             ? "bg-indigo-50/80 border-indigo-200 text-indigo-700 shadow-3xs ring-1 ring-indigo-200/50" 
                             : "bg-white border-slate-200 text-slate-650 hover:bg-slate-50 hover:border-slate-300 shadow-3xs"
@@ -382,7 +500,16 @@ export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, 
                         <div className={cn("h-5.5 w-5.5 rounded-full flex items-center justify-center text-[8px] text-white font-black shadow-3xs shrink-0", member.bg)}>
                           {member.initials || member.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
                         </div>
-                        <span>{member.name}</span>
+                        <span className="shrink-0">{member.name}</span>
+                        <span className={cn(
+                          "text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded-full shrink-0",
+                          member.role?.toLowerCase() === 'manager' && "bg-emerald-100 text-emerald-800 border border-emerald-200/60",
+                          member.role?.toLowerCase() === 'team lead' && "bg-indigo-100 text-indigo-800 border border-indigo-200/60",
+                          member.role?.toLowerCase() === 'client' && "bg-sky-100 text-sky-850 border border-sky-200/60",
+                          (member.role?.toLowerCase() === 'employee' || !member.role) && "bg-slate-100 text-slate-650 border border-slate-200/60"
+                        )}>
+                          {member.role || 'Employee'}
+                        </span>
                       </button>
                     );
                   })}

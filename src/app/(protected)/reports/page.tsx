@@ -11,7 +11,9 @@ import {
   AlertCircle,
   Printer,
   RefreshCw,
-  Sparkles
+  Sparkles,
+  MoreHorizontal,
+  Clock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -176,6 +178,7 @@ function getCurrentWeekDays() {
   const [weeklyTimeLogs, setWeeklyTimeLogs] = useState<DayLog[]>([]);
   const [dailyCapacity, setDailyCapacity] = useState(8);
   const [weeklyCapacity, setWeeklyCapacity] = useState(40);
+  const [isHoursMenuOpen, setIsHoursMenuOpen] = useState(false);
 
   // Load project & task data from backend / local storage and compute report metrics
   const loadReportData = async () => {
@@ -359,12 +362,8 @@ function getCurrentWeekDays() {
 
       const logsToProcess: { hours: number; date: Date; userName?: string; userId?: string }[] = [];
       if (Array.isArray(item.workLogs) && item.workLogs.length > 0) {
-        const totalLogHrs = item.workLogs.reduce((acc: number, wl: any) => acc + (Number(wl.hours) || 0), 0);
-        const ratio = (totalLogHrs > 0 && itemActual >= 0) ? (itemActual / totalLogHrs) : 1;
-
         item.workLogs.forEach((wl: any) => {
           const rawH = Number(wl.hours) || 0;
-          const scaledH = totalLogHrs > 0 ? rawH * ratio : rawH;
 
           let resolvedUserName = wl.userName || wl.author || wl.name;
           const logUserId = wl.userId || wl.id;
@@ -380,7 +379,7 @@ function getCurrentWeekDays() {
           }
 
           logsToProcess.push({
-            hours: scaledH,
+            hours: rawH,
             date: new Date(wl.date || wl.createdAt || item.updatedAt || item.createdAt),
             userName: resolvedUserName,
             userId: logUserId,
@@ -410,11 +409,6 @@ function getCurrentWeekDays() {
                  w.dateObj.getMonth() === log.date.getMonth() &&
                  w.dateObj.getDate() === log.date.getDate();
         });
-
-        if (!matchedDay) {
-          const dayIndex = (log.date.getDay() + 6) % 7;
-          matchedDay = weekDays[dayIndex];
-        }
 
         if (matchedDay) {
           const dKey = matchedDay.dayName;
@@ -447,17 +441,17 @@ function getCurrentWeekDays() {
       const data = dayMap[w.dayName];
       const projects = Object.entries(data.projects).map(([projectName, hours]) => ({
         projectName,
-        hours
+        hours: Math.round(hours * 100) / 100
       }));
       const employees = Object.entries(data.employees).map(([employeeName, hours]) => ({
         employeeName,
-        hours
+        hours: Math.round(hours * 100) / 100
       }));
       return {
         day: w.shortLabel,
         fullDayLabel: w.fullLabel,
         dateFormatted: w.dateFormatted,
-        hours: data.total,
+        hours: Math.round(data.total * 100) / 100,
         projects,
         employees
       };
@@ -710,15 +704,45 @@ function getCurrentWeekDays() {
 
         {/* 3. Timesheet Logs (Vertical Bar Graph with Project / Employee Breakdown) */}
         <div className="lg:col-span-2 bg-white border border-slate-200 rounded-3xl p-6 shadow-xs flex flex-col justify-between">
-          <div>
-            <h3 className="text-sm font-black text-slate-800">Logged Hours</h3>
-            <p className="text-[10px] text-slate-400 font-bold mt-0.5">
-              {(user?.role || '').toLowerCase() === 'employee' ? (
-                <>Workspace activity log ({weeklyTimeLogs.reduce((acc, d) => acc + d.hours, 0)}h / {weeklyCapacity}h weekly capacity - {Math.round((weeklyTimeLogs.reduce((acc, d) => acc + d.hours, 0) / (weeklyCapacity || 1)) * 100)}%)</>
-              ) : (
-                <>Workspace activity log ({weeklyTimeLogs.reduce((acc, d) => acc + d.hours, 0)}h total logged across team this week)</>
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-black text-slate-800">Logged Hours</h3>
+              <p className="text-[10px] text-slate-400 font-bold mt-0.5">
+                {(user?.role || '').toLowerCase() === 'employee' ? (
+                  <>Workspace activity log ({weeklyTimeLogs.reduce((acc, d) => acc + d.hours, 0)}h / {weeklyCapacity}h weekly capacity - {Math.round((weeklyTimeLogs.reduce((acc, d) => acc + d.hours, 0) / (weeklyCapacity || 1)) * 100)}%)</>
+                ) : (
+                  <>Workspace activity log ({weeklyTimeLogs.reduce((acc, d) => acc + d.hours, 0)}h total logged across team this week)</>
+                )}
+              </p>
+            </div>
+
+            {/* Three-dot dropdown menu */}
+            <div className="relative shrink-0">
+              <button
+                onClick={() => setIsHoursMenuOpen(!isHoursMenuOpen)}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-450 hover:bg-slate-50 cursor-pointer transition-colors"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+              
+              {isHoursMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-20" onClick={() => setIsHoursMenuOpen(false)} />
+                  <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-slate-150 bg-white p-1 shadow-lg z-30 animate-scaleUp">
+                    <button
+                      onClick={() => {
+                        router.push('/reports/hours');
+                        setIsHoursMenuOpen(false);
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-bold text-slate-755 hover:bg-slate-50 transition-colors cursor-pointer"
+                    >
+                      <Clock className="h-4 w-4 text-indigo-550" />
+                      View Hours Report
+                    </button>
+                  </div>
+                </>
               )}
-            </p>
+            </div>
           </div>
 
           <div className="flex items-end justify-between gap-3 h-48 mt-6 border-b border-slate-150 pb-2">

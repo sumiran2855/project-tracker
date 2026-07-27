@@ -30,7 +30,7 @@ import {
   ShieldAlert,
   Pencil
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatCommentTime, getCommentTimestamp } from '@/lib/utils';
 import { useUser, usePermission } from '@/contexts/UserContext';
 import { getProjectByIdAction, updateProjectAction, getEmployeesAction, type Employee } from '@/actions/projects';
 import { getTasksByProjectAction, createTaskAction, updateTaskAction, deleteTaskAction, type Task, type Subtask, type Comment } from '@/actions/tasks';
@@ -235,7 +235,9 @@ export default function ProjectDetailPage() {
   const [availableMembers, setAvailableMembers] = useState<Employee[]>([]);
   const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
   
-  const isEmployee = user?.role === 'Employee';
+  const isEmployee = user?.role?.toLowerCase() === 'employee';
+  const isClient = user?.role?.toLowerCase() === 'client';
+  const canEditHours = user?.role?.toLowerCase() === 'team lead' || user?.role?.toLowerCase() === 'employee';
 
   const isAssignedToUser = (item: any) => {
     if (!user) return false;
@@ -457,11 +459,16 @@ export default function ProjectDetailPage() {
 
   // Drag and Drop support
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
+    if (isClient) {
+      e.preventDefault();
+      return;
+    }
     e.dataTransfer.setData('text/plain', taskId);
   };
 
   const handleDrop = (e: React.DragEvent, targetStatus: Task['status']) => {
     e.preventDefault();
+    if (isClient) return;
     const taskId = e.dataTransfer.getData('text/plain');
     if (!taskId) return;
     handleMoveTask(taskId, targetStatus);
@@ -471,12 +478,12 @@ export default function ProjectDetailPage() {
     const taskToMove = tasks.find(t => t.id === taskId);
     if (!taskToMove) return;
 
-    if (targetStatus === 'Done' && taskToMove.status !== 'Done') {
+    if (targetStatus === 'Done' && taskToMove.status !== 'Done' && canEditHours) {
       setPromptTask({ taskId, targetStatus });
-      setPromptValue(String(taskToMove.actualHours || 0));
+      setPromptValue('0');
       setHoursPromptOpen(true);
     } else {
-      await submitMoveTask(taskId, targetStatus, taskToMove.actualHours || 0);
+      await submitMoveTask(taskId, targetStatus, 0);
     }
   };
 
@@ -484,7 +491,8 @@ export default function ProjectDetailPage() {
     const taskToMove = tasks.find(t => t.id === taskId);
     if (!taskToMove) return;
 
-    const updatedTask = { ...taskToMove, status: targetStatus, actualHours: hoursInput };
+    const newActualHours = (taskToMove.actualHours || 0) + (hoursInput > 0 ? hoursInput : 0);
+    const updatedTask = { ...taskToMove, status: targetStatus, actualHours: newActualHours };
 
     // Update locally first for visual speed
     setTasks(prev => prev.map(t => t.id === taskId ? updatedTask : t));
@@ -492,7 +500,11 @@ export default function ProjectDetailPage() {
       setSelectedTask(updatedTask);
     }
 
-    const res = await updateTaskAction(taskId, { status: targetStatus, actualHours: hoursInput });
+    const payload: any = { status: targetStatus };
+    if (hoursInput > 0) {
+      payload.newWorkLog = { hours: hoursInput };
+    }
+    const res = await updateTaskAction(taskId, payload);
     if (res.success && res.data) {
       setTasks(prev => prev.map(t => t.id === taskId ? (res.data as any) : t));
       if (selectedTask?.id === taskId) {
@@ -709,7 +721,7 @@ export default function ProjectDetailPage() {
       author: user?.name || 'Dev User',
       initials: user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2) : 'DU',
       text: newCommentText,
-      time: 'Just now',
+      time: new Date().toISOString(),
     };
 
     const updatedComments = [newComment, ...selectedTask.comments];
@@ -803,24 +815,31 @@ export default function ProjectDetailPage() {
                 <div className="relative group shrink-0">
                   <select 
                     value={project.status}
+                    disabled={isEmployee}
                     onChange={(e) => handleUpdateProjectStatus(e.target.value as Project['status'])}
-                    className={cn("text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/25 appearance-none pr-7 border shadow-xs transition-all", getProjectStatusBadge(project.status))}
+                    className={cn(
+                      "text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500/25 appearance-none pr-7 border shadow-xs transition-all", 
+                      getProjectStatusBadge(project.status),
+                      isEmployee ? "cursor-default opacity-85 pointer-events-none" : "cursor-pointer"
+                    )}
                   >
                     <option value="Planning">Planning</option>
                     <option value="In Progress">In Progress</option>
                     <option value="In Review">In Review</option>
                     <option value="Completed">Completed</option>
                   </select>
-                  <ChevronDown className="h-3 w-3 absolute right-2 top-1.5 text-slate-400 pointer-events-none" />
+                  {!isEmployee && <ChevronDown className="h-3 w-3 absolute right-2 top-1.5 text-slate-400 pointer-events-none" />}
                 </div>
 
-                <button
-                  onClick={() => setIsEditProjectModalOpen(true)}
-                  className="inline-flex h-7 items-center gap-1.5 rounded-full border border-slate-200 bg-white hover:bg-slate-55 px-3 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all cursor-pointer shadow-3xs hover:border-slate-300"
-                >
-                  <Pencil className="h-3 w-3 text-indigo-500" />
-                  <span>Edit Details</span>
-                </button>
+                {!isEmployee && (
+                  <button
+                    onClick={() => setIsEditProjectModalOpen(true)}
+                    className="inline-flex h-7 items-center gap-1.5 rounded-full border border-slate-200 bg-white hover:bg-slate-55 px-3 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all cursor-pointer shadow-3xs hover:border-slate-300"
+                  >
+                    <Pencil className="h-3 w-3 text-indigo-500" />
+                    <span>Edit Details</span>
+                  </button>
+                )}
               </div>
 
               <p className="text-xs text-slate-500 font-medium leading-relaxed max-w-2xl">{project.description}</p>
@@ -886,7 +905,13 @@ export default function ProjectDetailPage() {
                 <p className="text-sm font-black text-slate-800 mt-0.5">{project.completedTasks} / {project.tasksCount} Tasks Done</p>
                 
                 <div className="flex -space-x-1.5 mt-2">
-                  {project.members.filter((m: any) => m.role?.toLowerCase() !== 'admin').map((member, i) => (
+                  {project.members.filter((m: any) => {
+                    const r = m.role?.toLowerCase();
+                    if (r === 'admin') return false;
+                    const nameLower = (m.name || '').toLowerCase();
+                    if (nameLower.includes('admin')) return false;
+                    return true;
+                  }).map((member, i) => (
                     <div key={i} className={cn("h-6 w-6 rounded-lg text-[8px] font-extrabold text-white flex items-center justify-center ring-2 ring-white", member.bg)} title={member.name}>
                       {member.initials}
                     </div>
@@ -1082,10 +1107,13 @@ export default function ProjectDetailPage() {
                         return (
                           <div
                             key={task.id}
-                            draggable
+                            draggable={!isClient}
                             onDragStart={(e) => handleDragStart(e, task.id)}
                             onClick={() => setSelectedTask(task)}
-                            className="group flex flex-col justify-between bg-white border border-slate-200/85 hover:border-slate-350 rounded-2xl p-4 shadow-3xs hover:shadow-md transition-all duration-200 cursor-grab active:cursor-grabbing relative overflow-hidden"
+                            className={cn(
+                              "group flex flex-col justify-between bg-white border border-slate-200/85 hover:border-slate-350 rounded-2xl p-4 shadow-3xs hover:shadow-md transition-all duration-200 relative overflow-hidden",
+                              isClient ? "cursor-pointer" : "cursor-grab active:cursor-grabbing"
+                            )}
                           >
                             <div className="space-y-3">
                               {/* Top metadata */}
@@ -1422,7 +1450,7 @@ export default function ProjectDetailPage() {
             {/* Modal Body / Form */}
             <div className="space-y-4">
               <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                You marked this task as <strong className="text-slate-700">Done</strong>. How many hours did you spend to complete it?
+                You marked this task as <strong className="text-slate-700">Done</strong>. Enter any additional hours spent on this task today:
               </p>
               
               <div className="space-y-1.5">
@@ -1583,7 +1611,16 @@ export default function ProjectDetailPage() {
               <div className="space-y-2.5">
                 <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Assign Task To</label>
                 <div className="flex flex-wrap gap-2">
-                  {((project && project.members && project.members.length > 0) ? project.members : availableMembers).filter((m: any) => m.role?.toLowerCase() !== 'admin').map((member) => {
+                  {(project?.members || []).filter((m: any) => {
+                    const foundMember = availableMembers.find(
+                      (am) => am.id === m.userId || am.id === m.id || am.name?.toLowerCase() === m.name?.toLowerCase()
+                    );
+                    const roleStr = foundMember?.role || m.role;
+                    const r = roleStr?.toLowerCase();
+                    if (r === 'admin' || r === 'client' || r === 'manager') return false;
+                    if ((m.name || '').toLowerCase().includes('admin')) return false;
+                    return true;
+                  }).map((member) => {
                     const isSelected = newTaskAssignees.includes(member.name);
                     return (
                       <button
@@ -1677,8 +1714,9 @@ export default function ProjectDetailPage() {
                   <div className="relative">
                     <select
                       value={selectedTask.status}
+                      disabled={isClient}
                       onChange={(e) => handleMoveTask(selectedTask.id, e.target.value as Task['status'])}
-                      className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white cursor-pointer pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 appearance-none"
+                      className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 appearance-none"
                     >
                       <option value="To Do">To Do</option>
                       <option value="In Progress">In Progress</option>
@@ -1695,12 +1733,13 @@ export default function ProjectDetailPage() {
                   <div className="relative">
                     <select
                       value={selectedTask.priority}
+                      disabled={isClient}
                       onChange={(e) => {
                         const updated = tasks.map(t => t.id === selectedTask.id ? { ...t, priority: e.target.value as Task['priority'] } : t);
                         saveTasks(updated);
                         setSelectedTask({ ...selectedTask, priority: e.target.value as Task['priority'] });
                       }}
-                      className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white cursor-pointer pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 appearance-none"
+                      className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 appearance-none"
                     >
                       <option value="Low">Low</option>
                       <option value="Medium">Medium</option>
@@ -1718,14 +1757,23 @@ export default function ProjectDetailPage() {
                     type="number"
                     min={0}
                     value={selectedTask.actualHours || 0}
+                    disabled={!canEditHours}
                     onChange={async (e) => {
                       const val = parseInt(e.target.value, 10) || 0;
+                      const oldHours = selectedTask.actualHours || 0;
+                      const diff = val - oldHours;
+
                       const updatedTask = { ...selectedTask, actualHours: val };
                       setSelectedTask(updatedTask);
                       setTasks(prev => prev.map(t => t.id === selectedTask.id ? updatedTask : t));
-                      await updateTaskAction(selectedTask.id, { actualHours: val });
+
+                      if (diff > 0) {
+                        await updateTaskAction(selectedTask.id, { newWorkLog: { hours: diff } } as any);
+                      } else {
+                        await updateTaskAction(selectedTask.id, { actualHours: val });
+                      }
                     }}
-                    className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-75 disabled:cursor-not-allowed"
                   />
                 </div>
 
@@ -1778,8 +1826,9 @@ export default function ProjectDetailPage() {
                     selectedTask.subtasks.map(sub => (
                       <div key={sub.id} className="flex items-center justify-between group/sub">
                         <button
+                          disabled={isClient}
                           onClick={() => handleToggleSubtask(sub.id)}
-                          className="flex items-center gap-2.5 flex-1 text-left cursor-pointer"
+                          className={cn("flex items-center gap-2.5 flex-1 text-left", isClient ? "cursor-not-allowed" : "cursor-pointer")}
                         >
                           <div className={cn(
                             "h-4.5 w-4.5 rounded-md border flex items-center justify-center transition-colors",
@@ -1792,33 +1841,35 @@ export default function ProjectDetailPage() {
                           </span>
                         </button>
                         
-                        <button 
-                          onClick={() => handleDeleteSubtask(sub.id)}
-                          className="text-slate-450 opacity-0 group-hover/sub:opacity-100 hover:text-red-500 transition-opacity p-1 hover:bg-slate-100 rounded-lg cursor-pointer"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
+                        {!isClient && (
+                          <button 
+                            onClick={() => handleDeleteSubtask(sub.id)}
+                            className="text-slate-450 opacity-0 group-hover/sub:opacity-100 hover:text-red-500 transition-opacity p-1 hover:bg-slate-100 rounded-lg cursor-pointer"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                     ))
                   )}
 
                   {/* Add subtask Form */}
-                  <form onSubmit={handleAddSubtask} className="flex gap-2 border-t border-slate-200/80 pt-3.5 mt-3.5">
-                    <input
-                      type="text"
-                      required
-                      placeholder="Add another checklist task item..."
-                      value={newSubtaskTitle}
-                      onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                      className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:border-indigo-500 focus:outline-none"
-                    />
-                    <button
-                      type="submit"
-                      className="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-150 text-indigo-700 text-xs font-bold transition-colors cursor-pointer shrink-0"
-                    >
-                      Add
-                    </button>
-                  </form>
+                    <form onSubmit={handleAddSubtask} className="flex gap-2 border-t border-slate-200/80 pt-3.5 mt-3.5">
+                      <input
+                        type="text"
+                        required
+                        placeholder="Add another checklist task item..."
+                        value={newSubtaskTitle}
+                        onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                        className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:border-indigo-500 focus:outline-none"
+                      />
+                      <button
+                        type="submit"
+                        className="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-150 text-indigo-700 text-xs font-bold transition-colors cursor-pointer shrink-0"
+                      >
+                        Add
+                      </button>
+                    </form>
                 </div>
               </div>
 
@@ -1830,45 +1881,45 @@ export default function ProjectDetailPage() {
                 </span>
 
                 {/* Add Comment input */}
-                <form onSubmit={handleAddComment} className="flex gap-3">
-                  <div className="h-7 w-7 rounded-lg bg-indigo-600 text-[9px] font-bold text-white flex items-center justify-center shrink-0">
-                    {user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2) : 'DU'}
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    <textarea
-                      rows={2}
-                      placeholder="Ask a question or post progress notes..."
-                      value={newCommentText}
-                      onChange={(e) => setNewCommentText(e.target.value)}
+                  <form onSubmit={handleAddComment} className="flex gap-3">
+                    <div className="h-7 w-7 rounded-lg bg-indigo-600 text-[9px] font-bold text-white flex items-center justify-center shrink-0">
+                      {user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2) : 'DU'}
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <textarea
+                        rows={2}
+                        placeholder="Ask a question or post progress notes..."
+                        value={newCommentText}
+                        onChange={(e) => setNewCommentText(e.target.value)}
                       className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs text-slate-850 placeholder-slate-400 focus:border-indigo-500 focus:outline-none resize-none"
-                    />
-                    <div className="flex justify-end">
-                      <button
-                        type="submit"
-                        className="px-4.5 py-1.8 rounded-xl bg-indigo-650 hover:bg-indigo-750 text-white text-xs font-bold shadow-sm shadow-indigo-650/10 cursor-pointer"
-                      >
-                        Comment
-                      </button>
+                      />
+                      <div className="flex justify-end">
+                        <button
+                          type="submit"
+                          className="px-4.5 py-1.8 rounded-xl bg-indigo-650 hover:bg-indigo-750 text-white text-xs font-bold shadow-sm shadow-indigo-650/10 cursor-pointer"
+                        >
+                          Comment
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </form>
-
-                {/* Comment loops */}
+                  </form>                {/* Comment loops */}
                 <div className="space-y-3.5 pt-2">
-                  {selectedTask.comments.map(comment => (
-                    <div key={comment.id} className="flex gap-3 bg-slate-50/50 border border-slate-100 p-3 rounded-2xl">
-                      <div className={cn("h-7 w-7 rounded-lg text-[9px] font-black text-white flex items-center justify-center shrink-0 shadow-3xs", comment.initials === 'DU' ? 'bg-indigo-600' : 'bg-slate-500')}>
-                        {comment.initials}
-                      </div>
-                      <div className="space-y-1 flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-slate-800">{comment.author}</span>
-                          <span className="text-[9px] text-slate-400 font-bold">{comment.time}</span>
+                  {[...(selectedTask.comments || [])]
+                    .sort((a, b) => getCommentTimestamp(b) - getCommentTimestamp(a))
+                    .map(comment => (
+                      <div key={comment.id} className="flex gap-3 bg-slate-50/50 border border-slate-100 p-3 rounded-2xl">
+                        <div className={cn("h-7 w-7 rounded-lg text-[9px] font-black text-white flex items-center justify-center shrink-0 shadow-3xs", comment.initials === 'DU' ? 'bg-indigo-600' : 'bg-slate-500')}>
+                          {comment.initials}
                         </div>
-                        <p className="text-xs text-slate-650 font-medium leading-relaxed break-words">{comment.text}</p>
+                        <div className="space-y-1 flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-slate-800">{comment.author}</span>
+                            <span className="text-[9px] text-slate-400 font-bold">{formatCommentTime(comment.time)}</span>
+                          </div>
+                          <p className="text-xs text-slate-655 font-medium leading-relaxed break-words">{comment.text}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
 
               </div>

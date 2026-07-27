@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { ProjectCard } from '@/components/dashboard/ProjectCard';
 import { StatCard } from '@/components/dashboard/StatCard';
+import { HoursLoggedCard } from '@/components/dashboard/HoursLoggedCard';
 import { QuickActionsPanel } from '@/components/dashboard/QuickActionsPanel';
 import { cn } from '@/lib/utils';
 import { hasPermission } from '@/lib/auth/permissions';
@@ -149,6 +150,7 @@ export default async function DashboardPage() {
   let uniqueLoggedEmployees: string[] = [];
   let dailyCapacity = 8;
   let weeklyCapacity = 40;
+  let allWorkItems: any[] = [];
 
   const dynamicStats = [
     { label: 'Active Projects', value: '0',   change: '+2',   iconName: 'Folder',       tint: '#6366f1', positive: true  },
@@ -312,15 +314,15 @@ export default async function DashboardPage() {
 
       const remainingHours = Math.max(0, totalAssignedHours - totalActualHours);
 
-      const allWorkItems: any[] = [];
+      allWorkItems = [];
       tasksResList.forEach(tRes => {
         if (tRes.success && tRes.data) {
-          allWorkItems.push(...tRes.data);
+          allWorkItems.push(...tRes.data.map((t: any) => ({ ...t, itemType: 'task' })));
         }
       });
       issuesResList.forEach(iRes => {
         if (iRes.success && iRes.data) {
-          allWorkItems.push(...iRes.data);
+          allWorkItems.push(...iRes.data.map((i: any) => ({ ...i, itemType: 'issue' })));
         }
       });
 
@@ -369,12 +371,8 @@ export default async function DashboardPage() {
 
         const logsToProcess: { hours: number; date: Date; userName?: string; userId?: string }[] = [];
         if (Array.isArray(item.workLogs) && item.workLogs.length > 0) {
-          const totalLogHrs = item.workLogs.reduce((acc: number, wl: any) => acc + (Number(wl.hours) || 0), 0);
-          const ratio = (totalLogHrs > 0 && itemActual >= 0) ? (itemActual / totalLogHrs) : 1;
-
           item.workLogs.forEach((wl: any) => {
             const rawH = Number(wl.hours) || 0;
-            const scaledH = totalLogHrs > 0 ? rawH * ratio : rawH;
 
             let resolvedUserName = wl.userName || wl.author || wl.name;
             const logUserId = wl.userId || wl.id;
@@ -393,7 +391,7 @@ export default async function DashboardPage() {
             }
 
             logsToProcess.push({
-              hours: scaledH,
+              hours: rawH,
               date: new Date(wl.date || wl.createdAt || item.updatedAt || item.createdAt),
               userName: resolvedUserName,
               userId: logUserId,
@@ -426,11 +424,6 @@ export default async function DashboardPage() {
                    w.dateObj.getMonth() === log.date.getMonth() &&
                    w.dateObj.getDate() === log.date.getDate();
           });
-
-          if (!matchedDay) {
-            const dayIndex = (log.date.getDay() + 6) % 7;
-            matchedDay = weekDays[dayIndex];
-          }
 
           if (matchedDay) {
             const dKey = matchedDay.dayName;
@@ -466,17 +459,17 @@ export default async function DashboardPage() {
         const data = dayMap[w.dayName];
         const projects = Object.entries(data.projects).map(([projectName, hours]) => ({
           projectName,
-          hours
+          hours: Math.round(hours * 100) / 100
         }));
         const employees = Object.entries(data.employees).map(([employeeName, hours]) => ({
           employeeName,
-          hours
+          hours: Math.round(hours * 100) / 100
         }));
         return {
           day: w.shortLabel,
           fullDayLabel: w.fullLabel,
           dateFormatted: w.dateFormatted,
-          hours: data.total,
+          hours: Math.round(data.total * 100) / 100,
           projects,
           employees
         };
@@ -506,8 +499,8 @@ export default async function DashboardPage() {
 
       dynamicStats[1].value = String(openTasksCount);
       dynamicStats[2].value = String(openBugsCount);
-      dynamicStats[3].value = `${roleFilteredTotalActualHours}h`;
-      dynamicStats[3].change = `+${remainingHours}h left`;
+      dynamicStats[3].value = `${Math.round(roleFilteredTotalActualHours * 100) / 100}h`;
+      dynamicStats[3].change = `+${Math.round(remainingHours * 100) / 100}h left`;
 
       deadlines = gatheredDeadlines
         .sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime())
@@ -623,7 +616,13 @@ export default async function DashboardPage() {
       due: p.dueDate || 'No Due Date',
       bar: barColors[p.status] || '#6366f1',
       tasks: { completed: p.completedTasks || 0, total: p.tasksCount || 0 },
-      team: p.members.filter((m: any) => m.role?.toLowerCase() !== 'admin').map((m: any) => ({
+      team: p.members.filter((m: any) => {
+        const r = m.role?.toLowerCase();
+        if (r === 'admin') return false;
+        const nameLower = (m.name || '').toLowerCase();
+        if (nameLower.includes('admin')) return false;
+        return true;
+      }).map((m: any) => ({
         initials: m.initials,
         name: m.name,
         bg: m.bg,
@@ -674,162 +673,16 @@ export default async function DashboardPage() {
       {/* Bento grid */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
 
-        {/* Weekly hours chart — spans 2 or 3 depending on workload visibility */}
-        <div className={cn("rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 shadow-xs flex flex-col justify-between", canViewWorkload ? "lg:col-span-2" : "lg:col-span-3")}>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-base font-bold text-slate-800">Hours Logged This Week</h2>
-              <p className="text-xs text-slate-450 mt-0.5">
-                {isEmployeeRole ? (
-                  <>{weeklyHoursList.reduce((acc, d) => acc + d.hours, 0)}h / {weeklyCapacity}h weekly capacity ({Math.round((weeklyHoursList.reduce((acc, d) => acc + d.hours, 0) / (weeklyCapacity || 1)) * 100)}%)</>
-                ) : (
-                  <>{weeklyHoursList.reduce((acc, d) => acc + d.hours, 0)}h total logged across team this week</>
-                )}
-              </p>
-            </div>
-            <button className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-50 cursor-pointer transition-colors">
-              <MoreHorizontal className="h-4 w-4" />
-            </button>
-          </div>
-
-          <div className="flex items-end justify-between gap-1.5 sm:gap-3 h-44 mt-2">
-            {weeklyHoursList.map((d) => (
-              <div key={d.day} className="group relative flex flex-1 flex-col items-center gap-1.5 h-full justify-end">
-                {/* Detailed Tooltip on Hover */}
-                <div className="absolute bottom-[105%] left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] py-2 px-3 rounded-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 shadow-xl whitespace-nowrap z-20 min-w-[140px] border border-slate-700">
-                  <div className="font-black text-slate-200 border-b border-slate-700/80 pb-1 mb-1 flex items-center justify-between gap-3">
-                    <span>{d.fullDayLabel || d.day}</span>
-                    <span className="text-indigo-400 font-extrabold">
-                      {isEmployeeRole ? `${d.hours}h / ${dailyCapacity}h (${Math.round((d.hours / (dailyCapacity || 1)) * 100)}%)` : `${d.hours}h logged`}
-                    </span>
-                  </div>
-                  {isEmployeeRole ? (
-                    d.projects.length > 0 ? (
-                      d.projects.map((p) => {
-                        const color = getProjColor(p.projectName, uniqueLoggedProjects);
-                        return (
-                          <div key={p.projectName} className="flex items-center justify-between gap-3 font-semibold text-[10px]">
-                            <span className="flex items-center gap-1.5 text-slate-300">
-                              <span className={cn("h-2 w-2 rounded-full shrink-0", color.bg)} />
-                              <span>{p.projectName}</span>
-                            </span>
-                            <span className="font-bold text-white ml-auto">{p.hours}h</span>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="text-slate-400 italic text-[9px]">No hours logged</div>
-                    )
-                  ) : (
-                    d.employees.length > 0 ? (
-                      d.employees.map((e) => {
-                        const color = getProjColor(e.employeeName, uniqueLoggedEmployees);
-                        return (
-                          <div key={e.employeeName} className="flex items-center justify-between gap-3 font-semibold text-[10px]">
-                            <span className="flex items-center gap-1.5 text-slate-300">
-                              <span className={cn("h-2 w-2 rounded-full shrink-0", color.bg)} />
-                              <span>{e.employeeName}</span>
-                            </span>
-                            <span className="font-bold text-white ml-auto">{e.hours}h</span>
-                          </div>
-                        );
-                      })
-                    ) : (
-                      <div className="text-slate-400 italic text-[9px]">No hours logged</div>
-                    )
-                  )}
-                </div>
-
-                {/* Total hours label showing out of max capacity */}
-                <span className="text-[9px] font-black text-slate-700 whitespace-nowrap text-center">
-                  {isEmployeeRole ? (
-                    <>
-                      <span className="inline sm:hidden">{d.hours}h</span>
-                      <span className="hidden sm:inline">{d.hours}h / {dailyCapacity}h</span>
-                    </>
-                  ) : (
-                    <>{d.hours}h</>
-                  )}
-                </span>
-
-                {/* Stacked Project / Employee Bar */}
-                <div className="w-full h-32 flex flex-col-reverse justify-start rounded-xl bg-slate-50 border border-slate-150 overflow-hidden cursor-pointer hover:bg-slate-100/70 transition-colors p-0.5">
-                  {isEmployeeRole ? (
-                    d.projects.length > 0 ? (
-                      d.projects.map((p) => {
-                        const color = getProjColor(p.projectName, uniqueLoggedProjects);
-                        const segmentPercent = maxHours > 0 ? (p.hours / maxHours) * 100 : 0;
-                        return (
-                          <div
-                            key={p.projectName}
-                            className={cn("w-full transition-all duration-500 rounded-xs border-t border-white/20 first:border-0", color.bg)}
-                            style={{ height: `${segmentPercent}%` }}
-                          />
-                        );
-                      })
-                    ) : (
-                      <div className="w-full h-full bg-slate-200/40 rounded-lg" />
-                    )
-                  ) : (
-                    d.employees.length > 0 ? (
-                      d.employees.map((e) => {
-                        const color = getProjColor(e.employeeName, uniqueLoggedEmployees);
-                        const segmentPercent = maxHours > 0 ? (e.hours / maxHours) * 100 : 0;
-                        return (
-                          <div
-                            key={e.employeeName}
-                            className={cn("w-full transition-all duration-500 rounded-xs border-t border-white/20 first:border-0", color.bg)}
-                            style={{ height: `${segmentPercent}%` }}
-                          />
-                        );
-                      })
-                    ) : (
-                      <div className="w-full h-full bg-slate-200/40 rounded-lg" />
-                    )
-                  )}
-                </div>
-
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider text-center">
-                  <span className="inline sm:hidden">{d.day.split(' ')[0]}</span>
-                  <span className="hidden sm:inline">{d.day}</span>
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Color Legend */}
-          {isEmployeeRole ? (
-            uniqueLoggedProjects.length > 0 ? (
-              <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-slate-100 text-[10px]">
-                <span className="font-bold text-slate-400 uppercase tracking-wider text-[9px]">Projects:</span>
-                {uniqueLoggedProjects.map((pName) => {
-                  const color = getProjColor(pName, uniqueLoggedProjects);
-                  return (
-                    <div key={pName} className="flex items-center gap-1.5 font-bold text-slate-700">
-                      <span className={cn("h-2.5 w-2.5 rounded-full", color.bg)} />
-                      <span>{pName}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : null
-          ) : (
-            uniqueLoggedEmployees.length > 0 ? (
-              <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-slate-100 text-[10px]">
-                <span className="font-bold text-slate-400 uppercase tracking-wider text-[9px]">Employees:</span>
-                {uniqueLoggedEmployees.map((eName) => {
-                  const color = getProjColor(eName, uniqueLoggedEmployees);
-                  return (
-                    <div key={eName} className="flex items-center gap-1.5 font-bold text-slate-700">
-                      <span className={cn("h-2.5 w-2.5 rounded-full", color.bg)} />
-                      <span>{eName}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : null
-          )}
-        </div>
+        <HoursLoggedCard
+          weeklyHoursList={weeklyHoursList}
+          weeklyCapacity={weeklyCapacity}
+          dailyCapacity={dailyCapacity}
+          isEmployeeRole={isEmployeeRole}
+          canViewWorkload={canViewWorkload}
+          maxHours={maxHours}
+          uniqueLoggedProjects={uniqueLoggedProjects}
+          uniqueLoggedEmployees={uniqueLoggedEmployees}
+        />
 
         {/* Team workload */}
         {canViewWorkload && (
