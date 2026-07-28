@@ -298,6 +298,16 @@ export default function ProjectDetailPage() {
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
   const [newTaskAssignees, setNewTaskAssignees] = useState<string[]>([]);
 
+  useEffect(() => {
+    if (isTaskModalOpen) {
+      if (user && user.name && isEmployee) {
+        setNewTaskAssignees([user.name]);
+      } else {
+        setNewTaskAssignees([]);
+      }
+    }
+  }, [isTaskModalOpen, user, isEmployee]);
+
   // Task spent hours modal states
   const [hoursPromptOpen, setHoursPromptOpen] = useState(false);
   const [promptTask, setPromptTask] = useState<{ taskId: string; targetStatus: Task['status'] } | null>(null);
@@ -540,13 +550,45 @@ export default function ProjectDetailPage() {
     e.preventDefault();
     if (!newTaskTitle.trim()) return;
 
-    const selectedEmployees = availableMembers.filter(m => newTaskAssignees.includes(m.name));
-    const assignees = selectedEmployees.map(m => ({
-      id: m.id,
-      name: m.name,
-      initials: m.initials,
-      bg: m.bg
-    }));
+    const assignees = newTaskAssignees.map(name => {
+      const m = availableMembers.find(am => am.name === name);
+      if (m) {
+        return {
+          id: m.id,
+          name: m.name,
+          initials: m.initials,
+          bg: m.bg
+        };
+      }
+      if (user && user.name && name === user.name) {
+        return {
+          id: user.id || '',
+          name: user.name,
+          initials: user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
+          bg: 'bg-indigo-500'
+        };
+      }
+      return null;
+    }).filter((x): x is { id: string; name: string; initials: string; bg: string; } => x !== null);
+
+    let finalAssignees = assignees;
+    if (finalAssignees.length === 0) {
+      if (user && user.name && isEmployee) {
+        finalAssignees = [{
+          id: user.id || '',
+          name: user.name,
+          initials: user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
+          bg: 'bg-indigo-500'
+        }];
+      } else {
+        finalAssignees = [{
+          id: availableMembers[0]?.id || '1',
+          name: availableMembers[0]?.name || defaultMembers[0].name,
+          initials: availableMembers[0]?.initials || defaultMembers[0].initials,
+          bg: availableMembers[0]?.bg || defaultMembers[0].bg,
+        }];
+      }
+    }
 
     const newTaskData = {
       title: newTaskTitle,
@@ -555,10 +597,7 @@ export default function ProjectDetailPage() {
       priority: newTaskPriority,
       startDate: newTaskStartDate || new Date().toISOString().split('T')[0],
       dueDate: newTaskDueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      assignees: assignees.length > 0 ? assignees : [{
-        id: availableMembers[0]?.id || '1',
-        name: availableMembers[0]?.name || defaultMembers[0].name,
-      }],
+      assignees: finalAssignees,
       projectId: projectId,
       subtasks: [],
       comments: [],
@@ -588,7 +627,7 @@ export default function ProjectDetailPage() {
         priority: newTaskPriority,
         startDate: newTaskStartDate || new Date().toISOString().split('T')[0],
         dueDate: newTaskDueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        assignees: selectedEmployees.length > 0 ? selectedEmployees : [availableMembers[0] || defaultMembers[0]],
+        assignees: finalAssignees,
         subtasks: [],
         comments: [],
         attachmentsCount: 0,
@@ -1621,14 +1660,38 @@ export default function ProjectDetailPage() {
               <div className="space-y-2.5">
                 <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Assign Task To</label>
                 <div className="flex flex-wrap gap-2">
-                  {(project?.members || []).filter((m: any) => {
+                  {isEmployee && user && user.name ? (
+                    <div className="flex items-center gap-2 bg-indigo-50/80 border border-indigo-200 text-indigo-700 px-3.5 py-2 rounded-xl text-xs font-bold w-fit">
+                      <div className="h-5.5 w-5.5 rounded-full bg-indigo-500 flex items-center justify-center text-[8px] text-white font-black shrink-0">
+                        {user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                      </div>
+                      <span>Assigned to you ({user.name})</span>
+                    </div>
+                  ) : (project?.members || []).filter((m: any) => {
                     const foundMember = availableMembers.find(
                       (am) => am.id === m.userId || am.id === m.id || am.name?.toLowerCase() === m.name?.toLowerCase()
                     );
-                    const roleStr = foundMember?.role || m.role;
-                    const r = roleStr?.toLowerCase();
-                    if (r === 'admin' || r === 'client' || r === 'manager') return false;
-                    if ((m.name || '').toLowerCase().includes('admin')) return false;
+                    const roleStr = foundMember?.role || m.role || '';
+                    const r = roleStr.toLowerCase();
+                    const lowerName = (m.name || '').toLowerCase();
+                    const lowerCreatorName = (user?.name || '').toLowerCase();
+
+                    // Admin and client should never be visible
+                    if (r === 'admin' || r === 'client') return false;
+                    if (lowerName.includes('admin') || lowerName.includes('client')) return false;
+
+                    // Only Manager, TL, and Employee can be visible
+                    const isAllowedRole = r === 'manager' || r === 'team lead' || r === 'employee';
+                    if (!isAllowedRole && (roleStr !== '' || lowerName.includes('admin') || lowerName.includes('client'))) return false;
+
+                    // If manager or TL is creating the task, they should not be visible (cannot assign to themselves)
+                    const creatorRole = user?.role?.toLowerCase() || '';
+                    if (creatorRole === 'manager' || creatorRole === 'team lead') {
+                      if (m.userId === user?.id || m.id === user?.id || lowerName === lowerCreatorName) {
+                        return false;
+                      }
+                    }
+
                     return true;
                   }).map((member) => {
                     const isSelected = newTaskAssignees.includes(member.name);

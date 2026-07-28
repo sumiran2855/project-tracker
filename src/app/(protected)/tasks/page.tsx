@@ -166,7 +166,7 @@ export default function GlobalTasksPage() {
   const [tasks, setTasks] = useState<GlobalTask[]>([]);
   const [availableMembers, setAvailableMembers] = useState<Employee[]>([]);
 
-  const isEmployee = user?.role === 'Employee';
+  const isEmployee = user?.role?.toLowerCase() === 'employee';
   const isClient = user?.role?.toLowerCase() === 'client';
   const canEditHours = user?.role?.toLowerCase() === 'team lead' || user?.role?.toLowerCase() === 'employee';
 
@@ -236,6 +236,16 @@ export default function GlobalTasksPage() {
   const [newTaskStartDate, setNewTaskStartDate] = useState('');
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
   const [newTaskAssignees, setNewTaskAssignees] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (isTaskModalOpen) {
+      if (user && user.name && isEmployee) {
+        setNewTaskAssignees([user.name]);
+      } else {
+        setNewTaskAssignees([]);
+      }
+    }
+  }, [isTaskModalOpen, user, isEmployee]);
 
   // Load projects and compile tasks
   useEffect(() => {
@@ -477,13 +487,45 @@ export default function GlobalTasksPage() {
     const targetProject = projects.find(p => p.id === newTaskProject);
     if (!targetProject) return;
 
-    const selectedEmployees = availableMembers.filter(m => newTaskAssignees.includes(m.name));
-    const assignees = selectedEmployees.map(m => ({
-      id: m.id,
-      name: m.name,
-      initials: m.initials,
-      bg: m.bg
-    }));
+    const assignees = newTaskAssignees.map(name => {
+      const m = availableMembers.find(am => am.name === name);
+      if (m) {
+        return {
+          id: m.id,
+          name: m.name,
+          initials: m.initials,
+          bg: m.bg
+        };
+      }
+      if (user && user.name && name === user.name) {
+        return {
+          id: user.id || '',
+          name: user.name,
+          initials: user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
+          bg: 'bg-indigo-500'
+        };
+      }
+      return null;
+    }).filter((x): x is { id: string; name: string; initials: string; bg: string; } => x !== null);
+
+    let finalAssignees = assignees;
+    if (finalAssignees.length === 0) {
+      if (user && user.name && isEmployee) {
+        finalAssignees = [{
+          id: user.id || '',
+          name: user.name,
+          initials: user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
+          bg: 'bg-indigo-500'
+        }];
+      } else {
+        finalAssignees = [{
+          id: availableMembers[0]?.id || '1',
+          name: availableMembers[0]?.name || defaultMembers[0].name,
+          initials: availableMembers[0]?.initials || defaultMembers[0].initials,
+          bg: availableMembers[0]?.bg || defaultMembers[0].bg,
+        }];
+      }
+    }
 
     const newTaskData = {
       title: newTaskTitle,
@@ -492,10 +534,7 @@ export default function GlobalTasksPage() {
       priority: newTaskPriority,
       startDate: newTaskStartDate || new Date().toISOString().split('T')[0],
       dueDate: newTaskDueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      assignees: assignees.length > 0 ? assignees : [{
-        id: availableMembers[0]?.id || '1',
-        name: availableMembers[0]?.name || defaultMembers[0].name,
-      }],
+      assignees: finalAssignees,
       projectId: targetProject.id,
       subtasks: [],
       comments: [],
@@ -534,7 +573,7 @@ export default function GlobalTasksPage() {
         priority: newTaskPriority,
         startDate: newTaskStartDate || new Date().toISOString().split('T')[0],
         dueDate: newTaskDueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        assignees: selectedEmployees.length > 0 ? selectedEmployees : [availableMembers[0] || defaultMembers[0]],
+        assignees: finalAssignees,
         subtasks: [],
         comments: [],
         attachmentsCount: 0,
@@ -1223,7 +1262,11 @@ export default function GlobalTasksPage() {
                       const targetProj = projects.find((p) => p.id === selectedId);
                       if (targetProj && Array.isArray(targetProj.members)) {
                         const targetMemberNames = new Set(targetProj.members.map((m: any) => (m.name || '').toLowerCase()));
-                        setNewTaskAssignees((prev) => prev.filter((name) => targetMemberNames.has(name.toLowerCase())));
+                        if (user && user.name && isEmployee) {
+                          setNewTaskAssignees([user.name]);
+                        } else {
+                          setNewTaskAssignees((prev) => prev.filter((name) => targetMemberNames.has(name.toLowerCase())));
+                        }
                       }
                     }}
                     className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 focus:bg-white px-3.5 py-2.5 text-xs text-slate-800 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
@@ -1335,15 +1378,64 @@ export default function GlobalTasksPage() {
                         const foundMember = availableMembers.find(
                           (am) => am.id === m.userId || am.id === m.id || am.name?.toLowerCase() === m.name?.toLowerCase()
                         );
-                        const roleStr = foundMember?.role || m.role;
-                        const r = roleStr?.toLowerCase();
-                        return r !== 'admin' && r !== 'client' && r !== 'manager';
+                        const roleStr = foundMember?.role || m.role || '';
+                        const r = roleStr.toLowerCase();
+                        const lowerName = (m.name || '').toLowerCase();
+                        const lowerCreatorName = (user?.name || '').toLowerCase();
+
+                        // Admin and client should never be visible
+                        if (r === 'admin' || r === 'client') return false;
+                        if (lowerName.includes('admin') || lowerName.includes('client')) return false;
+
+                        // Only Manager, TL, and Employee can be visible
+                        const isAllowedRole = r === 'manager' || r === 'team lead' || r === 'employee';
+                        if (!isAllowedRole && (roleStr !== '' || lowerName.includes('admin') || lowerName.includes('client'))) return false;
+
+                        // If manager or TL is creating the task, they should not be visible (cannot assign to themselves)
+                        const creatorRole = user?.role?.toLowerCase() || '';
+                        if (creatorRole === 'manager' || creatorRole === 'team lead') {
+                          if (m.userId === user?.id || m.id === user?.id || lowerName === lowerCreatorName) {
+                            return false;
+                          }
+                        }
+
+                        return true;
                       });
                     } else {
                       taskAssignableMembers = availableMembers.filter((m) => {
-                        const r = m.role?.toLowerCase();
-                        return r !== 'admin' && r !== 'client' && r !== 'manager';
+                        const r = (m.role || '').toLowerCase();
+                        const lowerName = (m.name || '').toLowerCase();
+                        const lowerCreatorName = (user?.name || '').toLowerCase();
+
+                        // Admin and client should never be visible
+                        if (r === 'admin' || r === 'client') return false;
+                        if (lowerName.includes('admin') || lowerName.includes('client')) return false;
+
+                        // Only Manager, TL, and Employee can be visible
+                        const isAllowedRole = r === 'manager' || r === 'team lead' || r === 'employee';
+                        if (!isAllowedRole && (m.role !== '' || lowerName.includes('admin') || lowerName.includes('client'))) return false;
+
+                        // If manager or TL is creating the task, they should not be visible
+                        const creatorRole = user?.role?.toLowerCase() || '';
+                        if (creatorRole === 'manager' || creatorRole === 'team lead') {
+                          if (m.id === user?.id || lowerName === lowerCreatorName) {
+                            return false;
+                          }
+                        }
+
+                        return true;
                       });
+                    }
+
+                    if (isEmployee && user && user.name) {
+                      return (
+                        <div className="flex items-center gap-2 bg-indigo-50/80 border border-indigo-200 text-indigo-700 px-3.5 py-2 rounded-xl text-xs font-bold w-fit">
+                          <div className="h-5.5 w-5.5 rounded-full bg-indigo-500 flex items-center justify-center text-[8px] text-white font-black shrink-0">
+                            {user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                          </div>
+                          <span>Assigned to you ({user.name})</span>
+                        </div>
+                      );
                     }
 
                     if (taskAssignableMembers.length === 0) {
@@ -1367,7 +1459,7 @@ export default function GlobalTasksPage() {
                             "flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border text-[11px] font-bold transition-all duration-200 cursor-pointer",
                             isSelected 
                               ? "bg-indigo-50/80 border-indigo-200 text-indigo-700 shadow-3xs ring-1 ring-indigo-200/50" 
-                              : "bg-white border-slate-200 text-slate-650 hover:bg-slate-50 hover:border-slate-300 shadow-3xs"
+                              : "bg-white border-slate-200 text-slate-655 hover:bg-slate-50 hover:border-slate-300 shadow-3xs"
                           )}
                         >
                           <div className={cn("h-5.5 w-5.5 rounded-full flex items-center justify-center text-[8px] text-white font-black shadow-3xs shrink-0", member.bg || 'bg-indigo-500')}>

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, ChevronDown, ListTodo, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createTaskAction } from '@/actions/tasks';
+import { useUser } from '@/contexts/UserContext';
 
 interface AddTaskModalProps {
   isOpen: boolean;
@@ -22,6 +23,9 @@ export function AddTaskModal({
   onSuccess,
   defaultProjectId
 }: AddTaskModalProps) {
+  const { user } = useUser();
+  const isEmployee = user?.role?.toLowerCase() === 'employee';
+
   const [newProject, setNewProject] = useState('');
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
@@ -48,11 +52,15 @@ export function AddTaskModal({
       setNewStartDate(today);
       setNewDueDate(inOneWeek);
       
-      setNewAssignees([]);
+      if (user && user.name && isEmployee) {
+        setNewAssignees([user.name]);
+      } else {
+        setNewAssignees([]);
+      }
       setErrorMsg('');
       setLoading(false);
     }
-  }, [isOpen, projects, defaultProjectId]);
+  }, [isOpen, projects, defaultProjectId, user, isEmployee]);
 
   const selectedProj = projects.find((p) => p.id === newProject || (p as any)._id === newProject);
 
@@ -63,14 +71,52 @@ export function AddTaskModal({
       const foundMember = availableMembers.find(
         (am) => am.id === m.userId || am.id === m.id || am.name?.toLowerCase() === m.name?.toLowerCase()
       );
-      const roleStr = foundMember?.role || m.role;
-      const r = roleStr?.toLowerCase();
-      return r !== 'admin' && r !== 'client' && r !== 'manager';
+      const roleStr = foundMember?.role || m.role || '';
+      const r = roleStr.toLowerCase();
+      const lowerName = (m.name || '').toLowerCase();
+      const lowerCreatorName = (user?.name || '').toLowerCase();
+
+      // Admin and client should never be visible
+      if (r === 'admin' || r === 'client') return false;
+      if (lowerName.includes('admin') || lowerName.includes('client')) return false;
+
+      // Only Manager, TL, and Employee can be visible
+      const isAllowedRole = r === 'manager' || r === 'team lead' || r === 'employee';
+      if (!isAllowedRole && (roleStr !== '' || lowerName.includes('admin') || lowerName.includes('client'))) return false;
+
+      // If manager or TL is creating the task, they should not be visible (cannot assign to themselves)
+      const creatorRole = user?.role?.toLowerCase() || '';
+      if (creatorRole === 'manager' || creatorRole === 'team lead') {
+        if (m.userId === user?.id || m.id === user?.id || lowerName === lowerCreatorName) {
+          return false;
+        }
+      }
+
+      return true;
     });
   } else {
     assignableMembers = availableMembers.filter((m) => {
-      const r = m.role?.toLowerCase();
-      return r !== 'admin' && r !== 'client' && r !== 'manager';
+      const r = (m.role || '').toLowerCase();
+      const lowerName = (m.name || '').toLowerCase();
+      const lowerCreatorName = (user?.name || '').toLowerCase();
+
+      // Admin and client should never be visible
+      if (r === 'admin' || r === 'client') return false;
+      if (lowerName.includes('admin') || lowerName.includes('client')) return false;
+
+      // Only Manager, TL, and Employee can be visible
+      const isAllowedRole = r === 'manager' || r === 'team lead' || r === 'employee';
+      if (!isAllowedRole && (m.role !== '' || lowerName.includes('admin') || lowerName.includes('client'))) return false;
+
+      // If manager or TL is creating the task, they should not be visible
+      const creatorRole = user?.role?.toLowerCase() || '';
+      if (creatorRole === 'manager' || creatorRole === 'team lead') {
+        if (m.id === user?.id || lowerName === lowerCreatorName) {
+          return false;
+        }
+      }
+
+      return true;
     });
   }
 
@@ -79,7 +125,11 @@ export function AddTaskModal({
     const targetProj = projects.find((p) => p.id === projId);
     if (targetProj && Array.isArray(targetProj.members)) {
       const targetMemberNames = new Set(targetProj.members.map((m: any) => (m.name || '').toLowerCase()));
-      setNewAssignees((prev) => prev.filter((name) => targetMemberNames.has(name.toLowerCase())));
+      if (user && user.name && isEmployee) {
+        setNewAssignees([user.name]);
+      } else {
+        setNewAssignees((prev) => prev.filter((name) => targetMemberNames.has(name.toLowerCase())));
+      }
     }
   };
 
@@ -98,7 +148,7 @@ export function AddTaskModal({
     const combinedMembers = [...availableMembers, ...(targetProj.members || [])];
     const selectedAssignees = newAssignees.map((name) => {
       const found = combinedMembers.find((m) => m.name === name);
-      const memberId = found?.id || found?.userId || '';
+      const memberId = found?.id || found?.userId || (user && user.name && name === user.name ? user.id : '');
       return {
         id: memberId,
         userId: memberId,
@@ -284,7 +334,14 @@ export function AddTaskModal({
             <div className="space-y-2.5">
               <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Assign Team Members</label>
               <div className="flex flex-wrap gap-2.5">
-                {assignableMembers.length > 0 ? (
+                {isEmployee && user && user.name ? (
+                  <div className="flex items-center gap-2 bg-indigo-50/80 border border-indigo-200 text-indigo-700 px-3.5 py-2 rounded-xl text-xs font-bold w-fit">
+                    <div className="h-5.5 w-5.5 rounded-full bg-indigo-500 flex items-center justify-center text-[8px] text-white font-black shrink-0">
+                      {user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                    </div>
+                    <span>Assigned to you ({user.name})</span>
+                  </div>
+                ) : assignableMembers.length > 0 ? (
                   assignableMembers.map((member) => {
                     const isSelected = newAssignees.includes(member.name);
                     return (
