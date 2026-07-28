@@ -110,9 +110,19 @@ export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, 
       return;
     }
 
+    const allSelectedIds = new Set(
+      availableMembers
+        .filter((m) => m.role?.toLowerCase() !== 'admin')
+        .filter((m) => newProjMembers.some((nameOrId) => nameOrId === m.name || nameOrId === m.id))
+        .map((m) => m.id)
+    );
+
+    if (newProjManagerId) allSelectedIds.add(newProjManagerId);
+    if (newProjTeamLeadId) allSelectedIds.add(newProjTeamLeadId);
+    if (newProjClientId) allSelectedIds.add(newProjClientId);
+
     const selectedMembers = availableMembers
-      .filter((m) => m.role?.toLowerCase() !== 'admin')
-      .filter((m) => newProjMembers.some((nameOrId) => nameOrId === m.name || nameOrId === m.id))
+      .filter((m) => allSelectedIds.has(m.id))
       .map((m) => ({
         userId: m.id,
         name: m.name,
@@ -138,9 +148,9 @@ export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, 
       repositoryUrl: newProjRepositoryUrl || undefined,
       tags: tagsArray,
       members: selectedMembers,
-      managerId: (isTeamLead || userRole.toLowerCase() === 'admin') ? (newProjManagerId || undefined) : undefined,
-      teamLeadId: (isManager || userRole.toLowerCase() === 'admin') ? (newProjTeamLeadId || undefined) : undefined,
-      clientId: newProjClientId,
+      managerId: newProjManagerId || undefined,
+      teamLeadId: newProjTeamLeadId || undefined,
+      clientId: newProjClientId || undefined,
     };
 
     if (!projectToEdit) {
@@ -476,7 +486,10 @@ export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, 
                 <div className="flex flex-wrap gap-2.5">
                   {availableMembers.filter((m) => {
                     const role = m.role?.toLowerCase();
-                    return role !== 'admin' && role !== 'client';
+                    if (role === 'admin' || role === 'client') return false;
+                    if (role === 'manager' && newProjManagerId) return false;
+                    if (role === 'team lead' && newProjTeamLeadId) return false;
+                    return true;
                   }).map((member) => {
                     const isSelected = newProjMembers.some((nameOrId) => nameOrId === member.name || nameOrId === member.id);
                     return (
