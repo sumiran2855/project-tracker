@@ -366,7 +366,7 @@ export default function GlobalTasksPage() {
     const oldTask = tasks.find(t => t.id === updatedTask.id);
     if (updatedTask.status === 'Done' && oldTask && oldTask.status !== 'Done') {
       setPromptTask(updatedTask);
-      setPromptValue('0');
+      setPromptValue(String(oldTask.actualHours || 0));
       setHoursPromptOpen(true);
     } else {
       await submitUpdateTask(updatedTask, 0, false);
@@ -405,7 +405,7 @@ export default function GlobalTasksPage() {
         projectId,
         projectName,
       };
-      setTasks(prev => prev.map(t => t.id === id ? newGlobalTask : t));
+      saveAllTasks(tasks.map(t => t.id === id ? newGlobalTask : t));
       if (selectedTask?.id === id) {
         setSelectedTask(newGlobalTask);
       }
@@ -1168,8 +1168,10 @@ export default function GlobalTasksPage() {
                 type="button"
                 onClick={async () => {
                   if (promptTask) {
-                    const hours = parseFloat(promptValue) || 0;
-                    await submitUpdateTask(promptTask, hours, true);
+                    const finalHours = parseFloat(promptValue) || 0;
+                    const existingHours = promptTask.actualHours || 0;
+                    const delta = Math.max(0, finalHours - existingHours);
+                    await submitUpdateTask(promptTask, delta, delta > 0);
                   }
                   setHoursPromptOpen(false);
                   setPromptTask(null);

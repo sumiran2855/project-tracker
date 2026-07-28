@@ -486,7 +486,7 @@ export default function ProjectDetailPage() {
 
     if (targetStatus === 'Done' && taskToMove.status !== 'Done' && canEditHours) {
       setPromptTask({ taskId, targetStatus });
-      setPromptValue('0');
+      setPromptValue(String(taskToMove.actualHours || 0));
       setHoursPromptOpen(true);
     } else {
       await submitMoveTask(taskId, targetStatus, 0);
@@ -512,7 +512,8 @@ export default function ProjectDetailPage() {
     }
     const res = await updateTaskAction(taskId, payload);
     if (res.success && res.data) {
-      setTasks(prev => prev.map(t => t.id === taskId ? (res.data as any) : t));
+      const nextTasks = tasks.map(t => t.id === taskId ? (res.data as any) : t);
+      saveTasks(nextTasks);
       if (selectedTask?.id === taskId) {
         setSelectedTask(res.data as any);
       }
@@ -1488,8 +1489,11 @@ export default function ProjectDetailPage() {
                 type="button"
                 onClick={async () => {
                   if (promptTask) {
-                    const hours = parseInt(promptValue, 10) || 0;
-                    await submitMoveTask(promptTask.taskId, promptTask.targetStatus, hours);
+                    const finalHours = parseFloat(promptValue) || 0;
+                    const taskToMove = tasks.find(t => t.id === promptTask.taskId);
+                    const existingHours = taskToMove?.actualHours || 0;
+                    const delta = Math.max(0, finalHours - existingHours);
+                    await submitMoveTask(promptTask.taskId, promptTask.targetStatus, delta);
                   }
                   setHoursPromptOpen(false);
                   setPromptTask(null);
