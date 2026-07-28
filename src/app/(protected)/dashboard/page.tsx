@@ -226,7 +226,8 @@ export default async function DashboardPage() {
             if (task.status !== 'Done') {
               openTasksCount++;
             }
-            totalActualHours += task.actualHours || 0;
+            const taskLogsSum = (task.workLogs || []).reduce((sum: number, wl: any) => sum + (Number(wl.hours) || 0), 0);
+            totalActualHours += taskLogsSum;
 
             if (task.dueDate) {
               const d = new Date(task.dueDate);
@@ -272,7 +273,8 @@ export default async function DashboardPage() {
             if (issue.status !== 'Resolved' && issue.status !== 'Closed' && issue.type === 'Bug') {
               openBugsCount++;
             }
-            totalActualHours += issue.actualHours || 0;
+            const issueLogsSum = (issue.workLogs || []).reduce((sum: number, wl: any) => sum + (Number(wl.hours) || 0), 0);
+            totalActualHours += issueLogsSum;
 
             if (issue.dueDate) {
               const d = new Date(issue.dueDate);
@@ -396,12 +398,6 @@ export default async function DashboardPage() {
               userName: resolvedUserName,
               userId: logUserId,
             });
-          });
-        } else if (itemActual > 0) {
-          logsToProcess.push({
-            hours: itemActual,
-            date: new Date(item.updatedAt || item.createdAt || item.dueDate || item.startDate),
-            userName: primaryAssigneeName
           });
         }
 

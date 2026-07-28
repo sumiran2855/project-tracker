@@ -275,8 +275,14 @@ export default function ProjectDetailPage() {
   };
 
   const projectBudgetHours = project ? parseHoursFromBudget(project.budget) : 0;
-  const tasksLoggedHours = tasks.reduce((sum, t) => sum + (t.actualHours || 0), 0);
-  const issuesLoggedHours = issues.reduce((sum, i) => sum + (i.actualHours || 0), 0);
+  const tasksLoggedHours = tasks.reduce((sum, t) => {
+    const logsSum = (t.workLogs || []).reduce((acc: number, log: any) => acc + (Number(log.hours) || 0), 0);
+    return sum + logsSum;
+  }, 0);
+  const issuesLoggedHours = issues.reduce((sum, i) => {
+    const logsSum = (i.workLogs || []).reduce((acc: number, log: any) => acc + (Number(log.hours) || 0), 0);
+    return sum + logsSum;
+  }, 0);
   const totalLoggedProjectHours = tasksLoggedHours + issuesLoggedHours;
   const remainingProjectHours = Math.max(0, projectBudgetHours - totalLoggedProjectHours);
 
@@ -1751,30 +1757,49 @@ export default function ProjectDetailPage() {
                 </div>
 
                 {/* Hours Spent Column */}
-                <div className="col-span-2 border-t border-slate-100 pt-3.5 space-y-1.5 animate-fadeIn">
+                <div className="col-span-2 border-t border-slate-100 pt-3.5 space-y-2 animate-fadeIn">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Hours Spent (Actual)</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={selectedTask.actualHours || 0}
-                    disabled={!canEditHours}
-                    onChange={async (e) => {
-                      const val = parseInt(e.target.value, 10) || 0;
-                      const oldHours = selectedTask.actualHours || 0;
-                      const diff = val - oldHours;
-
-                      const updatedTask = { ...selectedTask, actualHours: val };
-                      setSelectedTask(updatedTask);
-                      setTasks(prev => prev.map(t => t.id === selectedTask.id ? updatedTask : t));
-
-                      if (diff > 0) {
-                        await updateTaskAction(selectedTask.id, { newWorkLog: { hours: diff } } as any);
-                      } else {
-                        await updateTaskAction(selectedTask.id, { actualHours: val });
-                      }
-                    }}
-                    className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-75 disabled:cursor-not-allowed"
-                  />
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-750 flex items-center gap-1.5 shadow-2xs">
+                      <Clock className="h-4 w-4 text-slate-405 shrink-0" />
+                      <span>{selectedTask.actualHours || 0} hours total</span>
+                    </div>
+                    {canEditHours && (
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="number"
+                          min="0.1"
+                          step="0.1"
+                          placeholder="Log hours..."
+                          id="project-task-log-hours-input"
+                          className="w-24 text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                        />
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const input = document.getElementById('project-task-log-hours-input') as HTMLInputElement;
+                            const val = parseFloat(input?.value || '0');
+                            if (val > 0) {
+                              const res = await updateTaskAction(selectedTask.id, { newWorkLog: { hours: val } } as any);
+                              if (res.success && res.data) {
+                                const updatedTask = {
+                                  ...res.data,
+                                  projectId: selectedTask.projectId,
+                                  projectName: selectedTask.projectName
+                                };
+                                setSelectedTask(updatedTask);
+                                saveTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
+                                if (input) input.value = '';
+                              }
+                            }
+                          }}
+                          className="px-3 py-2 rounded-xl bg-indigo-650 hover:bg-indigo-755 text-white text-xs font-bold shadow-3xs transition-all cursor-pointer shrink-0"
+                        >
+                          Log
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Dates */}

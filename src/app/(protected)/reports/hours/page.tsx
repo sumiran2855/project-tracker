@@ -227,18 +227,6 @@ export default function EnhancedHoursReportPage() {
             projectId: projId,
           });
         });
-      } else if (itemActual > 0) {
-        logs.push({
-          id: `${item.id || item._id}-legacy`,
-          itemId: item.id || item._id,
-          itemName: item.title,
-          itemType: item.itemType || 'task',
-          hours: itemActual,
-          date: new Date(item.updatedAt || item.createdAt || item.dueDate || item.startDate),
-          userName: primaryAssigneeName || 'Employee',
-          projectName: projName,
-          projectId: projId,
-        });
       }
     });
     return logs;

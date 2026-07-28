@@ -181,6 +181,7 @@ interface CardDetailItem {
   startDate?: string;
   assignees: Member[];
   actualHours?: number;
+  workLogs?: any[];
   comments: Comment[];
   subtasks?: Subtask[];
   itemType: 'task' | 'issue';
@@ -524,6 +525,7 @@ export default function WorkshopDashboard() {
           startDate: task.startDate,
           assignees: task.assignees,
           actualHours: task.actualHours || 0,
+          workLogs: task.workLogs || [],
           comments: task.comments || [],
           subtasks: task.subtasks || [],
           itemType: 'task'
@@ -552,6 +554,7 @@ export default function WorkshopDashboard() {
           dueDate: issue.dueDate,
           assignees: issue.assignees,
           actualHours: (issue as any).actualHours || 0,
+          workLogs: (issue as any).workLogs || [],
           comments: savedComments,
           relatedTaskId: (issue as any).relatedTaskId || '',
           relatedTaskTitle: (issue as any).relatedTaskTitle || '',
@@ -630,34 +633,31 @@ export default function WorkshopDashboard() {
   // Save actual hours inside details drawer
   const handleSaveHoursValue = async () => {
     if (!activeDetailItem) return;
-    const numHours = parseFloat(tempHours) || 0;
-    const oldHours = activeDetailItem.actualHours || 0;
-    const diff = numHours - oldHours;
+    const input = document.getElementById('workshop-log-hours-input') as HTMLInputElement;
+    const numHours = parseFloat(input?.value || '0');
+    if (numHours <= 0) return;
 
     if (activeDetailItem.itemType === 'task') {
-      const payload: any = diff > 0 
-        ? { newWorkLog: { hours: diff } } 
-        : { actualHours: numHours };
-      const res = await updateTaskAction(activeDetailItem.id, payload);
-      if (res.success) {
-        setActiveDetailItem({ ...activeDetailItem, actualHours: numHours });
-        setSelectedProjTasks(prev => prev.map(t => t.id === activeDetailItem.id ? { ...t, actualHours: numHours } : t));
-        setIsEditingHours(false);
+      const res = await updateTaskAction(activeDetailItem.id, { newWorkLog: { hours: numHours } });
+      if (res.success && res.data) {
+        setActiveDetailItem((prev: any) => prev ? { ...prev, actualHours: res.data!.actualHours, workLogs: res.data!.workLogs } : null);
+        const nextList = selectedProjTasks.map(t => t.id === activeDetailItem.id ? res.data! : t);
+        setSelectedProjTasks(nextList);
+        if (selectedProject?.id) {
+          localStorage.setItem(`pwt_tasks_project_${selectedProject.id}`, JSON.stringify(nextList));
+        }
+        if (input) input.value = '';
       }
     } else {
-      const payload: any = diff > 0 
-        ? { newWorkLog: { hours: diff } } 
-        : { actualHours: numHours };
-      const res = await updateIssueAction(activeDetailItem.id, payload);
-      if (res.success) {
-        setActiveDetailItem({ ...activeDetailItem, actualHours: numHours });
-        setSelectedProjIssues(prev => prev.map(i => {
-          if (i.id === activeDetailItem.id) {
-            return { ...i, actualHours: numHours } as any;
-          }
-          return i;
-        }));
-        setIsEditingHours(false);
+      const res = await updateIssueAction(activeDetailItem.id, { newWorkLog: { hours: numHours } } as any);
+      if (res.success && res.data) {
+        setActiveDetailItem((prev: any) => prev ? { ...prev, actualHours: res.data!.actualHours, workLogs: res.data!.workLogs } : null);
+        const nextList = selectedProjIssues.map(i => i.id === activeDetailItem.id ? res.data! : i);
+        setSelectedProjIssues(nextList);
+        if (selectedProject?.id) {
+          localStorage.setItem(`pwt_issues_project_${selectedProject.id}`, JSON.stringify(nextList));
+        }
+        if (input) input.value = '';
       }
     }
   };
@@ -1875,39 +1875,29 @@ export default function WorkshopDashboard() {
                       <div className="space-y-1">
                         {/* Logged Hours instead of Start Date for bugs */}
                         <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Logged Hours</label>
-                        <div>
-                          {isEditingHours ? (
+                        <div className="flex gap-2 items-center">
+                          <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-705 flex items-center gap-1.5 shadow-2xs h-9">
+                            <Clock className="h-4 w-4 text-slate-400 shrink-0" />
+                            <span>{activeDetailItem.actualHours || 0}h total</span>
+                          </div>
+                          {canEditHours && (
                             <div className="flex items-center gap-1.5">
                               <input
                                 type="number"
-                                value={tempHours}
-                                onChange={(e) => setTempHours(e.target.value)}
-                                className="w-20 border border-slate-200 focus:border-indigo-500 rounded-lg px-2.5 py-1 text-[11px] font-black text-slate-808 outline-none transition-all shadow-3xs bg-white"
-                                step="0.5"
-                                min="0"
-                                autoFocus
+                                min="0.1"
+                                step="0.1"
+                                placeholder="Log..."
+                                id="workshop-log-hours-input"
+                                className="w-20 text-xs font-bold rounded-xl border border-slate-200 px-2.5 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 h-9"
                               />
                               <button
+                                type="button"
                                 onClick={handleSaveHoursValue}
-                                className="px-2.5 py-1 rounded-lg bg-indigo-650 hover:bg-indigo-755 text-white text-[10px] font-black shadow-3xs transition-all cursor-pointer"
+                                className="bg-indigo-650 hover:bg-indigo-755 text-white rounded-xl px-2.5 py-1.5 text-[10px] font-black shadow-3xs cursor-pointer h-9 shrink-0 transition-colors"
                               >
-                                Save
+                                Log
                               </button>
                             </div>
-                          ) : (
-                            <button
-                              disabled={!canEditHours}
-                              onClick={() => {
-                                if (!canEditHours) return;
-                                setTempHours(String(activeDetailItem.actualHours || 0));
-                                setIsEditingHours(true);
-                              }}
-                              className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-150 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 shadow-3xs transition-all cursor-pointer w-full text-left select-none disabled:opacity-75 disabled:cursor-not-allowed"
-                            >
-                              <Clock className="h-4 w-4 text-indigo-550 shrink-0" />
-                              <span>{activeDetailItem.actualHours || 0} hrs</span>
-                              {canEditHours && <span className="text-[8px] text-slate-400 ml-auto font-bold uppercase tracking-wider">Edit</span>}
-                            </button>
                           )}
                         </div>
                       </div>
@@ -1953,47 +1943,37 @@ export default function WorkshopDashboard() {
                   </div>
                 </div>
 
-                {/* Logged Hours row for tasks, since start date occupied its slot */}
-                {activeDetailItem.itemType === 'task' && (
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Logged Hours</label>
-                    <div>
-                      {isEditingHours ? (
-                        <div className="flex items-center gap-1.5">
-                          <input
-                            type="number"
-                            value={tempHours}
-                            onChange={(e) => setTempHours(e.target.value)}
-                            className="w-20 border border-slate-200 focus:border-indigo-500 rounded-lg px-2.5 py-1 text-[11px] font-black text-slate-808 outline-none transition-all shadow-3xs bg-white"
-                            step="0.5"
-                            min="0"
-                            autoFocus
-                          />
-                          <button
-                            onClick={handleSaveHoursValue}
-                            className="px-2.5 py-1 rounded-lg bg-indigo-650 hover:bg-indigo-755 text-white text-[10px] font-black shadow-3xs transition-all cursor-pointer"
-                          >
-                            Save
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          disabled={!canEditHours}
-                          onClick={() => {
-                            if (!canEditHours) return;
-                            setTempHours(String(activeDetailItem.actualHours || 0));
-                            setIsEditingHours(true);
-                          }}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-150 bg-white hover:bg-slate-55 text-xs font-bold text-slate-700 shadow-3xs transition-all cursor-pointer w-36 text-left select-none disabled:opacity-75 disabled:cursor-not-allowed"
-                        >
-                          <Clock className="h-4 w-4 text-indigo-550 shrink-0" />
-                          <span>{activeDetailItem.actualHours || 0} hours</span>
-                          {canEditHours && <span className="text-[8px] text-slate-400 ml-auto font-bold uppercase tracking-wider">Edit</span>}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
+                 {/* Logged Hours row for tasks, since start date occupied its slot */}
+                 {activeDetailItem.itemType === 'task' && (
+                   <div className="space-y-1">
+                     <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Logged Hours</label>
+                     <div className="flex gap-2 items-center">
+                       <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-705 flex items-center gap-1.5 shadow-2xs h-9">
+                         <Clock className="h-4 w-4 text-slate-400 shrink-0" />
+                         <span>{activeDetailItem.actualHours || 0}h total</span>
+                       </div>
+                       {canEditHours && (
+                         <div className="flex items-center gap-1.5">
+                           <input
+                             type="number"
+                             min="0.1"
+                             step="0.1"
+                             placeholder="Log..."
+                             id="workshop-log-hours-input"
+                             className="w-20 text-xs font-bold rounded-xl border border-slate-200 px-2.5 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 h-9"
+                           />
+                           <button
+                             type="button"
+                             onClick={handleSaveHoursValue}
+                             className="bg-indigo-650 hover:bg-indigo-755 text-white rounded-xl px-2.5 py-1.5 text-[10px] font-black shadow-3xs cursor-pointer h-9 shrink-0 transition-colors"
+                           >
+                             Log
+                           </button>
+                         </div>
+                       )}
+                     </div>
+                   </div>
+                 )}
 
                 {/* Related Task for issues */}
                 {activeDetailItem.itemType === 'issue' && (

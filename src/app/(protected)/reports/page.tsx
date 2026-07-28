@@ -385,12 +385,6 @@ function getCurrentWeekDays() {
             userId: logUserId,
           });
         });
-      } else if (itemActual > 0) {
-        logsToProcess.push({
-          hours: itemActual,
-          date: new Date(item.updatedAt || item.createdAt || item.dueDate || item.startDate),
-          userName: primaryAssigneeName
-        });
       }
 
       logsToProcess.forEach(log => {

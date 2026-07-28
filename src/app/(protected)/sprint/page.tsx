@@ -53,6 +53,7 @@ interface SprintItem {
   startDate?: string;
   assignees: any[];
   actualHours?: number;
+  workLogs?: any[];
   comments?: any[];
   projectId?: string;
   projectName?: string;
@@ -203,6 +204,7 @@ export default function SprintPage() {
       startDate: t.startDate,
       assignees: t.assignees || [],
       actualHours: t.actualHours || 0,
+      workLogs: t.workLogs || [],
       comments: t.comments || [],
       projectId: t.projectId,
       projectName: t.projectName,
@@ -231,6 +233,7 @@ export default function SprintPage() {
         dueDate: i.dueDate,
         assignees: i.assignees || [],
         actualHours: (i as any).actualHours || 0,
+        workLogs: (i as any).workLogs || [],
         comments: localComments,
         projectId: i.projectId,
         projectName: i.projectName,
@@ -278,7 +281,10 @@ export default function SprintPage() {
   const totalIssuesCount = sprintIssues.length;
   const resolvedIssuesCount = sprintIssues.filter(i => i.status === 'Resolved' || i.status === 'Closed').length;
 
-  const totalLoggedHours = sprintItems.reduce((acc, item) => acc + (item.actualHours || 0), 0);
+  const totalLoggedHours = sprintItems.reduce((acc, item) => {
+    const logsSum = (item.workLogs || []).reduce((sum: number, wl: any) => sum + (Number(wl.hours) || 0), 0);
+    return acc + logsSum;
+  }, 0);
 
   // Status mapping
   const columns = ['To Do', 'In Progress', 'In Review', 'Done'];
@@ -427,20 +433,24 @@ export default function SprintPage() {
 
   const handleSaveHoursValue = async () => {
     if (!activeDetailItem) return;
-    const numHours = parseFloat(tempHours) || 0;
+    const input = document.getElementById('sprint-log-hours-input') as HTMLInputElement;
+    const numHours = parseFloat(input?.value || '0');
+    if (numHours <= 0) return;
 
     if (activeDetailItem.itemType === 'task') {
-      const res = await updateTaskAction(activeDetailItem.id, { actualHours: numHours });
+      const res = await updateTaskAction(activeDetailItem.id, { newWorkLog: { hours: numHours } });
       if (res.success && res.data) {
-        setActiveDetailItem((prev: any) => prev ? { ...prev, actualHours: numHours } : null);
-        setIsEditingHours(false);
+        setActiveDetailItem((prev: any) => prev ? { ...prev, actualHours: res.data!.actualHours, workLogs: res.data!.workLogs } : null);
+        setTasks(prev => prev.map(t => t.id === activeDetailItem.id ? res.data! : t));
+        if (input) input.value = '';
         dispatchUpdate();
       }
     } else {
-      const res = await updateIssueAction(activeDetailItem.id, { actualHours: numHours } as any);
+      const res = await updateIssueAction(activeDetailItem.id, { newWorkLog: { hours: numHours } } as any);
       if (res.success && res.data) {
-        setActiveDetailItem((prev: any) => prev ? { ...prev, actualHours: numHours } : null);
-        setIsEditingHours(false);
+        setActiveDetailItem((prev: any) => prev ? { ...prev, actualHours: res.data!.actualHours, workLogs: res.data!.workLogs } : null);
+        setIssues(prev => prev.map(i => i.id === activeDetailItem.id ? res.data! : i));
+        if (input) input.value = '';
         dispatchUpdate();
       }
     }
@@ -1092,7 +1102,7 @@ export default function SprintPage() {
                       </span>
                     </td>
                     <td className="px-5 py-4 text-right text-xs font-bold text-slate-700">
-                      {item.actualHours || 0}h
+                      {(item.workLogs || []).reduce((sum: number, wl: any) => sum + (Number(wl.hours) || 0), 0)}h
                     </td>
                   </tr>
                 ))}
@@ -1319,39 +1329,29 @@ export default function SprintPage() {
                     {/* Logged Hours */}
                     <div className="space-y-1">
                       <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Logged Hours</label>
-                      <div>
-                        {isEditingHours ? (
-                          <div className="flex gap-2 items-center">
+                      <div className="flex gap-2 items-center">
+                        <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 flex items-center gap-1.5 shadow-2xs h-9">
+                          <Clock className="h-4 w-4 text-slate-400 shrink-0" />
+                          <span>{activeDetailItem.actualHours || 0} hours total</span>
+                        </div>
+                        {canEditHours && (
+                          <div className="flex items-center gap-1.5">
                             <input
                               type="number"
-                              min="0"
-                              step="0.5"
-                              value={tempHours}
-                              onChange={(e) => setTempHours(e.target.value)}
-                              className="w-20 bg-white border border-slate-200 rounded-xl py-1 px-3 text-xs font-bold text-slate-700 focus:outline-none shadow-3xs h-9"
+                              min="0.1"
+                              step="0.1"
+                              placeholder="Log hours..."
+                              id="sprint-log-hours-input"
+                              className="w-24 text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 h-9"
                             />
                             <button
+                              type="button"
                               onClick={handleSaveHoursValue}
-                              className="bg-indigo-600 hover:bg-indigo-750 text-white rounded-xl px-3 py-1.5 text-[10px] font-black shadow-3xs cursor-pointer h-9 shrink-0 transition-colors"
+                              className="bg-indigo-600 hover:bg-indigo-750 text-white rounded-xl px-3.5 py-1.5 text-[10px] font-black shadow-3xs cursor-pointer h-9 shrink-0 transition-colors"
                             >
-                              Save
+                              Log
                             </button>
                           </div>
-                        ) : (
-                          <button
-                            disabled={!canEditHours}
-                            onClick={() => {
-                              if (!canEditHours) return;
-                              setIsEditingHours(true);
-                            }}
-                            className="w-full bg-white hover:bg-slate-55 border border-slate-200 rounded-xl py-1.5 px-3 text-xs font-bold text-slate-700 focus:outline-none shadow-3xs flex items-center justify-between cursor-pointer h-9 transition-colors disabled:opacity-75 disabled:cursor-not-allowed"
-                          >
-                            <span className="flex items-center gap-1.5 text-slate-650">
-                              <Clock className="h-3.5 w-3.5 text-slate-400" />
-                              {activeDetailItem.actualHours || 0} hours
-                            </span>
-                            {canEditHours && <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Edit</span>}
-                          </button>
                         )}
                       </div>
                     </div>

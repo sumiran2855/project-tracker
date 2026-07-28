@@ -26,6 +26,7 @@ export interface Issue {
   commentsCount: number;
   actualHours?: number;
   workLogs?: WorkLog[];
+  newWorkLog?: { hours: number; date?: string; userName?: string; userId?: string };
   relatedTaskId?: string;
   relatedTaskTitle?: string;
   attachments?: string[];

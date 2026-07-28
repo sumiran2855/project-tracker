@@ -71,8 +71,6 @@ export default function IssuesPage() {
 
   // Detailed Drawer States
   const [activeDetailItem, setActiveDetailItem] = useState<any | null>(null);
-  const [tempHours, setTempHours] = useState('0');
-  const [isEditingHours, setIsEditingHours] = useState(false);
   const [newCommentText, setNewCommentText] = useState('');
 
   // Project tasks and uploading image state
@@ -247,8 +245,6 @@ export default function IssuesPage() {
       projectId: issue.projectId,
       itemType: 'issue'
     });
-    setTempHours(String((issue as any).actualHours || 0));
-    setIsEditingHours(false);
   };
   const handleUpdateRelatedTask = async (newTaskId: string) => {
     if (!activeDetailItem) return;
@@ -376,29 +372,7 @@ export default function IssuesPage() {
     }
   };
 
-  const handleSaveHoursValue = async () => {
-    if (!activeDetailItem) return;
-    const numHours = parseFloat(tempHours) || 0;
-    const oldHours = activeDetailItem.actualHours || 0;
-    const diff = numHours - oldHours;
 
-    const payload: any = diff > 0 
-      ? { newWorkLog: { hours: diff } } 
-      : { actualHours: numHours };
-
-    const res = await updateIssueAction(activeDetailItem.id, payload);
-    if (res.success && res.data) {
-      setActiveDetailItem((prev: any) => prev ? { ...prev, actualHours: numHours } : null);
-      setIssues(prev => prev.map(i => i.id === activeDetailItem.id ? { ...i, actualHours: numHours } as any : i));
-      setIsEditingHours(false);
-    } else {
-      setActiveDetailItem((prev: any) => prev ? { ...prev, actualHours: numHours } : null);
-      const updated = issues.map(i => i.id === activeDetailItem.id ? { ...i, actualHours: numHours } as any : i);
-      setIssues(updated);
-      localStorage.setItem('pwt_issues', JSON.stringify(updated));
-      setIsEditingHours(false);
-    }
-  };
 
   const handleAddComment = async () => {
     if (!activeDetailItem || !newCommentText.trim()) return;
@@ -1100,39 +1074,40 @@ export default function IssuesPage() {
                     {/* Logged Hours */}
                     <div className="space-y-1">
                       <label className="text-[9px] font-black uppercase tracking-wider text-slate-400">Logged Hours</label>
-                      <div>
-                        {isEditingHours ? (
+                      <div className="flex flex-col gap-1.5">
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-750 flex items-center gap-1.5 shadow-2xs">
+                          <Clock className="h-4 w-4 text-slate-405 shrink-0" />
+                          <span>{activeDetailItem.actualHours || 0} hours total</span>
+                        </div>
+                        {canEditHours && (
                           <div className="flex items-center gap-1.5">
                             <input
                               type="number"
-                              value={tempHours}
-                              onChange={(e) => setTempHours(e.target.value)}
-                              className="w-full border border-slate-200 focus:border-indigo-500 rounded-lg px-2.5 py-1.5 text-[11px] font-black text-slate-808 outline-none transition-all shadow-3xs bg-white"
-                              step="0.5"
-                              min="0"
-                              autoFocus
+                              min="0.1"
+                              step="0.1"
+                              placeholder="Log hours..."
+                              id="issue-log-hours-input"
+                              className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                             />
                             <button
-                              onClick={handleSaveHoursValue}
-                              className="px-2.5 py-1.5 rounded-lg bg-indigo-650 hover:bg-indigo-755 text-white text-[10px] font-black shadow-3xs transition-all cursor-pointer shrink-0"
+                              type="button"
+                              onClick={async () => {
+                                const input = document.getElementById('issue-log-hours-input') as HTMLInputElement;
+                                const val = parseFloat(input?.value || '0');
+                                if (val > 0) {
+                                  const res = await updateIssueAction(activeDetailItem.id, { newWorkLog: { hours: val } });
+                                  if (res.success && res.data) {
+                                    setActiveDetailItem((prev: any) => prev ? { ...prev, actualHours: res.data!.actualHours, workLogs: res.data!.workLogs } : null);
+                                    setIssues(prev => prev.map(i => i.id === activeDetailItem.id ? { ...i, actualHours: res.data!.actualHours, workLogs: res.data!.workLogs } : i));
+                                    if (input) input.value = '';
+                                  }
+                                }
+                              }}
+                              className="px-3 py-2 rounded-xl bg-indigo-650 hover:bg-indigo-755 text-white text-xs font-bold shadow-3xs transition-all cursor-pointer shrink-0"
                             >
-                              Save
+                              Log
                             </button>
                           </div>
-                        ) : (
-                          <button
-                            disabled={!canEditHours}
-                            onClick={() => {
-                              if (!canEditHours) return;
-                              setTempHours(String(activeDetailItem.actualHours || 0));
-                              setIsEditingHours(true);
-                            }}
-                            className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-150 bg-white hover:bg-slate-55 text-xs font-bold text-slate-700 shadow-3xs transition-all cursor-pointer w-full text-left select-none disabled:opacity-75 disabled:cursor-not-allowed"
-                          >
-                            <Clock className="h-4 w-4 text-indigo-555 shrink-0" />
-                            <span>{activeDetailItem.actualHours || 0} hours</span>
-                            {canEditHours && <span className="text-[8px] text-slate-400 ml-auto font-bold uppercase tracking-wider">Edit</span>}
-                          </button>
                         )}
                       </div>
                     </div>

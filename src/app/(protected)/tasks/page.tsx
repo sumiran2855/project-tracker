@@ -369,11 +369,11 @@ export default function GlobalTasksPage() {
       setPromptValue('0');
       setHoursPromptOpen(true);
     } else {
-      await submitUpdateTask(updatedTask, updatedTask.actualHours || 0);
+      await submitUpdateTask(updatedTask, 0, false);
     }
   };
 
-  const submitUpdateTask = async (updatedTask: GlobalTask, hoursInput: number, isAdditional: boolean = false) => {
+  const submitUpdateTask = async (updatedTask: GlobalTask, hoursInput: number = 0, isAdditional: boolean = false) => {
     const oldTask = tasks.find(t => t.id === updatedTask.id);
     const { projectId, projectName, id, ...taskFields } = updatedTask;
 
@@ -389,21 +389,12 @@ export default function GlobalTasksPage() {
       assignees: mappedAssignees as any,
     };
 
-    let targetHours = hoursInput;
-    if (isAdditional) {
-      targetHours = (oldTask?.actualHours || 0) + (hoursInput > 0 ? hoursInput : 0);
-      if (hoursInput > 0) {
-        payload.newWorkLog = { hours: hoursInput };
-        delete payload.actualHours;
-      }
-    } else {
-      const diff = hoursInput - (oldTask?.actualHours || 0);
-      if (diff > 0) {
-        payload.newWorkLog = { hours: diff };
-        delete payload.actualHours;
-      } else {
-        payload.actualHours = hoursInput;
-      }
+    // Enforce derived total and prevent direct updates
+    delete payload.actualHours;
+    delete payload.workLogs;
+
+    if (isAdditional && hoursInput > 0) {
+      payload.newWorkLog = { hours: hoursInput };
     }
 
     const res = await updateTaskAction(id, payload);
@@ -413,7 +404,6 @@ export default function GlobalTasksPage() {
         ...res.data,
         projectId,
         projectName,
-        actualHours: targetHours,
       };
       setTasks(prev => prev.map(t => t.id === id ? newGlobalTask : t));
       if (selectedTask?.id === id) {
@@ -421,11 +411,11 @@ export default function GlobalTasksPage() {
       }
 
       // Update projects counters locally
-      const oldTask = tasks.find(t => t.id === id);
-      if (oldTask && oldTask.status !== updatedTask.status) {
+      const oldTaskObj = tasks.find(t => t.id === id);
+      if (oldTaskObj && oldTaskObj.status !== updatedTask.status) {
         setProjects(prevProjs => prevProjs.map(p => {
           if (p.id === projectId) {
-            const wasCompleted = oldTask.status === 'Done';
+            const wasCompleted = oldTaskObj.status === 'Done';
             const isNowCompleted = updatedTask.status === 'Done';
             const newCompleted = p.completedTasks + (isNowCompleted ? 1 : 0) - (wasCompleted ? 1 : 0);
             return {
@@ -1178,8 +1168,8 @@ export default function GlobalTasksPage() {
                 type="button"
                 onClick={async () => {
                   if (promptTask) {
-                    const hours = parseInt(promptValue, 10) || 0;
-                    await submitUpdateTask(promptTask, hours);
+                    const hours = parseFloat(promptValue) || 0;
+                    await submitUpdateTask(promptTask, hours, true);
                   }
                   setHoursPromptOpen(false);
                   setPromptTask(null);
@@ -1488,19 +1478,40 @@ export default function GlobalTasksPage() {
                 </div>
 
                 {/* Hours Spent */}
-                <div className="col-span-2 border-t border-slate-100 pt-3.5 space-y-1.5 animate-fadeIn">
+                <div className="col-span-2 border-t border-slate-100 pt-3.5 space-y-2 animate-fadeIn">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Hours Spent (Actual)</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={selectedTask.actualHours || 0}
-                    disabled={!canEditHours}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value, 10) || 0;
-                      handleUpdateTask({ ...selectedTask, actualHours: val });
-                    }}
-                    className="w-full text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-75 disabled:cursor-not-allowed"
-                  />
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-750 flex items-center gap-1.5 shadow-2xs">
+                      <Clock className="h-4 w-4 text-slate-405 shrink-0" />
+                      <span>{selectedTask.actualHours || 0} hours total</span>
+                    </div>
+                    {canEditHours && (
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="number"
+                          min="0.1"
+                          step="0.1"
+                          placeholder="Log hours..."
+                          id="task-log-hours-input"
+                          className="w-24 text-xs font-bold rounded-xl border border-slate-200 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                        />
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const input = document.getElementById('task-log-hours-input') as HTMLInputElement;
+                            const val = parseFloat(input?.value || '0');
+                            if (val > 0) {
+                              await submitUpdateTask(selectedTask, val, true);
+                              if (input) input.value = '';
+                            }
+                          }}
+                          className="px-3 py-2 rounded-xl bg-indigo-650 hover:bg-indigo-755 text-white text-xs font-bold shadow-3xs transition-all cursor-pointer shrink-0"
+                        >
+                          Log
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Dates */}

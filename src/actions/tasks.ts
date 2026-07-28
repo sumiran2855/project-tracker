@@ -42,6 +42,7 @@ export interface Task {
   attachmentsCount?: number;
   actualHours?: number;
   workLogs?: WorkLog[];
+  newWorkLog?: { hours: number; date?: string; userName?: string; userId?: string };
   createdAt?: string;
   updatedAt?: string;
 }
