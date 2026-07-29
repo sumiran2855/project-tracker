@@ -176,7 +176,7 @@ export default async function DashboardPage() {
       activeProjects.forEach(p => {
         totalAssignedHours += parseHoursFromBudget(p.budget);
 
-        if (p.dueDate && p.dueDate !== 'No Due Date') {
+        if (p.status !== 'Completed' && p.dueDate && p.dueDate !== 'No Due Date') {
           const d = new Date(p.dueDate);
           if (!isNaN(d.getTime())) {
             gatheredDeadlines.push({
@@ -229,7 +229,7 @@ export default async function DashboardPage() {
             const taskLogsSum = (task.workLogs || []).reduce((sum: number, wl: any) => sum + (Number(wl.hours) || 0), 0);
             totalActualHours += taskLogsSum;
 
-            if (task.dueDate) {
+            if (task.status !== 'Done' && task.dueDate) {
               const d = new Date(task.dueDate);
               if (!isNaN(d.getTime())) {
                 gatheredDeadlines.push({
@@ -276,7 +276,7 @@ export default async function DashboardPage() {
             const issueLogsSum = (issue.workLogs || []).reduce((sum: number, wl: any) => sum + (Number(wl.hours) || 0), 0);
             totalActualHours += issueLogsSum;
 
-            if (issue.dueDate) {
+            if (issue.status !== 'Resolved' && issue.status !== 'Closed' && issue.dueDate) {
               const d = new Date(issue.dueDate);
               if (!isNaN(d.getTime())) {
                 gatheredDeadlines.push({
