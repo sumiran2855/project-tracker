@@ -1,14 +1,8 @@
 import type { Metadata } from 'next';
 import { getCurrentUser } from '@/lib/auth/dal';
 import {
-  ArrowUpRight,
   TrendingUp,
-  Plus,
-  Play,
-  Bug,
-  MoreHorizontal,
   CalendarDays,
-  Calendar,
   FolderOpen,
 } from 'lucide-react';
 import { ProjectCard } from '@/components/dashboard/ProjectCard';
@@ -26,32 +20,7 @@ export const metadata: Metadata = {
   description: 'Your Project Tracker dashboard.',
 };
 
-const stats = [
-  { label: 'Active Projects', value: '12',   change: '+2',   iconName: 'Folder',       tint: '#6366f1', positive: true  },
-  { label: 'Open Tasks',      value: '48',   change: '-5',   iconName: 'CheckCircle2', tint: '#3b82f6', positive: true  },
-  { label: 'Open Bugs',       value: '7',    change: '+3',   iconName: 'AlertTriangle',tint: '#ef4444', positive: false },
-  { label: 'Hours Logged',    value: '134h', change: '+18h', iconName: 'Clock',        tint: '#ec4899', positive: true  },
-];
-
-
-const PROJECT_COLOR_PALETTE = [
-  { bg: 'bg-indigo-500', text: 'text-indigo-500', hex: '#6366f1' },
-  { bg: 'bg-emerald-500', text: 'text-emerald-500', hex: '#10b981' },
-  { bg: 'bg-violet-500', text: 'text-violet-500', hex: '#8b5cf6' },
-  { bg: 'bg-amber-500', text: 'text-amber-500', hex: '#f59e0b' },
-  { bg: 'bg-rose-500', text: 'text-rose-500', hex: '#f43f5e' },
-  { bg: 'bg-cyan-500', text: 'text-cyan-500', hex: '#06b6d4' },
-  { bg: 'bg-purple-500', text: 'text-purple-500', hex: '#a855f7' },
-];
-
-function getProjColor(projName: string, allProjNames: string[]) {
-  const idx = allProjNames.indexOf(projName);
-  return PROJECT_COLOR_PALETTE[(idx >= 0 ? idx : 0) % PROJECT_COLOR_PALETTE.length];
-}
-
 const recentProjects: any[] = [];
-
-
 
 function getRelativeTimeString(dateStr: string | Date | undefined): string {
   if (!dateStr) return 'Unknown time';
