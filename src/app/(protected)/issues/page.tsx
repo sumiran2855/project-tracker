@@ -5,29 +5,24 @@ import {
   AlertCircle,
   Bug,
   Search,
-  Filter,
   MessageSquare,
   Plus,
   Clock,
-  Calendar,
   X,
   Sparkles,
-  TrendingUp,
   CheckCircle2,
   Trash2,
   Folder,
-  Tag,
   ChevronDown,
   Bookmark,
   UploadCloud,
-  Link
 } from 'lucide-react';
 import { cn, formatCommentTime, getCommentTimestamp } from '@/lib/utils';
 import { useUser, usePermission } from '@/contexts/UserContext';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 import { getProjectsAction, getEmployeesAction, type Employee, type Member } from '@/actions/projects';
-import { getIssuesByProjectAction, createIssueAction, updateIssueAction, deleteIssueAction, uploadIssueAttachmentAction, type Issue } from '@/actions/issues';
+import { getIssuesByProjectAction, updateIssueAction, deleteIssueAction, uploadIssueAttachmentAction, type Issue } from '@/actions/issues';
 import { getTasksByProjectAction } from '@/actions/tasks';
 import { AddIssueModal } from '@/components/dashboard/AddIssueModal';
 
@@ -45,8 +40,6 @@ interface Project {
   id: string;
   name: string;
 }
-
-const defaultProjects: Project[] = [];
 
 const fallbackIssues: Issue[] = [];
 
@@ -371,8 +364,6 @@ export default function IssuesPage() {
       localStorage.setItem('pwt_issues', JSON.stringify(updated));
     }
   };
-
-
 
   const handleAddComment = async () => {
     if (!activeDetailItem || !newCommentText.trim()) return;

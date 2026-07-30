@@ -1,15 +1,12 @@
-import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { decrypt } from '@/lib/auth/session';
 import { SignupForm } from '@/components/auth/SignupForm';
 import { AUTH_COOKIE_NAME, DEFAULT_LOGIN_REDIRECT } from '@/constants/routes';
 import { AuthPanel } from '@/components/auth/AuthPanel';
+import { signupMetadata } from '@/types/app.metadata';
 
-export const metadata: Metadata = {
-  title: 'Create Account — Project Work Tracker',
-  description: 'Create your Project Work Tracker account.',
-};
+export const metadata = signupMetadata;
 
 export default async function SignupPage() {
   const cookieStore = await cookies();

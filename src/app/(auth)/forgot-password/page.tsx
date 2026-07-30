@@ -1,15 +1,12 @@
-import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { decrypt } from '@/lib/auth/session';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 import { AUTH_COOKIE_NAME, DEFAULT_LOGIN_REDIRECT } from '@/constants/routes';
 import { AuthPanel } from '@/components/auth/AuthPanel';
+import { forgotPasswordMetadata } from '@/types/app.metadata';
 
-export const metadata: Metadata = {
-  title: 'Forgot Password — Project Work Tracker',
-  description: 'Request a password reset link for your account.',
-};
+export const metadata = forgotPasswordMetadata;
 
 export default async function ForgotPasswordPage() {
   const cookieStore = await cookies();

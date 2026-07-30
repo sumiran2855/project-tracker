@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 import { getCurrentUser } from '@/lib/auth/dal';
 import {
   TrendingUp,
@@ -14,11 +13,9 @@ import { hasPermission } from '@/lib/auth/permissions';
 import { getProjectsAction, getEmployeesAction } from '@/actions/projects';
 import { getTasksByProjectAction } from '@/actions/tasks';
 import { getIssuesByProjectAction } from '@/actions/issues';
+import { dashboardMetadata } from '@/types/app.metadata';
 
-export const metadata: Metadata = {
-  title: 'Dashboard — Project Tracker',
-  description: 'Your Project Tracker dashboard.',
-};
+export const metadata = dashboardMetadata;
 
 const recentProjects: any[] = [];
 

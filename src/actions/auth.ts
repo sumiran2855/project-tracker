@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { LoginSchema, SignupSchema, ForgotPasswordSchema, ResetPasswordSchema } from '@/validations/auth.validation';
 import { createSession, deleteSession } from '@/lib/auth/session';
-import { DEFAULT_LOGIN_REDIRECT, LOGIN_ROUTE } from '@/constants/routes';
+import { LOGIN_ROUTE } from '@/constants/routes';
 import { apiClient, ApiError } from '@/lib/api/apiClient';
 import { getDefaultViewRoute } from '@/lib/utils';
 import type { 

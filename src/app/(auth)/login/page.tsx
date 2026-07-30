@@ -1,15 +1,12 @@
-import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { decrypt } from '@/lib/auth/session';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { AUTH_COOKIE_NAME, DEFAULT_LOGIN_REDIRECT } from '@/constants/routes';
 import { AuthPanel } from '@/components/auth/AuthPanel';
+import { loginMetadata } from '@/types/app.metadata';
 
-export const metadata: Metadata = {
-  title: 'Sign In — Project Work Tracker',
-  description: 'Sign in to your Project Work Tracker account.',
-};
+export const metadata = loginMetadata;
 
 export default async function LoginPage() {
   const cookieStore = await cookies();
