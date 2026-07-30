@@ -21,7 +21,8 @@ import {
   Search,
   FileText,
   Settings,
-  AlertCircle
+  AlertCircle,
+  Users
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -56,6 +57,7 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
       items: [
         { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, active: pathname === '/dashboard' },
         { label: 'Projects', href: '/projects', icon: Folder, active: pathname === '/projects', badge: projectsCount !== null ? String(projectsCount) : undefined },
+        { label: 'My Team', href: '/my-team', icon: Users, active: pathname === '/my-team', permission: 'team:view' },
       ],
     },
     {
@@ -70,6 +72,7 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
       items: [
         { label: 'Issues', href: '/issues', icon: AlertCircle, active: pathname === '/issues' },
         { label: 'Reports', href: '/reports', icon: BarChart3, active: pathname === '/reports', permission: 'report:view' },
+        { label: 'Hierarchy', href: '/manager-assignments', icon: Users, active: pathname === '/manager-assignments', permission: 'manager-assignments:manage' },
         { label: 'Settings', href: '/settings', icon: Settings, active: pathname === '/settings' },
       ],
     },

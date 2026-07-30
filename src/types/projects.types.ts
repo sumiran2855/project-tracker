@@ -13,6 +13,7 @@ export interface Employee {
   role: string;
   initials: string;
   bg: string;
+  manager?: string;
 }
 
 export interface Project {

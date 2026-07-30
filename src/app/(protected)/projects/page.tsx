@@ -21,7 +21,8 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getProjectsAction, createProjectAction, deleteProjectAction, getEmployeesAction, type Employee } from '@/actions/projects';
+import { getProjectsAction, createProjectAction, deleteProjectAction, getEmployeesAction } from '@/actions/projects';
+import type { Employee } from '@/types/projects.types';
 import { AddProjectModal } from '@/components/dashboard/AddProjectModal';
 
 interface Member {

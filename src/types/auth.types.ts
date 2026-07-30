@@ -68,6 +68,7 @@ export interface SafeUser {
   collaborators?: { name: string; initials: string; bg: string; role: string }[];
   notificationPrefs?: NotificationPrefs;
   workspacePrefs?: WorkspacePrefs;
+  manager?: string;
 }
 
 /**

@@ -3,6 +3,11 @@ import {
   TrendingUp,
   CalendarDays,
   FolderOpen,
+  Users,
+  Briefcase,
+  User,
+  Folder,
+  ChevronRight
 } from 'lucide-react';
 import { ProjectCard } from '@/components/dashboard/ProjectCard';
 import { StatCard } from '@/components/dashboard/StatCard';
@@ -102,6 +107,8 @@ function getCurrentWeekDays() {
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
+  const userRole = (user?.role || '').toLowerCase();
+  const userId = user?.id || '';
   const canViewWorkload = hasPermission(user?.role, 'dashboard:view-team-workload');
   const canViewQuickActions = hasPermission(user?.role, 'dashboard:view-quick-actions');
 
@@ -109,6 +116,7 @@ export default async function DashboardPage() {
   let deadlines: { title: string; date: string; urgent: boolean }[] = [];
   let recentActivity: { text: string; time: string; dot: string }[] = [];
   let workloadData: { name: string; role: string; load: number; initials: string; bg?: string }[] = [];
+  let hierarchyTree: any[] = [];
   let allEmployees: any[] = [];
   let weeklyHoursList: { day: string; fullDayLabel: string; dateFormatted: string; hours: number; projects: { projectName: string; hours: number }[]; employees: { employeeName: string; hours: number }[] }[] = [];
   let maxHours = 8;
@@ -437,7 +445,7 @@ export default async function DashboardPage() {
         };
       });
 
-      const userRole = (user?.role || '').toLowerCase();
+      // Use outer userRole
       if (userRole === 'employee') {
         dailyCapacity = 8;
         weeklyCapacity = 40;
@@ -556,6 +564,158 @@ export default async function DashboardPage() {
         if (calculatedWorkloads.length > 0) {
           workloadData = calculatedWorkloads;
         }
+
+        // Calculate Hierarchy Tree
+        const activeMembers = allEmployees.filter(e => {
+          const r = (e.role || '').toLowerCase();
+          return r === 'manager' || r === 'team lead' || r === 'employee';
+        });
+
+
+
+        if (userRole === 'admin') {
+          const managers = activeMembers.filter(m => (m.role || '').toLowerCase() === 'manager');
+          hierarchyTree = managers.map(mgr => {
+            const mgrLeads = activeMembers.filter(e => e.manager === mgr.id && (e.role || '').toLowerCase().replace('-', ' ') === 'team lead');
+            const mgrEmployees = activeMembers.filter(e => e.manager === mgr.id && (e.role || '').toLowerCase() === 'employee');
+
+            const leadsTree = mgrLeads.map(lead => {
+              const leadEmp = mgrEmployees.filter(emp => {
+                const shares = activeProjects.some(p => 
+                  p.members?.some((m: any) => m.userId?.toString() === lead.id) &&
+                  p.members?.some((m: any) => m.userId?.toString() === emp.id)
+                );
+                return shares;
+              });
+              return { ...lead, children: leadEmp };
+            });
+
+            const standaloneEmp = mgrEmployees.filter(emp => {
+              const underAnyLead = mgrLeads.some(lead => 
+                activeProjects.some(p => 
+                  p.members?.some((m: any) => m.userId?.toString() === lead.id) &&
+                  p.members?.some((m: any) => m.userId?.toString() === emp.id)
+                )
+              );
+              return !underAnyLead;
+            });
+
+            return {
+              ...mgr,
+              leads: leadsTree,
+              standalone: standaloneEmp
+            };
+          });
+        } else if (userRole === 'manager') {
+          const mgr = activeMembers.find(m => m.id === userId) || {
+            id: userId,
+            name: user?.name || 'Manager',
+            role: 'Manager',
+            initials: user?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'M',
+            bg: 'bg-indigo-500'
+          };
+
+          const mgrLeads = activeMembers.filter(e => e.manager === userId && (e.role || '').toLowerCase().replace('-', ' ') === 'team lead');
+          const mgrEmployees = activeMembers.filter(e => e.manager === userId && (e.role || '').toLowerCase() === 'employee');
+
+          const leadsTree = mgrLeads.map(lead => {
+            const leadEmp = mgrEmployees.filter(emp => {
+              const shares = activeProjects.some(p => 
+                p.members?.some((m: any) => m.userId?.toString() === lead.id) &&
+                p.members?.some((m: any) => m.userId?.toString() === emp.id)
+              );
+              return shares;
+            });
+            return { ...lead, children: leadEmp };
+          });
+
+          const standaloneEmp = mgrEmployees.filter(emp => {
+            const underAnyLead = mgrLeads.some(lead => 
+              activeProjects.some(p => 
+                p.members?.some((m: any) => m.userId?.toString() === lead.id) &&
+                p.members?.some((m: any) => m.userId?.toString() === emp.id)
+              )
+            );
+            return !underAnyLead;
+          });
+
+          hierarchyTree = [{
+            ...mgr,
+            leads: leadsTree,
+            standalone: standaloneEmp
+          }];
+        } else if (userRole.replace('-', ' ') === 'team lead') {
+          const managerId = user?.manager;
+          const mgr = activeMembers.find(m => m.id === managerId) || {
+            id: managerId || '',
+            name: 'Assigned Manager',
+            role: 'Manager',
+            initials: 'M',
+            bg: 'bg-slate-400'
+          };
+
+          const lead = activeMembers.find(m => m.id === userId) || {
+            id: userId,
+            name: user?.name || 'Team Lead',
+            role: 'Team Lead',
+            initials: user?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'TL',
+            bg: 'bg-amber-500'
+          };
+
+          const leadEmp = activeMembers.filter(emp => {
+            if ((emp.role || '').toLowerCase() !== 'employee') return false;
+            const shares = activeProjects.some(p => 
+              p.members?.some((m: any) => m.userId?.toString() === userId) &&
+              p.members?.some((m: any) => m.userId?.toString() === emp.id)
+            );
+            return shares;
+          });
+
+          hierarchyTree = [{
+            ...mgr,
+            leads: [{ ...lead, children: leadEmp }],
+            standalone: []
+          }];
+        } else {
+          // Employee
+          const managerId = user?.manager;
+          const mgr = activeMembers.find(m => m.id === managerId) || {
+            id: managerId || '',
+            name: 'Assigned Manager',
+            role: 'Manager',
+            initials: 'M',
+            bg: 'bg-slate-400'
+          };
+
+          const sharedLeads = activeMembers.filter(lead => {
+            if ((lead.role || '').toLowerCase().replace('-', ' ') !== 'team lead') return false;
+            const shares = activeProjects.some(p => 
+              p.members?.some((m: any) => m.userId?.toString() === lead.id) &&
+              p.members?.some((m: any) => m.userId?.toString() === userId)
+            );
+            return shares;
+          });
+
+          const emp = activeMembers.find(m => m.id === userId) || {
+            id: userId,
+            name: user?.name || 'Employee',
+            role: 'Employee',
+            initials: user?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'E',
+            bg: 'bg-emerald-500'
+          };
+
+          const leadsTree = sharedLeads.map(lead => {
+            return { ...lead, children: [emp] };
+          });
+
+          const standalone = sharedLeads.length === 0 ? [emp] : [];
+
+          hierarchyTree = [{
+            ...mgr,
+            leads: leadsTree,
+            standalone
+          }];
+        }
       }
     }
   } catch (error) {
@@ -640,44 +800,106 @@ export default async function DashboardPage() {
           weeklyCapacity={weeklyCapacity}
           dailyCapacity={dailyCapacity}
           isEmployeeRole={isEmployeeRole}
-          canViewWorkload={canViewWorkload}
+          canViewWorkload={userRole !== 'client'}
           maxHours={maxHours}
           uniqueLoggedProjects={uniqueLoggedProjects}
           uniqueLoggedEmployees={uniqueLoggedEmployees}
         />
 
-        {/* Team workload */}
-        {canViewWorkload && (
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
-            <h2 className="text-base font-bold text-slate-800 mb-1">Team Workload</h2>
-            <p className="text-xs text-slate-400 mb-5">Capacity this sprint</p>
-            <div className="space-y-4">
-              {workloadData.length > 0 ? (
-                workloadData.map((t) => (
-                  <div key={t.name} className="flex items-center gap-3">
-                    <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold border border-slate-100 shadow-3xs", t.bg || "bg-indigo-50 text-indigo-650 border border-indigo-100/50")}>
-                      {t.initials}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs font-bold text-slate-800 truncate">{t.name}</p>
-                        <span className="text-[10px] font-bold text-slate-400 shrink-0 ml-2">{t.load}%</span>
+        {/* Team Hierarchy Card */}
+        {userRole !== 'client' && (
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs flex flex-col justify-between">
+            <div>
+              <h2 className="text-base font-bold text-slate-800 mb-1">Team Hierarchy</h2>
+              <p className="text-xs text-slate-450 mb-5">Subordinate structure & alignments</p>
+              
+              <div className="max-h-[290px] overflow-y-auto pr-1 space-y-4">
+                {hierarchyTree && hierarchyTree.length > 0 ? (
+                  hierarchyTree.map((mgr) => (
+                    <div key={mgr.id || 'mgr'} className="space-y-3.5">
+                      {/* Manager node */}
+                      <div className="flex items-center gap-3 bg-indigo-50/50 p-3 rounded-2xl border border-indigo-100/40 shadow-3xs">
+                        <div className={`h-8 w-8 rounded-full flex items-center justify-center text-white text-[10px] font-black shrink-0 ${mgr.bg || 'bg-indigo-500'}`}>
+                          {mgr.initials || 'M'}
+                        </div>
+                        <div>
+                          <p className="text-xs font-black text-slate-850 leading-tight">{mgr.name}</p>
+                          <span className="inline-flex items-center gap-1 rounded bg-indigo-50 border border-indigo-100/50 px-1.5 py-0.5 text-[8px] font-black uppercase text-indigo-700 tracking-wider mt-0.5">
+                            Manager
+                          </span>
+                        </div>
                       </div>
-                      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${t.load}%`,
-                            backgroundColor: t.load > 85 ? '#ef4444' : t.load > 60 ? '#f59e0b' : '#10b981',
-                          }}
-                        />
+
+                      {/* Leads and children */}
+                      <div className="pl-5 border-l border-dashed border-slate-200 ml-4 space-y-4">
+                        {mgr.leads && mgr.leads.map((lead: any) => (
+                          <div key={lead.id || 'lead'} className="space-y-3 relative">
+                            {/* Connector line for lead */}
+                            <div className="absolute -left-5 top-4 w-4 h-0.5 border-t border-dashed border-slate-200" />
+                            
+                            {/* Lead node */}
+                            <div className="flex items-center gap-2.5 bg-amber-50/40 p-2.5 rounded-xl border border-amber-100/30 shadow-3xs">
+                              <div className={`h-7 w-7 rounded-full flex items-center justify-center text-white text-[9px] font-black shrink-0 ${lead.bg || 'bg-amber-500'}`}>
+                                {lead.initials || 'TL'}
+                              </div>
+                              <div>
+                                <p className="text-[11px] font-bold text-slate-800 leading-tight">{lead.name}</p>
+                                <span className="inline-flex items-center gap-1 rounded bg-amber-50 border border-amber-100/55 px-1 py-0.2 text-[7px] font-black uppercase text-amber-800 tracking-wider mt-0.5">
+                                  Team Lead
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Employees under lead */}
+                            {lead.children && lead.children.length > 0 && (
+                              <div className="pl-5 border-l border-dashed border-slate-200 ml-3.5 space-y-2 relative">
+                                {lead.children.map((emp: any) => (
+                                  <div key={emp.id || 'emp'} className="relative flex items-center gap-2.5 bg-emerald-50/30 p-2 rounded-lg border border-emerald-100/30 shadow-3xs">
+                                    {/* Connector line for employee */}
+                                    <div className="absolute -left-5 top-4 w-4.5 h-0.5 border-t border-dashed border-slate-200" />
+                                    
+                                    <div className={`h-6 w-6 rounded-full flex items-center justify-center text-white text-[8px] font-black shrink-0 ${emp.bg || 'bg-emerald-550'}`}>
+                                      {emp.initials || 'E'}
+                                    </div>
+                                    <div>
+                                      <p className="text-[10px] font-bold text-slate-850 leading-tight">{emp.name}</p>
+                                      <span className="inline-flex items-center gap-1 rounded bg-emerald-50 border border-emerald-100/50 px-1 py-0.2 text-[7px] font-black uppercase text-emerald-800 tracking-wider mt-0.5">
+                                        Employee
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+
+                        {/* Standalone Employees under manager */}
+                        {mgr.standalone && mgr.standalone.length > 0 && (
+                          <div className="space-y-2">
+                            {mgr.standalone.map((emp: any) => (
+                              <div key={emp.id || 'emp-standalone'} className="relative flex items-center gap-2.5 bg-emerald-50/30 p-2 rounded-lg border border-emerald-100/30 shadow-3xs ml-0">
+                                <div className="absolute -left-5 top-4 w-4 h-0.5 border-t border-dashed border-slate-200" />
+                                <div className={`h-6 w-6 rounded-full flex items-center justify-center text-white text-[8px] font-black shrink-0 ${emp.bg || 'bg-emerald-550'}`}>
+                                  {emp.initials || 'E'}
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-slate-850 leading-tight">{emp.name}</p>
+                                  <span className="inline-flex items-center gap-1 rounded bg-emerald-50 border border-emerald-100/50 px-1 py-0.2 text-[7px] font-black uppercase text-emerald-800 tracking-wider mt-0.5">
+                                    Employee
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-xs text-slate-400 italic text-center py-4">No team members found</p>
-              )}
+                  ))
+                ) : (
+                  <p className="text-xs text-slate-400 italic text-center py-8">No hierarchy data available</p>
+                )}
+              </div>
             </div>
           </div>
         )}

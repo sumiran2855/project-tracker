@@ -27,8 +27,10 @@ import {
 import { cn, getCurrentWeekBounds, isItemInSprint, formatCommentTime, getCommentTimestamp } from '@/lib/utils';
 import { useUser } from '@/contexts/UserContext';
 import { getEmployeesAction } from '@/actions/projects';
-import { updateTaskAction, deleteTaskAction, Task, Subtask, Comment } from '@/actions/tasks';
-import { updateIssueAction, deleteIssueAction, uploadIssueAttachmentAction, Issue } from '@/actions/issues';
+import { updateTaskAction, deleteTaskAction } from '@/actions/tasks';
+import type { Task, Subtask, Comment } from '@/types/tasks.types';
+import { updateIssueAction, deleteIssueAction, uploadIssueAttachmentAction } from '@/actions/issues';
+import type { Issue } from '@/types/issues.types';
 import { fetchAllSprintData } from '@/lib/sprintLoader';
 
 function getAttachmentUrl(path: string) {
@@ -683,6 +685,34 @@ export default function SprintPage() {
     memberAnalytics = memberAnalytics.filter(m => 
       clientEmployeeIdentifiers.has(m.name) || clientEmployeeIdentifiers.has(m.id)
     );
+  } else if (user?.role === 'Team Lead') {
+    memberAnalytics = memberAnalytics.filter(m => {
+      // 1. Only show employees
+      if (m.role?.toLowerCase() !== 'employee') return false;
+
+      // 2. Both Team Lead and Employee must belong to the same manager team
+      const sameManager = !!(user.manager && m.manager && String(user.manager) === String(m.manager));
+      if (!sameManager) return false;
+
+      // 3. Both Team Lead and Employee must be assigned to the same project
+      const sharedProject = projects.some(p => {
+        const isTeamLeadInProject = (p.members || []).some((pm: any) =>
+          (pm.name && user.name && pm.name.toLowerCase().trim() === user.name.toLowerCase().trim()) ||
+          (pm.userId && user.id && String(pm.userId) === String(user.id)) ||
+          (pm.id && user.id && String(pm.id) === String(user.id))
+        );
+
+        const isEmployeeInProject = (p.members || []).some((pm: any) =>
+          (pm.name && m.name && pm.name.toLowerCase().trim() === m.name.toLowerCase().trim()) ||
+          (pm.userId && m.id && String(pm.userId) === String(m.id)) ||
+          (pm.id && m.id && String(pm.id) === String(m.id))
+        );
+
+        return isTeamLeadInProject && isEmployeeInProject;
+      });
+
+      return sharedProject;
+    });
   }
 
   const selectedEmployeeItems = selectedEmployee ? sprintItems.filter(item => 

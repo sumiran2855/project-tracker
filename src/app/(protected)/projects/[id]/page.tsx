@@ -32,8 +32,10 @@ import {
 } from 'lucide-react';
 import { cn, formatCommentTime, getCommentTimestamp } from '@/lib/utils';
 import { useUser, usePermission } from '@/contexts/UserContext';
-import { getProjectByIdAction, updateProjectAction, getEmployeesAction, type Employee } from '@/actions/projects';
-import { getTasksByProjectAction, createTaskAction, updateTaskAction, deleteTaskAction, type Task, type Subtask, type Comment } from '@/actions/tasks';
+import { getProjectByIdAction, updateProjectAction, getEmployeesAction } from '@/actions/projects';
+import type { Employee } from '@/types/projects.types';
+import { getTasksByProjectAction, createTaskAction, updateTaskAction, deleteTaskAction } from '@/actions/tasks';
+import type { Task, Subtask, Comment } from '@/types/tasks.types';
 import { getIssuesByProjectAction } from '@/actions/issues';
 import { AddProjectModal } from '@/components/dashboard/AddProjectModal';
 

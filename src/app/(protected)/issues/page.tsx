@@ -21,8 +21,10 @@ import { cn, formatCommentTime, getCommentTimestamp } from '@/lib/utils';
 import { useUser, usePermission } from '@/contexts/UserContext';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 
-import { getProjectsAction, getEmployeesAction, type Employee, type Member } from '@/actions/projects';
-import { getIssuesByProjectAction, updateIssueAction, deleteIssueAction, uploadIssueAttachmentAction, type Issue } from '@/actions/issues';
+import { getProjectsAction, getEmployeesAction } from '@/actions/projects';
+import type { Employee, Member } from '@/types/projects.types';
+import { getIssuesByProjectAction, updateIssueAction, deleteIssueAction, uploadIssueAttachmentAction } from '@/actions/issues';
+import type { Issue } from '@/types/issues.types';
 import { getTasksByProjectAction } from '@/actions/tasks';
 import { AddIssueModal } from '@/components/dashboard/AddIssueModal';
 

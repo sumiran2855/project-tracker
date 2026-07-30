@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils';
 import { useUser } from '@/contexts/UserContext';
 import { updateProfileAction, inviteCollaboratorAction, removeCollaboratorAction } from '@/actions/auth';
 import { getEmployeesAction, getProjectsAction } from '@/actions/projects';
-import type { Employee } from '@/actions/projects';
+import type { Employee } from '@/types/projects.types';
 import { getTasksByProjectAction } from '@/actions/tasks';
 import { getIssuesByProjectAction } from '@/actions/issues';
 import { fetchAllSprintData } from '@/lib/sprintLoader';

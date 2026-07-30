@@ -41,9 +41,12 @@ import {
   UploadCloud
 } from 'lucide-react';
 import { cn, formatCommentTime, getCommentTimestamp } from '@/lib/utils';
-import { getProjectsAction, getEmployeesAction, type Employee } from '@/actions/projects';
-import { getTasksByProjectAction, updateTaskAction, deleteTaskAction, type Task, type Subtask, type Comment } from '@/actions/tasks';
-import { getIssuesByProjectAction, updateIssueAction, deleteIssueAction, uploadIssueAttachmentAction, type Issue } from '@/actions/issues';
+import { getProjectsAction, getEmployeesAction } from '@/actions/projects';
+import type { Employee } from '@/types/projects.types';
+import { getTasksByProjectAction, updateTaskAction, deleteTaskAction } from '@/actions/tasks';
+import type { Task, Subtask, Comment } from '@/types/tasks.types';
+import { getIssuesByProjectAction, updateIssueAction, deleteIssueAction, uploadIssueAttachmentAction } from '@/actions/issues';
+import type { Issue } from '@/types/issues.types';
 
 function getAttachmentUrl(path: string) {
   if (!path) return '';

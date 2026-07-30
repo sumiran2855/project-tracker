@@ -16,7 +16,9 @@ export type Permission =
   | 'settings:view'
   | 'issue:view'
   | 'issue:delete'
-  | 'hours:edit';
+  | 'hours:edit'
+  | 'manager-assignments:manage'
+  | 'team:view';
 
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   Admin: [
@@ -35,6 +37,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'settings:view',
     'issue:view',
     'issue:delete',
+    'manager-assignments:manage',
   ],
   Manager: [
     'project:create',
@@ -52,6 +55,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'settings:view',
     'issue:view',
     'issue:delete',
+    'team:view',
   ],
   'Team Lead': [
     'project:create',
