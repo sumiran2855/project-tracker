@@ -21,7 +21,6 @@ export function UserProvider({
   initialUser: SafeUser | null;
 }) {
   const [user, setUser] = useState<SafeUser | null>(initialUser);
-  // We can use loading if we ever implement client-side refresh/fetching, defaulting to false.
   const [loading] = useState(false);
 
   const checkPermission = (permission: Permission) => {

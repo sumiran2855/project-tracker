@@ -107,14 +107,65 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
         const sprintTasks = tasks.filter((t: any) => isItemInSprint(t.dueDate, t.status));
         const sprintIssues = issues.filter((i: any) => isItemInSprint(i.dueDate, i.status));
         
-        const totalItems = sprintTasks.length + sprintIssues.length;
+        // Helper to check if item is assigned to current user
+        const isAssignedToUser = (item: any) => {
+          if (!user) return false;
+          const assignees = Array.isArray(item.assignees) ? item.assignees : [];
+          return assignees.some((a: any) => {
+            if (!a) return false;
+            const aName = typeof a === 'string' ? a : a.name;
+            const aId = typeof a === 'object' ? a.id || a.userId : null;
+            const aEmail = typeof a === 'object' ? a.email : null;
+
+            const matchName = aName && user.name && aName.toLowerCase().trim() === user.name.toLowerCase().trim();
+            const matchId = aId && user.id && String(aId) === String(user.id);
+            const matchEmail = aEmail && user.email && aEmail.toLowerCase().trim() === user.email.toLowerCase().trim();
+
+            return matchName || matchId || matchEmail;
+          });
+        };
+
+        const isEmployeeRole = user?.role === 'Employee';
+        const isClientRole = user?.role === 'Client';
+
+        let clientProjectIds = new Set<string>();
+        if (isClientRole) {
+          const pRes = await getProjectsAction();
+          if (pRes.success && pRes.data) {
+            const projects = pRes.data;
+            clientProjectIds = new Set(
+              projects
+                .filter((p: any) => (p.members || []).some((m: any) => {
+                  const mName = m.name;
+                  const mId = m.userId || m.id;
+                  return (mName && user?.name && mName.toLowerCase().trim() === user.name.toLowerCase().trim()) ||
+                         (mId && user?.id && String(mId) === String(user.id));
+                }))
+                .map((p: any) => p.id)
+            );
+          }
+        }
+
+        const filteredTasks = sprintTasks.filter((item: any) => {
+          if (isEmployeeRole) return isAssignedToUser(item);
+          if (isClientRole && clientProjectIds.size > 0 && item.projectId) return clientProjectIds.has(item.projectId);
+          return true;
+        });
+
+        const filteredIssues = sprintIssues.filter((item: any) => {
+          if (isEmployeeRole) return isAssignedToUser(item);
+          if (isClientRole && clientProjectIds.size > 0 && item.projectId) return clientProjectIds.has(item.projectId);
+          return true;
+        });
+
+        const totalItems = filteredTasks.length + filteredIssues.length;
         if (totalItems === 0) {
           setProgress(100);
           return;
         }
         
-        const completedTasks = sprintTasks.filter((t: any) => t.status === 'Done').length;
-        const resolvedIssues = sprintIssues.filter((i: any) => i.status === 'Resolved' || i.status === 'Closed').length;
+        const completedTasks = filteredTasks.filter((t: any) => t.status === 'Done').length;
+        const resolvedIssues = filteredIssues.filter((i: any) => i.status === 'Resolved' || i.status === 'Closed').length;
         
         const calculated = Math.round(((completedTasks + resolvedIssues) / totalItems) * 100);
         setProgress(calculated);

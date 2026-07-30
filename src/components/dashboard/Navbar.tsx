@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, Search, Bell, User, Settings, LogOut, Command, Inbox, Check } from 'lucide-react';
+import { Menu, Search, Bell, User, Settings, LogOut, Command, Inbox } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
   DropdownMenu,

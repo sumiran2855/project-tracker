@@ -5,8 +5,8 @@ import { X, ChevronDown, Bug, Loader2, Trash2, UploadCloud } from 'lucide-react'
 import { cn } from '@/lib/utils';
 import { createIssueAction, uploadIssueAttachmentAction } from '@/actions/issues';
 import { getTasksByProjectAction } from '@/actions/tasks';
-import { Issue } from '@/actions/issues';
 import { useUser } from '@/contexts/UserContext';
+import { Issue } from '@/types/issues.types';
 
 function getAttachmentUrl(path: string) {
   if (!path) return '';

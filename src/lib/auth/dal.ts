@@ -1,11 +1,10 @@
 import 'server-only';
 
 import { cache } from 'react';
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getOrRefreshSession } from '@/lib/auth/session';
 import type { SafeUser, VerifiedSession } from '@/types/auth.types';
-import { AUTH_COOKIE_NAME, LOGIN_ROUTE } from '@/constants/routes';
+import { LOGIN_ROUTE } from '@/constants/routes';
 import { apiClient } from '@/lib/api/apiClient';
 
 export const getSession = cache(async () => {

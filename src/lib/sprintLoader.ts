@@ -1,6 +1,7 @@
-import { getSprintSummaryAction, Project } from '@/actions/projects';
-import { Task } from '@/actions/tasks';
-import { Issue } from '@/actions/issues';
+import { getSprintSummaryAction } from '@/actions/projects';
+import { Issue } from '@/types/issues.types';
+import { Project } from '@/types/projects.types';
+import { Task } from '@/types/tasks.types';
 
 interface SprintDataResult {
   tasks: Task[];

@@ -1,7 +1,6 @@
 'use client';
 
-import React from 'react';
-import { X, Mail, Shield, CheckCircle2, Clock, Calendar, CheckSquare, AlertCircle, Folder, ExternalLink, User } from 'lucide-react';
+import { X, Mail, CheckSquare, Folder, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface EmployeeDetailModalProps {
