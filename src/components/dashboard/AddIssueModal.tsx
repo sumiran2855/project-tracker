@@ -25,9 +25,10 @@ interface AddIssueModalProps {
   availableMembers: any[];
   onSuccess?: () => void;
   defaultType?: 'Bug' | 'Security' | 'Improvement' | 'Task';
+  defaultStatus?: Issue['status'];
 }
 
-export function AddIssueModal({ isOpen, onClose, projects, availableMembers, onSuccess, defaultType = 'Bug' }: AddIssueModalProps) {
+export function AddIssueModal({ isOpen, onClose, projects, availableMembers, onSuccess, defaultType = 'Bug', defaultStatus = 'Open' }: AddIssueModalProps) {
   const { user } = useUser();
   const isEmployee = user?.role?.toLowerCase() === 'employee';
 
@@ -36,7 +37,7 @@ export function AddIssueModal({ isOpen, onClose, projects, availableMembers, onS
   const [newDesc, setNewDesc] = useState('');
   const [newType, setNewType] = useState<Issue['type']>(defaultType);
   const [newPriority, setNewPriority] = useState<Issue['priority']>('Medium');
-  const [newStatus, setNewStatus] = useState<Issue['status']>('Open');
+  const [newStatus, setNewStatus] = useState<Issue['status']>(defaultStatus);
   const [newDueDate, setNewDueDate] = useState('');
   const [newAssignees, setNewAssignees] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -73,7 +74,7 @@ export function AddIssueModal({ isOpen, onClose, projects, availableMembers, onS
       setNewDesc('');
       setNewType(defaultType);
       setNewPriority('Medium');
-      setNewStatus('Open');
+      setNewStatus(defaultStatus);
       
       const inOneWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       setNewDueDate(inOneWeek);
@@ -88,7 +89,7 @@ export function AddIssueModal({ isOpen, onClose, projects, availableMembers, onS
       setAttachments([]);
       setSelectedTaskId('');
     }
-  }, [isOpen, projects, defaultType, user, isEmployee]);
+  }, [isOpen, projects, defaultType, defaultStatus, user, isEmployee]);
 
   const selectedProj = projects.find((p) => p.id === newProject || (p as any)._id === newProject);
 

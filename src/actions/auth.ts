@@ -103,7 +103,7 @@ export async function logoutAction(): Promise<never> {
       );
     }
   } catch (error) {
-    // Ignore logout request errors to prevent blocking local logout
+    console.error("Error in logoutAction:", error);
   }
   await deleteSession();
   redirect(LOGIN_ROUTE);

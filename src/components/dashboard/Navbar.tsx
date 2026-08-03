@@ -136,6 +136,26 @@ export function Navbar({ userName, userEmail }: NavbarProps) {
   };
 
   const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (
+            key &&
+            key.startsWith('pwt_') &&
+            key !== 'pwt_remember_email' &&
+            key !== 'pwt_remember_password'
+          ) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach((key) => localStorage.removeItem(key));
+      } catch (err) {
+        console.error('Failed to clear localStorage on logout', err);
+      }
+    }
+
     startTransition(() => {
       logoutAction();
     });

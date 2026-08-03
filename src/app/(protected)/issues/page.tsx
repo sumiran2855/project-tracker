@@ -16,6 +16,8 @@ import {
   ChevronDown,
   Bookmark,
   UploadCloud,
+  Columns,
+  ListTodo,
 } from 'lucide-react';
 import { cn, formatCommentTime, getCommentTimestamp } from '@/lib/utils';
 import { useUser, usePermission } from '@/contexts/UserContext';
@@ -58,6 +60,9 @@ export default function IssuesPage() {
   const [projectFilter, setProjectFilter] = useState('All');
   const [priorityFilter, setPriorityFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
+
+  const [activeTab, setActiveTab] = useState<'board' | 'list'>('board');
+  const [modalStatus, setModalStatus] = useState<Issue['status']>('Open');
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -211,6 +216,37 @@ export default function IssuesPage() {
       console.error('Failed to update issue status on backend:', res.error);
       const updated = issues.map(iss => iss.id === issue.id ? { ...iss, status: nextStatus } : iss);
       saveIssues(updated);
+    }
+  };
+
+  // Drag and Drop handlers
+  const handleDragStart = (e: React.DragEvent, issueId: string) => {
+    if (isClient) {
+      e.preventDefault();
+      return;
+    }
+    e.dataTransfer.setData('text/plain', issueId);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetStatus: Issue['status']) => {
+    e.preventDefault();
+    if (isClient) return;
+    const issueId = e.dataTransfer.getData('text/plain');
+    if (!issueId) return;
+
+    const targetIssue = issues.find(i => i.id === issueId);
+    if (targetIssue && targetIssue.status !== targetStatus) {
+      // Optimistic update
+      setIssues(prev => prev.map(iss => iss.id === issueId ? { ...iss, status: targetStatus } : iss));
+
+      const res = await updateIssueAction(issueId, { status: targetStatus });
+      if (res.success && res.data) {
+        setIssues(prev => prev.map(iss => iss.id === issueId ? (res.data as any) : iss));
+      } else {
+        console.error('Failed to update issue status on backend:', res.error);
+        const updated = issues.map(iss => iss.id === issueId ? { ...iss, status: targetStatus } : iss);
+        saveIssues(updated);
+      }
     }
   };
 
@@ -507,6 +543,7 @@ export default function IssuesPage() {
 
           <button
             onClick={() => {
+              setModalStatus('Open');
               setIsModalOpen(true);
             }}
             className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-755 text-white px-4.5 py-2.5 text-xs font-bold shadow-md shadow-indigo-600/10 transition-all cursor-pointer"
@@ -650,218 +687,383 @@ export default function IssuesPage() {
 
         </div>
 
-        {/* Issues list cards */}
-        <div className="space-y-3">
-          {filteredIssues.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-12 bg-white border border-slate-100 rounded-2xl text-center space-y-2">
-              <AlertCircle className="h-8 w-8 text-slate-350" />
-              <p className="text-xs font-bold text-slate-400">No issues found. Try widening filters or create a new issue.</p>
-            </div>
-          ) : (
-            filteredIssues.map(issue => {
-              const priorityAccent: Record<string, string> = {
-                Critical: '#ef4444', High: '#f97316', Medium: '#6366f1', Low: '#94a3b8'
-              };
-              const accent = priorityAccent[issue.priority] ?? '#94a3b8';
-
+        {/* Tab Select & Controls */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white border border-slate-200 p-2 rounded-2xl shadow-xs">
+          
+          {/* Switching Tabs */}
+          <div className="flex bg-slate-50 p-1 rounded-xl w-full sm:w-auto border border-slate-100">
+            {[
+              { id: 'board', label: 'Kanban Board', icon: Columns },
+              { id: 'list', label: 'Detailed List', icon: ListTodo },
+            ].map(tab => {
+              const Icon = tab.icon;
+              const active = activeTab === tab.id;
               return (
-                <div
-                  key={issue.id}
-                  onClick={() => handleCardClick(issue)}
-                  className="group relative flex flex-col md:grid md:grid-cols-[1.5fr_180px_100px_100px_100px_96px_40px] md:items-center gap-3 bg-white border border-slate-100 rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4 cursor-pointer transition-all duration-200 hover:-translate-y-px overflow-hidden animate-fadeIn"
-                  style={{ boxShadow: '0 1px 3px 0 rgba(0,0,0,0.04)' }}
-                  onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.boxShadow = `0 4px 14px -4px ${accent}22`}
-                  onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 3px 0 rgba(0,0,0,0.04)'}
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={cn(
+                    "flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer",
+                    active 
+                      ? "bg-white text-indigo-650 shadow-sm ring-1 ring-slate-200/50" 
+                      : "text-slate-400 hover:text-slate-650"
+                  )}
                 >
-                  {/* Left accent stripe */}
-                  <div className="absolute left-0 inset-y-0 w-1 rounded-l-2xl" style={{ backgroundColor: accent }} />
+                  <Icon className="h-4 w-4" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-                  {/* Mobile Card Layout */}
-                  <div className="flex flex-col gap-2.5 md:hidden w-full pl-2">
-                    {/* Header row: Checkbox, Title, Delete */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-2.5 min-w-0">
-                        <button
-                          onClick={e => handleToggleStatus(issue, e)}
-                          className={cn(
-                            'mt-0.5 h-4.5 w-4.5 shrink-0 rounded-md border-2 flex items-center justify-center transition-colors cursor-pointer',
-                            issue.status === 'Resolved' || issue.status === 'Closed'
-                              ? 'border-emerald-500 bg-emerald-500 text-white'
-                              : 'border-slate-300 bg-white hover:border-indigo-455'
-                          )}
-                        >
-                          {(issue.status === 'Resolved' || issue.status === 'Closed') && <span className="text-[8px] font-black">✓</span>}
-                        </button>
-                        <div className="min-w-0">
-                          <p className={cn(
-                            'text-xs font-bold text-slate-800 transition-colors break-words',
-                            (issue.status === 'Resolved' || issue.status === 'Closed') && 'line-through text-slate-400'
-                          )}>
-                            {issue.title}
-                          </p>
-                        </div>
+        {/* Views Content Container */}
+        <div className="min-h-[50vh]">
+
+          {/* 1. KANBAN BOARD VIEW */}
+          {activeTab === 'board' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+              {(['Open', 'In Progress', 'Resolved', 'Closed'] as Issue['status'][]).map(status => {
+                const colIssues = filteredIssues.filter(i => i.status === status);
+                return (
+                  <div 
+                    key={status}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => handleDrop(e, status)}
+                    className="bg-[#f8fafc] border border-slate-200 rounded-3xl p-4.5 flex flex-col min-h-[350px] shadow-2xs"
+                  >
+                    {/* Col Header */}
+                    <div className="flex items-center justify-between mb-4 border-b border-slate-200 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className={cn(
+                          "h-2 w-2 rounded-full",
+                          status === 'Open' ? 'bg-slate-450' :
+                          status === 'In Progress' ? 'bg-indigo-500' :
+                          status === 'Resolved' ? 'bg-emerald-500' : 'bg-blue-500'
+                        )} />
+                        <span className="text-xs font-black text-slate-800 uppercase tracking-wider">{status}</span>
+                        <span className="rounded-full bg-white border border-slate-200 text-slate-500 text-[10px] font-bold px-2 py-0.5 shadow-2xs">
+                          {colIssues.length}
+                        </span>
                       </div>
-                      {canDeleteIssue && (
-                        <button
-                          onClick={e => handleDeleteIssue(issue.id, e)}
-                          className="text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-all cursor-pointer shrink-0"
-                          title="Delete Issue"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      )}
+
+                      <button 
+                        onClick={() => {
+                          setModalStatus(status);
+                          setIsModalOpen(true);
+                        }}
+                        className="text-slate-400 hover:text-indigo-650 p-1 hover:bg-white rounded-lg transition-colors cursor-pointer"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
                     </div>
 
-                    {/* Description */}
-                    {issue.description && (
-                      <p className="text-[10px] text-slate-550 pl-7 leading-normal line-clamp-2">
-                        {issue.description}
-                      </p>
-                    )}
+                    {/* Issues List */}
+                    <div className="space-y-3.5 flex-1 pr-1.5">
+                      {colIssues.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200/80 rounded-2xl text-slate-350 text-[10px] font-bold text-center h-28 select-none">
+                          Drop Issues Here
+                        </div>
+                      ) : (
+                        colIssues.map(issue => {
+                          const priorityAccent: Record<string, string> = {
+                            Critical: '#ef4444', High: '#f97316', Medium: '#6366f1', Low: '#94a3b8'
+                          };
+                          const accent = priorityAccent[issue.priority] ?? '#94a3b8';
+                          return (
+                            <div
+                              key={issue.id}
+                              draggable={!isClient}
+                              onDragStart={(e) => handleDragStart(e, issue.id)}
+                              onClick={() => handleCardClick(issue)}
+                              className={cn(
+                                "group flex flex-col justify-between bg-white border border-slate-200/85 hover:border-slate-350 rounded-2xl p-4 shadow-3xs hover:shadow-md transition-all duration-200 relative overflow-hidden",
+                                isClient ? "cursor-pointer" : "cursor-grab active:cursor-grabbing"
+                              )}
+                            >
+                              {/* Left accent stripe */}
+                              <div className="absolute left-0 inset-y-0 w-1 rounded-l-2xl" style={{ backgroundColor: accent }} />
+                              
+                              <div className="space-y-3.5 pl-1.5">
+                                {/* Metadata */}
+                                <div className="flex items-center justify-between">
+                                  <span className={cn("rounded-lg px-2 py-0.5 text-[8px] font-black uppercase tracking-wider border", getPriorityColor(issue.priority))}>
+                                    {issue.priority}
+                                  </span>
+                                  <span className="text-[8px] text-indigo-500 font-extrabold uppercase tracking-widest max-w-[120px] truncate" title={issue.projectName}>
+                                    {issue.projectName}
+                                  </span>
+                                </div>
 
-                    {/* Metadata Row */}
-                    <div className="flex flex-wrap items-center gap-1.5 pl-7 pt-1">
-                      {/* Project tag */}
-                      <span className="inline-flex items-center gap-1 text-[9px] font-bold text-indigo-650 bg-indigo-50/50 border border-indigo-100/30 rounded-lg px-2 py-0.5 max-w-[120px]">
-                        <Folder className="h-2.5 w-2.5 shrink-0" />
-                        <span className="truncate">{issue.projectName}</span>
-                      </span>
+                                {/* Title */}
+                                <h4 className="text-xs font-black text-slate-800 leading-snug group-hover:text-indigo-600 transition-colors">
+                                  {issue.title}
+                                </h4>
 
-                      {/* Related Task Tag */}
-                      {issue.relatedTaskTitle && (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-bold text-slate-650 bg-slate-100 border border-slate-200 rounded-lg px-2 py-0.5 max-w-[120px]" title={`Related Task: ${issue.relatedTaskTitle}`}>
-                          <Bookmark className="h-2.5 w-2.5 shrink-0 text-slate-500" />
-                          <span className="truncate">{issue.relatedTaskTitle}</span>
-                        </span>
+                                {/* Description snippet */}
+                                {issue.description && (
+                                  <p className="text-[10px] text-slate-450 line-clamp-2 leading-relaxed mt-1.5 font-medium">
+                                    {issue.description}
+                                  </p>
+                                )}
+                                
+                                {/* Type & Related Task */}
+                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                  <span className={cn('inline-flex rounded px-1.5 py-0.2 text-[8px] font-black uppercase border', getTypeStyle(issue.type))}>
+                                    {issue.type}
+                                  </span>
+                                  {issue.relatedTaskTitle && (
+                                    <span className="inline-flex items-center gap-1 text-[8px] font-black uppercase text-slate-500 bg-slate-100 border border-slate-200 rounded px-1.5 py-0.2 shrink-0" title={`Related Task: ${issue.relatedTaskTitle}`}>
+                                      <Bookmark className="h-2 w-2 shrink-0 text-slate-500" />
+                                      <span className="truncate max-w-[100px]">{issue.relatedTaskTitle}</span>
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Footer */}
+                              <div className="border-t border-slate-100 pt-3 mt-4 flex items-center justify-between pl-1.5">
+                                <div className="flex items-center gap-2 text-slate-400 text-[9px] font-bold">
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {issue.dueDate}
+                                  </span>
+                                </div>
+
+                                <div className="flex -space-x-1 overflow-hidden">
+                                  {issue.assignees && issue.assignees.map((assignee, idx) => (
+                                    <div key={idx} className={cn("h-5.5 w-5.5 rounded-md text-[7px] font-bold text-white flex items-center justify-center ring-2 ring-white shadow-3xs shrink-0", assignee.bg || 'bg-indigo-500')} title={assignee.name}>
+                                      {assignee.initials || assignee.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
                       )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-                      {/* Status */}
-                      <span className={cn(
-                        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold border',
-                        issue.status === 'Resolved' || issue.status === 'Closed' ? 'bg-emerald-50 text-emerald-700 border-emerald-100/50' :
-                          issue.status === 'In Progress' ? 'bg-indigo-50 text-indigo-700 border-indigo-100/50' :
-                            'bg-slate-50 text-slate-500 border-slate-200/50'
-                      )}>
-                        <span className="h-1.2 w-1.2 rounded-full bg-current" />
-                        {issue.status}
-                      </span>
+          {/* 2. DETAILED LIST VIEW */}
+          {activeTab === 'list' && (
+            <div className="space-y-3">
+              {filteredIssues.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-12 bg-white border border-slate-100 rounded-2xl text-center space-y-2">
+                  <AlertCircle className="h-8 w-8 text-slate-350" />
+                  <p className="text-xs font-bold text-slate-400">No issues found. Try widening filters or create a new issue.</p>
+                </div>
+              ) : (
+                filteredIssues.map(issue => {
+                  const priorityAccent: Record<string, string> = {
+                    Critical: '#ef4444', High: '#f97316', Medium: '#6366f1', Low: '#94a3b8'
+                  };
+                  const accent = priorityAccent[issue.priority] ?? '#94a3b8';
 
-                      {/* Priority */}
-                      <span className={cn('inline-flex rounded-lg px-2 py-0.5 text-[9px] font-black uppercase tracking-wider border', getPriorityColor(issue.priority))}>
-                        {issue.priority}
-                      </span>
+                  return (
+                    <div
+                      key={issue.id}
+                      onClick={() => handleCardClick(issue)}
+                      className="group relative flex flex-col md:grid md:grid-cols-[1.5fr_180px_100px_100px_100px_96px_40px] md:items-center gap-3 bg-white border border-slate-100 rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4 cursor-pointer transition-all duration-200 hover:-translate-y-px overflow-hidden animate-fadeIn"
+                      style={{ boxShadow: '0 1px 3px 0 rgba(0,0,0,0.04)' }}
+                      onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.boxShadow = `0 4px 14px -4px ${accent}22`}
+                      onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 3px 0 rgba(0,0,0,0.04)'}
+                    >
+                      {/* Left accent stripe */}
+                      <div className="absolute left-0 inset-y-0 w-1 rounded-l-2xl" style={{ backgroundColor: accent }} />
 
-                      {/* Type Tag */}
-                      <span className={cn('inline-flex rounded-lg px-2 py-0.5 text-[9px] font-bold border', getTypeStyle(issue.type))}>
-                        {issue.type}
-                      </span>
+                      {/* Mobile Card Layout */}
+                      <div className="flex flex-col gap-2.5 md:hidden w-full pl-2">
+                        {/* Header row: Checkbox, Title, Delete */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-2.5 min-w-0">
+                            <button
+                              onClick={e => handleToggleStatus(issue, e)}
+                              className={cn(
+                                'mt-0.5 h-4.5 w-4.5 shrink-0 rounded-md border-2 flex items-center justify-center transition-colors cursor-pointer',
+                                issue.status === 'Resolved' || issue.status === 'Closed'
+                                  ? 'border-emerald-500 bg-emerald-500 text-white'
+                                  : 'border-slate-300 bg-white hover:border-indigo-455'
+                              )}
+                            >
+                              {(issue.status === 'Resolved' || issue.status === 'Closed') && <span className="text-[8px] font-black">✓</span>}
+                            </button>
+                            <div className="min-w-0">
+                              <p className={cn(
+                                'text-xs font-bold text-slate-800 transition-colors break-words',
+                                (issue.status === 'Resolved' || issue.status === 'Closed') && 'line-through text-slate-400'
+                              )}>
+                                {issue.title}
+                              </p>
+                            </div>
+                          </div>
+                          {canDeleteIssue && (
+                            <button
+                              onClick={e => handleDeleteIssue(issue.id, e)}
+                              className="text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-55 rounded-lg transition-all cursor-pointer shrink-0"
+                              title="Delete Issue"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
 
-                      {/* Assignees */}
-                      {issue.assignees && issue.assignees.length > 0 && (
-                        <div className="flex -space-x-1 ml-auto shrink-0">
+                        {/* Description */}
+                        {issue.description && (
+                          <p className="text-[10px] text-slate-550 pl-7 leading-normal line-clamp-2">
+                            {issue.description}
+                          </p>
+                        )}
+
+                        {/* Metadata Row */}
+                        <div className="flex flex-wrap items-center gap-1.5 pl-7 pt-1">
+                          {/* Project tag */}
+                          <span className="inline-flex items-center gap-1 text-[9px] font-bold text-indigo-650 bg-indigo-50/50 border border-indigo-100/30 rounded-lg px-2 py-0.5 max-w-[120px]">
+                            <Folder className="h-2.5 w-2.5 shrink-0" />
+                            <span className="truncate">{issue.projectName}</span>
+                          </span>
+
+                          {/* Related Task Tag */}
+                          {issue.relatedTaskTitle && (
+                            <span className="inline-flex items-center gap-1 text-[9px] font-bold text-slate-650 bg-slate-100 border border-slate-200 rounded-lg px-2 py-0.5 max-w-[120px]" title={`Related Task: ${issue.relatedTaskTitle}`}>
+                              <Bookmark className="h-2.5 w-2.5 shrink-0 text-slate-500" />
+                              <span className="truncate">{issue.relatedTaskTitle}</span>
+                            </span>
+                          )}
+
+                          {/* Status */}
+                          <span className={cn(
+                            'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold border',
+                            issue.status === 'Resolved' || issue.status === 'Closed' ? 'bg-emerald-50 text-emerald-700 border-emerald-100/50' :
+                              issue.status === 'In Progress' ? 'bg-indigo-50 text-indigo-700 border-indigo-100/50' :
+                                'bg-slate-50 text-slate-500 border-slate-200/50'
+                          )}>
+                            <span className="h-1.2 w-1.2 rounded-full bg-current" />
+                            {issue.status}
+                          </span>
+
+                          {/* Priority */}
+                          <span className={cn('inline-flex rounded-lg px-2 py-0.5 text-[9px] font-black uppercase tracking-wider border', getPriorityColor(issue.priority))}>
+                            {issue.priority}
+                          </span>
+
+                          {/* Type Tag */}
+                          <span className={cn('inline-flex rounded-lg px-2 py-0.5 text-[9px] font-bold border', getTypeStyle(issue.type))}>
+                            {issue.type}
+                          </span>
+
+                          {/* Assignees */}
+                          {issue.assignees && issue.assignees.length > 0 && (
+                            <div className="flex -space-x-1 ml-auto shrink-0">
+                              {issue.assignees.map((a, idx) => (
+                                <div key={idx} title={a.name}
+                                  className={cn('h-5.5 w-5.5 rounded-lg text-[6px] font-bold text-white flex items-center justify-center ring-2 ring-white shrink-0 shadow-3xs', a.bg)}
+                                >
+                                  {a.initials}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Desktop View Row (rendered inside display: contents parent grid) */}
+                      <div className="hidden md:contents">
+                        {/* Title & description */}
+                        <div className="flex items-start gap-3 min-w-0 pl-2">
+                          <button
+                            onClick={e => handleToggleStatus(issue, e)}
+                            className={cn(
+                              'mt-0.5 h-4.5 w-4.5 shrink-0 rounded-md border-2 flex items-center justify-center transition-colors cursor-pointer',
+                              issue.status === 'Resolved' || issue.status === 'Closed'
+                                ? 'border-emerald-500 bg-emerald-500 text-white'
+                                : 'border-slate-300 bg-white hover:border-indigo-455'
+                            )}
+                          >
+                            {(issue.status === 'Resolved' || issue.status === 'Closed') && <span className="text-[8px] font-black">✓</span>}
+                          </button>
+                          <div className="min-w-0">
+                            <p className={cn(
+                              'text-xs font-bold text-slate-800 group-hover:text-indigo-650 transition-colors truncate',
+                              (issue.status === 'Resolved' || issue.status === 'Closed') && 'line-through text-slate-400'
+                            )}>
+                              {issue.title}
+                            </p>
+                            <div className="flex items-center gap-2 mt-0.5 min-w-0">
+                              {issue.description ? (
+                                <p className="text-[10px] text-slate-400 truncate leading-normal max-w-lg">
+                                  {issue.description}
+                                </p>
+                              ) : (
+                                <span className="h-1" />
+                              )}
+                              {issue.relatedTaskTitle && (
+                                <span className="inline-flex items-center gap-1 text-[8px] font-black uppercase text-slate-500 bg-slate-100 border border-slate-200 rounded px-1.5 py-0.2 shrink-0" title={`Related Task: ${issue.relatedTaskTitle}`}>
+                                  <Bookmark className="h-2 w-2 shrink-0 text-slate-500" />
+                                  <span className="truncate max-w-[100px]">{issue.relatedTaskTitle}</span>
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Project */}
+                        <span className="text-[10px] font-bold text-indigo-650 truncate">
+                          {issue.projectName}
+                        </span>
+
+                        {/* Status */}
+                        <span className={cn(
+                          'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-bold border w-fit',
+                          issue.status === 'Resolved' || issue.status === 'Closed' ? 'bg-emerald-50 text-emerald-700 border-emerald-100/50' :
+                            issue.status === 'In Progress' ? 'bg-indigo-50 text-indigo-700 border-indigo-100/50' :
+                              'bg-slate-50 text-slate-500 border-slate-200/50'
+                        )}>
+                          <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                          {issue.status}
+                        </span>
+
+                        {/* Priority */}
+                        <span className={cn('inline-flex rounded-lg px-2 py-1 text-[9px] font-black uppercase tracking-wider border w-fit', getPriorityColor(issue.priority))}>
+                          {issue.priority}
+                        </span>
+
+                        {/* Type Tag */}
+                        <span className={cn('inline-flex rounded-lg px-2 py-1 text-[9px] font-bold border w-fit', getTypeStyle(issue.type))}>
+                          {issue.type}
+                        </span>
+
+                        {/* Assignees */}
+                        <div className="flex -space-x-1.5">
                           {issue.assignees.map((a, idx) => (
                             <div key={idx} title={a.name}
-                              className={cn('h-5.5 w-5.5 rounded-lg text-[6px] font-bold text-white flex items-center justify-center ring-2 ring-white shrink-0 shadow-3xs', a.bg)}
+                              className={cn('h-6 w-6 rounded-lg text-[7px] font-bold text-white flex items-center justify-center ring-2 ring-white shrink-0', a.bg)}
                             >
                               {a.initials}
                             </div>
                           ))}
                         </div>
-                      )}
-                    </div>
-                  </div>
 
-                  {/* Desktop View Row (rendered inside display: contents parent grid) */}
-                  <div className="hidden md:contents">
-                    {/* Title & description */}
-                    <div className="flex items-start gap-3 min-w-0 pl-2">
-                      <button
-                        onClick={e => handleToggleStatus(issue, e)}
-                        className={cn(
-                          'mt-0.5 h-4.5 w-4.5 shrink-0 rounded-md border-2 flex items-center justify-center transition-colors cursor-pointer',
-                          issue.status === 'Resolved' || issue.status === 'Closed'
-                            ? 'border-emerald-500 bg-emerald-500 text-white'
-                            : 'border-slate-300 bg-white hover:border-indigo-455'
+                        {/* Delete */}
+                        {canDeleteIssue && (
+                          <button
+                            onClick={e => handleDeleteIssue(issue.id, e)}
+                            className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+                            title="Delete Issue"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         )}
-                      >
-                        {(issue.status === 'Resolved' || issue.status === 'Closed') && <span className="text-[8px] font-black">✓</span>}
-                      </button>
-                      <div className="min-w-0">
-                        <p className={cn(
-                          'text-xs font-bold text-slate-800 group-hover:text-indigo-650 transition-colors truncate',
-                          (issue.status === 'Resolved' || issue.status === 'Closed') && 'line-through text-slate-400'
-                        )}>
-                          {issue.title}
-                        </p>
-                        <div className="flex items-center gap-2 mt-0.5 min-w-0">
-                          {issue.description ? (
-                            <p className="text-[10px] text-slate-400 truncate leading-normal max-w-lg">
-                              {issue.description}
-                            </p>
-                          ) : (
-                            <span className="h-1" />
-                          )}
-                          {issue.relatedTaskTitle && (
-                            <span className="inline-flex items-center gap-1 text-[8px] font-black uppercase text-slate-500 bg-slate-100 border border-slate-200 rounded px-1.5 py-0.2 shrink-0" title={`Related Task: ${issue.relatedTaskTitle}`}>
-                              <Bookmark className="h-2 w-2 shrink-0 text-slate-500" />
-                              <span className="truncate max-w-[100px]">{issue.relatedTaskTitle}</span>
-                            </span>
-                          )}
-                        </div>
                       </div>
                     </div>
-
-                    {/* Project */}
-                    <span className="text-[10px] font-bold text-indigo-650 truncate">
-                      {issue.projectName}
-                    </span>
-
-                    {/* Status */}
-                    <span className={cn(
-                      'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-bold border w-fit',
-                      issue.status === 'Resolved' || issue.status === 'Closed' ? 'bg-emerald-50 text-emerald-700 border-emerald-100/50' :
-                        issue.status === 'In Progress' ? 'bg-indigo-50 text-indigo-700 border-indigo-100/50' :
-                          'bg-slate-50 text-slate-500 border-slate-200/50'
-                    )}>
-                      <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                      {issue.status}
-                    </span>
-
-                    {/* Priority */}
-                    <span className={cn('inline-flex rounded-lg px-2 py-1 text-[9px] font-black uppercase tracking-wider border w-fit', getPriorityColor(issue.priority))}>
-                      {issue.priority}
-                    </span>
-
-                    {/* Type Tag */}
-                    <span className={cn('inline-flex rounded-lg px-2 py-1 text-[9px] font-bold border w-fit', getTypeStyle(issue.type))}>
-                      {issue.type}
-                    </span>
-
-                    {/* Assignees */}
-                    <div className="flex -space-x-1.5">
-                      {issue.assignees.map((a, idx) => (
-                        <div key={idx} title={a.name}
-                          className={cn('h-6 w-6 rounded-lg text-[7px] font-bold text-white flex items-center justify-center ring-2 ring-white shrink-0', a.bg)}
-                        >
-                          {a.initials}
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Delete */}
-                    {canDeleteIssue && (
-                      <button
-                        onClick={e => handleDeleteIssue(issue.id, e)}
-                        className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
-                        title="Delete Issue"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })
+                  );
+                })
+              )}
+            </div>
           )}
         </div>
 
@@ -874,6 +1076,7 @@ export default function IssuesPage() {
         projects={projects}
         availableMembers={availableMembers}
         onSuccess={handleIssueSuccess}
+        defaultStatus={modalStatus}
       />
 
       {/* modal - Delete Confirmation Modal */}
