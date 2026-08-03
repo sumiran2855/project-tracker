@@ -646,75 +646,83 @@ export default async function DashboardPage() {
           }];
         } else if (userRole.replace('-', ' ') === 'team lead') {
           const managerId = user?.manager;
-          const mgr = activeMembers.find(m => m.id === managerId) || {
-            id: managerId || '',
-            name: 'Assigned Manager',
-            role: 'Manager',
-            initials: 'M',
-            bg: 'bg-slate-400'
-          };
+          if (!managerId || managerId === 'none') {
+            hierarchyTree = [];
+          } else {
+            const mgr = activeMembers.find(m => m.id === managerId) || {
+              id: managerId || '',
+              name: 'Assigned Manager',
+              role: 'Manager',
+              initials: 'M',
+              bg: 'bg-slate-400'
+            };
 
-          const lead = activeMembers.find(m => m.id === userId) || {
-            id: userId,
-            name: user?.name || 'Team Lead',
-            role: 'Team Lead',
-            initials: user?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'TL',
-            bg: 'bg-amber-500'
-          };
+            const lead = activeMembers.find(m => m.id === userId) || {
+              id: userId,
+              name: user?.name || 'Team Lead',
+              role: 'Team Lead',
+              initials: user?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'TL',
+              bg: 'bg-amber-500'
+            };
 
-          const leadEmp = activeMembers.filter(emp => {
-            if ((emp.role || '').toLowerCase() !== 'employee') return false;
-            const shares = activeProjects.some(p => 
-              p.members?.some((m: any) => m.userId?.toString() === userId) &&
-              p.members?.some((m: any) => m.userId?.toString() === emp.id)
-            );
-            return shares;
-          });
+            const leadEmp = activeMembers.filter(emp => {
+              if ((emp.role || '').toLowerCase() !== 'employee') return false;
+              const shares = activeProjects.some(p => 
+                p.members?.some((m: any) => m.userId?.toString() === userId) &&
+                p.members?.some((m: any) => m.userId?.toString() === emp.id)
+              );
+              return shares;
+            });
 
-          hierarchyTree = [{
-            ...mgr,
-            leads: [{ ...lead, children: leadEmp }],
-            standalone: []
-          }];
+            hierarchyTree = [{
+              ...mgr,
+              leads: [{ ...lead, children: leadEmp }],
+              standalone: []
+            }];
+          }
         } else {
           // Employee
           const managerId = user?.manager;
-          const mgr = activeMembers.find(m => m.id === managerId) || {
-            id: managerId || '',
-            name: 'Assigned Manager',
-            role: 'Manager',
-            initials: 'M',
-            bg: 'bg-slate-400'
-          };
+          if (!managerId || managerId === 'none') {
+            hierarchyTree = [];
+          } else {
+            const mgr = activeMembers.find(m => m.id === managerId) || {
+              id: managerId || '',
+              name: 'Assigned Manager',
+              role: 'Manager',
+              initials: 'M',
+              bg: 'bg-slate-400'
+            };
 
-          const sharedLeads = activeMembers.filter(lead => {
-            if ((lead.role || '').toLowerCase().replace('-', ' ') !== 'team lead') return false;
-            const shares = activeProjects.some(p => 
-              p.members?.some((m: any) => m.userId?.toString() === lead.id) &&
-              p.members?.some((m: any) => m.userId?.toString() === userId)
-            );
-            return shares;
-          });
+            const sharedLeads = activeMembers.filter(lead => {
+              if ((lead.role || '').toLowerCase().replace('-', ' ') !== 'team lead') return false;
+              const shares = activeProjects.some(p => 
+                p.members?.some((m: any) => m.userId?.toString() === lead.id) &&
+                p.members?.some((m: any) => m.userId?.toString() === userId)
+              );
+              return shares;
+            });
 
-          const emp = activeMembers.find(m => m.id === userId) || {
-            id: userId,
-            name: user?.name || 'Employee',
-            role: 'Employee',
-            initials: user?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'E',
-            bg: 'bg-emerald-500'
-          };
+            const emp = activeMembers.find(m => m.id === userId) || {
+              id: userId,
+              name: user?.name || 'Employee',
+              role: 'Employee',
+              initials: user?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'E',
+              bg: 'bg-emerald-500'
+            };
 
-          const leadsTree = sharedLeads.map(lead => {
-            return { ...lead, children: [emp] };
-          });
+            const leadsTree = sharedLeads.map(lead => {
+              return { ...lead, children: [emp] };
+            });
 
-          const standalone = sharedLeads.length === 0 ? [emp] : [];
+            const standalone = sharedLeads.length === 0 ? [emp] : [];
 
-          hierarchyTree = [{
-            ...mgr,
-            leads: leadsTree,
-            standalone
-          }];
+            hierarchyTree = [{
+              ...mgr,
+              leads: leadsTree,
+              standalone
+            }];
+          }
         }
       }
     }
@@ -893,11 +901,19 @@ export default async function DashboardPage() {
                             ))}
                           </div>
                         )}
-                      </div>
                     </div>
-                  ))
-                ) : (
-                  <p className="text-xs text-slate-400 italic text-center py-8">No hierarchy data available</p>
+                  </div>
+                ))
+              ) : (
+                  <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+                    <div className="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center mb-3">
+                      <Users className="h-5 w-5 text-slate-400" />
+                    </div>
+                    <p className="text-sm font-bold text-slate-705 text-slate-800">No Team Assigned</p>
+                    <p className="text-xs text-slate-400 mt-1 max-w-[220px]">
+                      No Team is assigned to you yet. Please contact your manager or administrator.
+                    </p>
+                  </div>
                 )}
               </div>
             </div>

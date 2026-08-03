@@ -63,3 +63,17 @@ export const ResetPasswordSchema = z.object({
 });
 
 export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;
+
+export const VerifyEmailSchema = z.object({
+  email: z
+    .string()
+    .min(1, { message: 'Email is required.' })
+    .email({ message: 'Please enter a valid email address.' })
+    .trim(),
+  code: z
+    .string()
+    .min(1, { message: 'Verification code is required.' })
+    .length(6, { message: 'Verification code must be exactly 6 characters.' }),
+});
+
+export type VerifyEmailInput = z.infer<typeof VerifyEmailSchema>;

@@ -23,8 +23,9 @@ import {
   Check
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'react-toastify';
 import { useUser } from '@/contexts/UserContext';
-import { updateProfileAction, inviteCollaboratorAction, removeCollaboratorAction } from '@/actions/auth';
+import { updateProfileAction, inviteCollaboratorAction, removeCollaboratorAction, generateClientInviteAction } from '@/actions/auth';
 import { getEmployeesAction, getProjectsAction } from '@/actions/projects';
 import type { Employee } from '@/types/projects.types';
 import { getTasksByProjectAction } from '@/actions/tasks';
@@ -163,6 +164,7 @@ export default function ProfilePage() {
 
   const isEmployeeOrLead = profile.role?.toLowerCase() === 'employee' || profile.role?.toLowerCase() === 'team lead';
   const isAdminOrManager = profile.role?.toLowerCase() === 'admin' || profile.role?.toLowerCase() === 'manager';
+  const isAdmin = profile.role?.toLowerCase() === 'admin';
   const isClient = profile.role?.toLowerCase() === 'client';
 
   useEffect(() => {
@@ -395,6 +397,21 @@ export default function ProfilePage() {
       showFeedback('Success', 'Collaborator removed successfully!', 'success');
     } else {
       showFeedback('Error', res.error || 'Failed to delete collaborator', 'error');
+    }
+  };
+
+  const handleCopyClientInviteLink = async () => {
+    try {
+      const res = await generateClientInviteAction();
+      if (res.success && res.token) {
+        const inviteUrl = `${window.location.origin}/signup?inviteToken=${res.token}`;
+        await navigator.clipboard.writeText(inviteUrl);
+        toast.success('Client invitation link copied to clipboard!');
+      } else {
+        toast.error(res.error || 'Failed to generate client invite link.');
+      }
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to copy client invite link.');
     }
   };
 
@@ -738,6 +755,18 @@ export default function ProfilePage() {
                   ))
                 )}
               </div>
+
+              {isAdmin && (
+                <div className="pt-4 border-t border-slate-150 mt-2">
+                  <button
+                    onClick={handleCopyClientInviteLink}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 text-indigo-750 py-2.5 text-xs font-bold transition-all cursor-pointer"
+                  >
+                    <Users className="h-4 w-4" />
+                    <span>Copy Client Invite Link</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-2xs text-center space-y-2">

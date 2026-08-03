@@ -30,3 +30,8 @@ export const resetPasswordMetadata: Metadata = {
   title: 'Reset Password — Project Work Tracker',
   description: 'Enter your new password to access your account.',
 };
+
+export const verifyEmailMetadata: Metadata = {
+  title: 'Verify Email — Project Work Tracker',
+  description: 'Verify your email address using the one-time verification code.',
+};

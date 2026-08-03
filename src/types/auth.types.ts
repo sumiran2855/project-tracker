@@ -109,3 +109,14 @@ export type ResetPasswordActionState =
     successMessage?: string;
   }
   | undefined;
+
+export type VerifyEmailActionState =
+  | {
+      errors?: {
+        email?: string[];
+        code?: string[];
+      };
+      message?: string;
+      successMessage?: string;
+    }
+  | undefined;

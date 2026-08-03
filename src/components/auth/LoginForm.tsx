@@ -20,6 +20,7 @@ export function LoginForm() {
 
   const searchParams = useSearchParams();
   const resetSuccess = searchParams.get('resetSuccess') === 'true';
+  const verifySuccess = searchParams.get('verifySuccess') === 'true';
   const expired = searchParams.get('expired') === 'true';
 
   // Show session expired toast if query parameter exists
@@ -65,6 +66,17 @@ export function LoginForm() {
         >
           <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
           <span className="font-medium">Password reset successfully! You can now sign in.</span>
+        </div>
+      )}
+
+      {/* Verification Success */}
+      {verifySuccess && (
+        <div
+          role="alert"
+          className="flex items-start gap-2.5 rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 text-sm text-emerald-800 shadow-sm"
+        >
+          <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
+          <span className="font-medium">Email verified successfully! You can now sign in.</span>
         </div>
       )}
 

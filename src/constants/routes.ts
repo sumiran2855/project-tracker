@@ -10,6 +10,7 @@ export const ROUTES = {
   dashboard: '/dashboard',
   forgotPassword: '/forgot-password',
   resetPassword: '/reset-password',
+  verifyEmail: '/verify-email',
 } as const;
 
 /** Routes that do not require authentication */
@@ -18,6 +19,7 @@ export const PUBLIC_ROUTES: string[] = [
   ROUTES.signup,
   ROUTES.forgotPassword,
   ROUTES.resetPassword,
+  ROUTES.verifyEmail,
 ];
 
 /** Where to send unauthenticated users */

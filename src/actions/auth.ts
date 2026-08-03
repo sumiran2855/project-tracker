@@ -1,16 +1,17 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { LoginSchema, SignupSchema, ForgotPasswordSchema, ResetPasswordSchema } from '@/validations/auth.validation';
+import { LoginSchema, SignupSchema, ForgotPasswordSchema, ResetPasswordSchema, VerifyEmailSchema } from '@/validations/auth.validation';
 import { createSession, deleteSession } from '@/lib/auth/session';
 import { LOGIN_ROUTE } from '@/constants/routes';
 import { apiClient, ApiError } from '@/lib/api/apiClient';
 import { getDefaultViewRoute } from '@/lib/utils';
-import type { 
-  LoginActionState, 
-  SignupActionState, 
-  ForgotPasswordActionState, 
+import type {
+  LoginActionState,
+  SignupActionState,
+  ForgotPasswordActionState,
   ResetPasswordActionState,
+  VerifyEmailActionState,
   SafeUser,
   WorkspacePrefs,
   NotificationPrefs
@@ -35,6 +36,7 @@ export async function loginAction(
   const remember = formData.get('remember') === 'on';
 
   let user: SafeUser | null = null;
+  let redirectToVerify = false;
 
   try {
     const res = await apiClient.post<{ success: boolean; data: { user: SafeUser; accessToken: string; refreshToken: string } }>(
@@ -45,9 +47,18 @@ export async function loginAction(
     await createSession(res.data.user, res.data.accessToken, res.data.refreshToken, remember);
   } catch (error) {
     if (error instanceof ApiError) {
-      return { message: error.message };
+      if (error.statusCode === 403) {
+        redirectToVerify = true;
+      } else {
+        return { message: error.message };
+      }
+    } else {
+      return { message: 'Failed to connect to authentication server.' };
     }
-    return { message: 'Failed to connect to authentication server.' };
+  }
+
+  if (redirectToVerify) {
+    redirect(`/verify-email?email=${encodeURIComponent(email)}&unverify=true`);
   }
 
   const redirectRoute = getDefaultViewRoute(user?.workspacePrefs?.defaultView);
@@ -71,15 +82,15 @@ export async function signupAction(
   }
 
   const { fullName, email, password } = validatedFields.data;
-  let user: SafeUser | null = null;
+  const inviteToken = formData.get('inviteToken')?.toString() || undefined;
+  let signupSuccess = false;
 
   try {
-    const res = await apiClient.post<{ success: boolean; data: { user: SafeUser; accessToken: string; refreshToken: string } }>(
+    await apiClient.post(
       'auth/register',
-      { name: fullName, email, password }
+      { name: fullName, email, password, inviteToken }
     );
-    user = res.data.user;
-    await createSession(res.data.user, res.data.accessToken, res.data.refreshToken, false);
+    signupSuccess = true;
   } catch (error) {
     if (error instanceof ApiError) {
       return { message: error.message };
@@ -87,8 +98,55 @@ export async function signupAction(
     return { message: 'Failed to connect to authentication server.' };
   }
 
-  const redirectRoute = getDefaultViewRoute(user?.workspacePrefs?.defaultView);
-  redirect(redirectRoute);
+  if (signupSuccess) {
+    redirect(`/verify-email?email=${encodeURIComponent(email)}&registered=true`);
+  }
+}
+
+export async function verifyEmailAction(
+  _prevState: VerifyEmailActionState,
+  formData: FormData
+): Promise<VerifyEmailActionState> {
+  const validatedFields = VerifyEmailSchema.safeParse({
+    email: formData.get('email'),
+    code: formData.get('code'),
+  });
+
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+    };
+  }
+
+  const { email, code } = validatedFields.data;
+
+  try {
+    await apiClient.post('auth/verify-email', { email, code });
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return { message: error.message };
+    }
+    return { message: 'Failed to connect to authentication server.' };
+  }
+
+  redirect('/login?verifySuccess=true');
+}
+
+export async function resendVerificationAction(
+  email: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const res = await apiClient.post<{ success: boolean; message: string }>(
+      'auth/resend-verification',
+      { email }
+    );
+    return { success: true, message: res.message || 'Verification code resent successfully' };
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return { success: false, message: error.message };
+    }
+    return { success: false, message: 'Failed to connect to authentication server.' };
+  }
 }
 
 export async function logoutAction(): Promise<never> {
@@ -177,15 +235,15 @@ export async function updateUserRoleAction(role: string): Promise<{ success: boo
     if (!user || !session?.token) {
       return { success: false, error: 'Unauthorized' };
     }
-    
+
     const res = await apiClient.put<{ success: boolean; data: { user: SafeUser } }>(
       'auth/role',
       { role },
       { token: session.token }
     );
-    
+
     await createSession(res.data.user, session.token, session.refreshToken, false);
-    
+
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error?.message || 'Failed to update user role' };
@@ -327,5 +385,26 @@ export async function updatePreferencesAction(prefs: {
     return { success: true, data: res.data.user };
   } catch (error: any) {
     return { success: false, error: error?.message || 'Failed to update preferences' };
+  }
+}
+
+export async function generateClientInviteAction(): Promise<{ success: boolean; token?: string; error?: string }> {
+  const { getSession } = await import('@/lib/auth/dal');
+
+  try {
+    const session = await getSession();
+    if (!session?.token) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const res = await apiClient.post<{ success: boolean; token: string }>(
+      'auth/client-invite',
+      {},
+      { token: session.token }
+    );
+
+    return { success: true, token: res.token };
+  } catch (error: any) {
+    return { success: false, error: error?.message || 'Failed to generate invitation link' };
   }
 }

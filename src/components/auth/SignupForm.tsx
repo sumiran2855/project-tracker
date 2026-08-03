@@ -5,7 +5,7 @@ import { signupAction } from '@/actions/auth';
 import type { SignupActionState } from '@/types/auth.types';
 import { User, Mail, Lock, AlertCircle } from 'lucide-react';
 
-export function SignupForm() {
+export function SignupForm({ inviteToken, isClientInvite }: { inviteToken?: string; isClientInvite?: boolean }) {
   const [state, formAction, isPending] = useActionState<
     SignupActionState,
     FormData
@@ -15,6 +15,22 @@ export function SignupForm() {
 
   return (
     <form action={formAction} className="space-y-4" noValidate>
+      {/* Hidden Invite Token */}
+      {inviteToken && <input type="hidden" name="inviteToken" value={inviteToken} />}
+
+      {/* Client Registration Banner */}
+      {isClientInvite && (
+        <div
+          role="status"
+          className="flex items-start gap-2.5 rounded-xl border border-indigo-100 bg-indigo-50/50 px-4 py-3 text-sm text-indigo-900 shadow-sm mb-2"
+        >
+          <User className="mt-0.5 h-4 w-4 flex-shrink-0 text-indigo-600" />
+          <span className="font-medium">
+            You are signing up as a <strong>Client</strong> using a secure invitation link.
+          </span>
+        </div>
+      )}
+
       {/* Global error */}
       {state?.message && (
         <div
@@ -44,11 +60,10 @@ export function SignupForm() {
             disabled={isPending}
             required
             aria-describedby={state?.errors?.fullName ? 'name-error' : undefined}
-            className={`block h-12 w-full rounded-xl border bg-slate-50/50 pl-10 pr-4 text-sm text-slate-800 transition-all duration-200 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed ${
-              state?.errors?.fullName
+            className={`block h-12 w-full rounded-xl border bg-slate-50/50 pl-10 pr-4 text-sm text-slate-800 transition-all duration-200 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed ${state?.errors?.fullName
                 ? 'border-rose-300 focus:border-rose-400 focus:ring-rose-100'
                 : 'border-slate-200 hover:border-slate-300/80 hover:bg-slate-50'
-            }`}
+              }`}
           />
         </div>
         {state?.errors?.fullName && (
@@ -77,11 +92,10 @@ export function SignupForm() {
             disabled={isPending}
             required
             aria-describedby={state?.errors?.email ? 'signup-email-error' : undefined}
-            className={`block h-12 w-full rounded-xl border bg-slate-50/50 pl-10 pr-4 text-sm text-slate-800 transition-all duration-200 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed ${
-              state?.errors?.email
+            className={`block h-12 w-full rounded-xl border bg-slate-50/50 pl-10 pr-4 text-sm text-slate-800 transition-all duration-200 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed ${state?.errors?.email
                 ? 'border-rose-300 focus:border-rose-400 focus:ring-rose-100'
                 : 'border-slate-200 hover:border-slate-300/80 hover:bg-slate-50'
-            }`}
+              }`}
           />
         </div>
         {state?.errors?.email && (
@@ -110,11 +124,10 @@ export function SignupForm() {
             disabled={isPending}
             required
             aria-describedby={state?.errors?.password ? 'signup-password-error' : undefined}
-            className={`block h-12 w-full rounded-xl border bg-slate-50/50 pl-10 pr-20 text-sm text-slate-800 transition-all duration-200 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed ${
-              state?.errors?.password
+            className={`block h-12 w-full rounded-xl border bg-slate-50/50 pl-10 pr-20 text-sm text-slate-800 transition-all duration-200 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed ${state?.errors?.password
                 ? 'border-rose-300 focus:border-rose-400 focus:ring-rose-100'
                 : 'border-slate-200 hover:border-slate-300/80 hover:bg-slate-50'
-            }`}
+              }`}
           />
           <button
             type="button"
