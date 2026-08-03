@@ -3,12 +3,10 @@
 import { useState, useEffect } from 'react';
 import { 
   Sparkles, 
-  Calendar, 
-  TrendingUp, 
+  Calendar,
   CheckCircle2, 
   Clock, 
-  Search, 
-  Filter, 
+  Search,
   X, 
   Bookmark, 
   ChevronDown, 
@@ -20,7 +18,6 @@ import {
   Grid, 
   Kanban,
   User,
-  ExternalLink,
   FlameKindling,
   UploadCloud
 } from 'lucide-react';
@@ -28,10 +25,10 @@ import { cn, getCurrentWeekBounds, isItemInSprint, formatCommentTime, getComment
 import { useUser } from '@/contexts/UserContext';
 import { getEmployeesAction } from '@/actions/projects';
 import { updateTaskAction, deleteTaskAction } from '@/actions/tasks';
-import type { Task, Subtask, Comment } from '@/types/tasks.types';
+import type { Task, Subtask } from '@/types/tasks.types';
 import { updateIssueAction, deleteIssueAction, uploadIssueAttachmentAction } from '@/actions/issues';
 import type { Issue } from '@/types/issues.types';
-import { fetchAllSprintData } from '@/lib/sprintLoader';
+import { fetchAllSprintData, clearSprintDataCache } from '@/lib/sprintLoader';
 
 function getAttachmentUrl(path: string) {
   if (!path) return '';
@@ -302,6 +299,7 @@ export default function SprintPage() {
 
   // Dispatch update event
   const dispatchUpdate = () => {
+    clearSprintDataCache();
     window.dispatchEvent(new Event('storage'));
     window.dispatchEvent(new Event('pwt_update'));
   };
@@ -579,15 +577,26 @@ export default function SprintPage() {
       setInputHours('');
       setShowHoursModal(true);
     } else {
+      // Optimistic update
+      if (cardType === 'task') {
+        setTasks(prev => prev.map(t => t.id === cardId ? { ...t, status: targetStatus as any } : t));
+      } else {
+        setIssues(prev => prev.map(i => i.id === cardId ? { ...i, status: targetStatus as any } : i));
+      }
+
       if (cardType === 'task') {
         const res = await updateTaskAction(cardId, { status: targetStatus as any });
         if (res.success) {
           dispatchUpdate();
+        } else {
+          loadSprintData();
         }
       } else {
         const res = await updateIssueAction(cardId, { status: targetStatus as any });
         if (res.success) {
           dispatchUpdate();
+        } else {
+          loadSprintData();
         }
       }
     }
@@ -597,6 +606,13 @@ export default function SprintPage() {
     if (!hoursModalTarget) return;
     const hoursVal = parseFloat(inputHours) || 0;
 
+    // Optimistic update
+    if (hoursModalTarget.type === 'task') {
+      setTasks(prev => prev.map(t => t.id === hoursModalTarget.id ? { ...t, status: hoursModalTarget.newStatus as any } : t));
+    } else {
+      setIssues(prev => prev.map(i => i.id === hoursModalTarget.id ? { ...i, status: hoursModalTarget.newStatus as any } : i));
+    }
+
     if (hoursModalTarget.type === 'task') {
       const payload: any = { status: hoursModalTarget.newStatus as any };
       if (hoursVal > 0) {
@@ -605,6 +621,8 @@ export default function SprintPage() {
       const res = await updateTaskAction(hoursModalTarget.id, payload);
       if (res.success) {
         dispatchUpdate();
+      } else {
+        loadSprintData();
       }
     } else {
       const payload: any = { status: hoursModalTarget.newStatus as any };
@@ -614,6 +632,8 @@ export default function SprintPage() {
       const res = await updateIssueAction(hoursModalTarget.id, payload);
       if (res.success) {
         dispatchUpdate();
+      } else {
+        loadSprintData();
       }
     }
     setShowHoursModal(false);
@@ -963,84 +983,90 @@ export default function SprintPage() {
                 </div>
 
                 <div className="flex-1 space-y-3.5">
-                  {colItems.map(item => (
-                    <div
-                      key={item.id}
-                      onClick={() => handleItemClick(item)}
-                      draggable={!isClient}
-                      onDragStart={(e) => handleDragStart(e, item.id, item.itemType)}
-                      className={cn(
-                        "bg-white border border-slate-200 hover:border-indigo-400 p-4 rounded-2xl shadow-3xs select-none transition-all hover:shadow-md hover:-translate-y-0.5 group active:opacity-60",
-                        isClient ? "cursor-pointer" : "cursor-grab active:cursor-grabbing"
-                      )}
-                    >
-                      <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                        <span className={cn(
-                          "px-2 py-0.5 rounded-full font-extrabold text-[8px] uppercase tracking-wider",
-                          item.itemType === 'task' ? "bg-indigo-50 text-indigo-650 border border-indigo-100/30" : "bg-rose-50 text-rose-600 border border-rose-100/30"
-                        )}>
-                          {item.itemType === 'task' ? 'Task' : `Issue: ${item.type || 'Bug'}`}
-                        </span>
-
-                        {item.itemType === 'issue' && item.relatedTaskTitle && (
-                          <span className="inline-flex items-center gap-0.5 text-[8px] font-black uppercase text-slate-500 bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5 shrink-0" title={`Related Task: ${item.relatedTaskTitle}`}>
-                            <Bookmark className="h-2 w-2 shrink-0 text-slate-500" />
-                            <span className="truncate max-w-[80px]">{item.relatedTaskTitle}</span>
-                          </span>
-                        )}
-                        
-                        {/* Priority Badge */}
-                        <span className={cn(
-                          "text-[9px] font-black uppercase tracking-wider ml-auto",
-                          item.priority === 'Urgent' || item.priority === 'Critical' ? "text-rose-600" :
-                          item.priority === 'High' ? "text-amber-500" : "text-slate-400"
-                        )}>
-                          {item.priority}
-                        </span>
-                      </div>
-
-                      <h4 className="text-xs font-black text-slate-800 tracking-tight leading-snug group-hover:text-indigo-650 transition-colors line-clamp-2">
-                        {item.title}
-                      </h4>
-                      
-                      <p className="text-[10px] text-slate-450 font-bold mt-1 flex items-center gap-1 truncate">
-                        <Folder className="h-3 w-3 text-slate-400" />
-                        <span>{item.projectName}</span>
-                      </p>
-
-                      <div className="border-t border-slate-100/80 pt-3 mt-3 flex items-center justify-between">
-                        {/* Due date */}
-                        <div className="flex items-center gap-1 text-[9px] font-extrabold text-slate-400">
-                          <Calendar className="h-3 w-3" />
-                          <span className={cn(
-                            new Date(item.dueDate) < new Date(monday) && item.status !== 'Done' ? "text-rose-600 font-black" : ""
-                          )}>
-                            {item.dueDate === 'No Due Date' ? 'No Due Date' : new Date(item.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                          </span>
-                        </div>
-
-                        {/* Assignees initials circle */}
-                        <div className="flex items-center -space-x-1.5 overflow-hidden">
-                          {item.assignees.map((a, idx) => (
-                            <div
-                              key={idx}
-                              title={a.name}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedEmployee(a);
-                              }}
-                              className={cn(
-                                "h-5.5 w-5.5 rounded-full border border-white flex items-center justify-center text-[7px] text-white font-extrabold shadow-3xs cursor-pointer hover:scale-110 transition-transform",
-                                a.bg || "bg-indigo-600"
-                              )}
-                            >
-                              {a.initials}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                  {colItems.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200/80 rounded-2xl text-slate-350 text-[10px] font-bold text-center h-28 select-none">
+                      No tasks or issues in this stage
                     </div>
-                  ))}
+                  ) : (
+                    colItems.map(item => (
+                      <div
+                        key={item.id}
+                        onClick={() => handleItemClick(item)}
+                        draggable={!isClient}
+                        onDragStart={(e) => handleDragStart(e, item.id, item.itemType)}
+                        className={cn(
+                          "bg-white border border-slate-200 hover:border-indigo-400 p-4 rounded-2xl shadow-3xs select-none transition-all hover:shadow-md hover:-translate-y-0.5 group active:opacity-60",
+                          isClient ? "cursor-pointer" : "cursor-grab active:cursor-grabbing"
+                        )}
+                      >
+                        <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                          <span className={cn(
+                            "px-2 py-0.5 rounded-full font-extrabold text-[8px] uppercase tracking-wider",
+                            item.itemType === 'task' ? "bg-indigo-50 text-indigo-650 border border-indigo-100/30" : "bg-rose-50 text-rose-600 border border-rose-100/30"
+                          )}>
+                            {item.itemType === 'task' ? 'Task' : `Issue: ${item.type || 'Bug'}`}
+                          </span>
+
+                          {item.itemType === 'issue' && item.relatedTaskTitle && (
+                            <span className="inline-flex items-center gap-0.5 text-[8px] font-black uppercase text-slate-500 bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5 shrink-0" title={`Related Task: ${item.relatedTaskTitle}`}>
+                              <Bookmark className="h-2 w-2 shrink-0 text-slate-500" />
+                              <span className="truncate max-w-[80px]">{item.relatedTaskTitle}</span>
+                            </span>
+                          )}
+                          
+                          {/* Priority Badge */}
+                          <span className={cn(
+                            "text-[9px] font-black uppercase tracking-wider ml-auto",
+                            item.priority === 'Urgent' || item.priority === 'Critical' ? "text-rose-600" :
+                            item.priority === 'High' ? "text-amber-500" : "text-slate-400"
+                          )}>
+                            {item.priority}
+                          </span>
+                        </div>
+
+                        <h4 className="text-xs font-black text-slate-800 tracking-tight leading-snug group-hover:text-indigo-650 transition-colors line-clamp-2">
+                          {item.title}
+                        </h4>
+                        
+                        <p className="text-[10px] text-slate-450 font-bold mt-1 flex items-center gap-1 truncate">
+                          <Folder className="h-3 w-3 text-slate-400" />
+                          <span>{item.projectName}</span>
+                        </p>
+
+                        <div className="border-t border-slate-100/80 pt-3 mt-3 flex items-center justify-between">
+                          {/* Due date */}
+                          <div className="flex items-center gap-1 text-[9px] font-extrabold text-slate-400">
+                            <Calendar className="h-3 w-3" />
+                            <span className={cn(
+                              new Date(item.dueDate) < new Date(monday) && item.status !== 'Done' ? "text-rose-600 font-black" : ""
+                            )}>
+                              {item.dueDate === 'No Due Date' ? 'No Due Date' : new Date(item.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </span>
+                          </div>
+
+                          {/* Assignees initials circle */}
+                          <div className="flex items-center -space-x-1.5 overflow-hidden">
+                            {item.assignees.map((a, idx) => (
+                              <div
+                                key={idx}
+                                title={a.name}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedEmployee(a);
+                                }}
+                                className={cn(
+                                  "h-5.5 w-5.5 rounded-full border border-white flex items-center justify-center text-[7px] text-white font-extrabold shadow-3xs cursor-pointer hover:scale-110 transition-transform",
+                                  a.bg || "bg-indigo-600"
+                                )}
+                              >
+                                {a.initials}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             );
