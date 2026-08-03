@@ -15,6 +15,8 @@ import {
   X,
   Bookmark,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Trash2,
   Folder,
   Sparkles,
@@ -211,6 +213,7 @@ export default function GlobalTasksPage() {
   });
 
   const [activeTab, setActiveTab] = useState<'board' | 'list' | 'calendar'>('board');
+  const [currentCalendarDate, setCurrentCalendarDate] = useState<Date>(() => new Date(2026, 6, 1));
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -656,22 +659,31 @@ export default function GlobalTasksPage() {
     }
   };
 
-  // Render a custom monthly calendar for July 2026
+  // Render a custom monthly calendar with interactive controls
   const renderCalendar = () => {
-    const daysInMonth = 31;
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+
+    // Number of days in the month
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // Start offset (day of the week of the 1st of the month, 0 for Sunday)
+    const startOffset = new Date(year, month, 1).getDay();
+
     const calendarCells = [];
 
-    // July 2026 starts on a Wednesday (offset 3 days for Sunday-start layout: Sun=0, Mon=1, Tue=2, Wed=3)
-    const startOffset = 3;
-
-    // Blank cells before Wed
+    // Blank cells before the 1st of the month
     for (let i = 0; i < startOffset; i++) {
       calendarCells.push(<div key={`blank-${i}`} className="min-h-24 bg-slate-50/50 border border-slate-100 rounded-2xl opacity-40" />);
     }
 
-    // Days 1 to 31
+    // Days 1 to daysInMonth
     for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = `2026-07-${day < 10 ? '0' + day : day}`;
+      const yearStr = String(year);
+      const monthStr = String(month + 1).padStart(2, '0');
+      const dayStr = String(day).padStart(2, '0');
+      const dateStr = `${yearStr}-${monthStr}-${dayStr}`;
+
       const dayTasks = filteredTasks.filter(t => t.dueDate === dateStr);
 
       calendarCells.push(
@@ -710,13 +722,49 @@ export default function GlobalTasksPage() {
       calendarCells.push(<div key={`blank-end-${i}`} className="min-h-24 bg-slate-50/50 border border-slate-100 rounded-2xl opacity-40" />);
     }
 
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const monthName = monthNames[month];
+
+    const handlePrevMonth = () => {
+      setCurrentCalendarDate(new Date(year, month - 1, 1));
+    };
+
+    const handleNextMonth = () => {
+      setCurrentCalendarDate(new Date(year, month + 1, 1));
+    };
+
     return (
       <div className="space-y-4">
         {/* Calendar Month Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4.5 w-4.5 text-indigo-650" />
-            <h3 className="text-sm font-black text-slate-800">July 2026</h3>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4.5 w-4.5 text-indigo-650" />
+              <h3 className="text-sm font-black text-slate-800">{monthName} {year}</h3>
+            </div>
+            
+            {/* Month Switcher Buttons */}
+            <div className="flex items-center gap-1 bg-slate-50 border border-slate-200/60 p-0.5 rounded-xl">
+              <button
+                type="button"
+                onClick={handlePrevMonth}
+                className="h-6 w-6 rounded-lg hover:bg-white flex items-center justify-center text-slate-600 hover:text-slate-900 transition-all cursor-pointer border border-transparent hover:border-slate-100 active:scale-95"
+                title="Previous Month"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={handleNextMonth}
+                className="h-6 w-6 rounded-lg hover:bg-white flex items-center justify-center text-slate-600 hover:text-slate-900 transition-all cursor-pointer border border-transparent hover:border-slate-100 active:scale-95"
+                title="Next Month"
+              >
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Workspace Tracker</span>
         </div>
