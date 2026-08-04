@@ -22,6 +22,7 @@ export function VerifyEmailForm() {
   const [code, setCode] = useState<string[]>(Array(6).fill(''));
   const [cooldown, setCooldown] = useState(0);
   const [isResending, setIsResending] = useState(false);
+  const [hasRequestedOnce, setHasRequestedOnce] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Synchronize email state if URL parameter changes
@@ -93,6 +94,7 @@ export function VerifyEmailForm() {
     if (result.success) {
       toast.success(result.message);
       setCooldown(60); // 60 seconds cooldown
+      setHasRequestedOnce(true);
     } else {
       toast.error(result.message);
       // If the backend returns a 429 rate limit with cooldown, set cooldown
@@ -236,12 +238,14 @@ export function VerifyEmailForm() {
           {isResending ? (
             <>
               <RotateCw className="h-4 w-4 animate-spin text-slate-400" />
-              Resending…
+              {hasRequestedOnce ? 'Resending…' : 'Sending…'}
             </>
           ) : cooldown > 0 ? (
             `Resend Code (${cooldown}s)`
-          ) : (
+          ) : hasRequestedOnce ? (
             'Resend Code'
+          ) : (
+            'Send Code'
           )}
         </button>
       </div>

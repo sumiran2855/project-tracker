@@ -21,19 +21,61 @@ import { getProjectsAction } from '@/actions/projects';
 import { getAllTasksAction } from '@/actions/tasks';
 import { getIssuesByProjectAction } from '@/actions/issues';
 
-const PROJECT_COLOR_PALETTE = [
-  { bg: 'bg-indigo-500', text: 'text-indigo-500', hex: '#6366f1' },
-  { bg: 'bg-emerald-500', text: 'text-emerald-500', hex: '#10b981' },
-  { bg: 'bg-violet-500', text: 'text-violet-500', hex: '#8b5cf6' },
-  { bg: 'bg-amber-500', text: 'text-amber-500', hex: '#f59e0b' },
-  { bg: 'bg-rose-500', text: 'text-rose-500', hex: '#f43f5e' },
-  { bg: 'bg-cyan-500', text: 'text-cyan-500', hex: '#06b6d4' },
-  { bg: 'bg-purple-500', text: 'text-purple-500', hex: '#a855f7' },
+const GRADIENT_PALETTE = [
+  {
+    bg: 'bg-gradient-to-t from-indigo-650 via-indigo-500 to-cyan-400',
+    barBg: 'bg-gradient-to-r from-indigo-650 to-cyan-400',
+    dotBg: 'bg-indigo-600',
+    text: 'text-indigo-650',
+    accent: '#4F46E5',
+  },
+  {
+    bg: 'bg-gradient-to-t from-violet-600 via-purple-500 to-pink-400',
+    barBg: 'bg-gradient-to-r from-violet-600 to-pink-400',
+    dotBg: 'bg-violet-600',
+    text: 'text-violet-650',
+    accent: '#7C3AED',
+  },
+  {
+    bg: 'bg-gradient-to-t from-emerald-600 via-teal-500 to-cyan-400',
+    barBg: 'bg-gradient-to-r from-emerald-600 to-cyan-400',
+    dotBg: 'bg-emerald-600',
+    text: 'text-emerald-650',
+    accent: '#059669',
+  },
+  {
+    bg: 'bg-gradient-to-t from-rose-600 via-pink-500 to-orange-400',
+    barBg: 'bg-gradient-to-r from-rose-600 to-orange-400',
+    dotBg: 'bg-rose-600',
+    text: 'text-rose-650',
+    accent: '#E11D48',
+  },
+  {
+    bg: 'bg-gradient-to-t from-blue-600 via-sky-500 to-indigo-400',
+    barBg: 'bg-gradient-to-r from-blue-600 to-indigo-400',
+    dotBg: 'bg-blue-600',
+    text: 'text-blue-650',
+    accent: '#2563EB',
+  },
+  {
+    bg: 'bg-gradient-to-t from-cyan-600 via-teal-500 to-emerald-400',
+    barBg: 'bg-gradient-to-r from-cyan-600 to-emerald-400',
+    dotBg: 'bg-cyan-600',
+    text: 'text-cyan-650',
+    accent: '#0891B2',
+  },
+  {
+    bg: 'bg-gradient-to-t from-amber-600 via-amber-550 to-yellow-400',
+    barBg: 'bg-gradient-to-r from-amber-600 to-yellow-400',
+    dotBg: 'bg-amber-600',
+    text: 'text-amber-650',
+    accent: '#D97706',
+  },
 ];
 
 function getProjColor(projName: string, allProjNames: string[]) {
   const idx = allProjNames.indexOf(projName);
-  return PROJECT_COLOR_PALETTE[(idx >= 0 ? idx : 0) % PROJECT_COLOR_PALETTE.length];
+  return GRADIENT_PALETTE[(idx >= 0 ? idx : 0) % GRADIENT_PALETTE.length];
 }
 
 // Types
@@ -179,6 +221,7 @@ function getCurrentWeekDays() {
   const [dailyCapacity, setDailyCapacity] = useState(8);
   const [weeklyCapacity, setWeeklyCapacity] = useState(40);
   const [isHoursMenuOpen, setIsHoursMenuOpen] = useState(false);
+  const [hoveredHoursIndex, setHoveredHoursIndex] = useState<number | null>(null);
 
   // Load project & task data from backend / local storage and compute report metrics
   const loadReportData = async () => {
@@ -697,7 +740,7 @@ function getCurrentWeekDays() {
         </div>
 
         {/* 3. Timesheet Logs (Vertical Bar Graph with Project / Employee Breakdown) */}
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-3xl p-6 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-3xl p-6 shadow-xs flex flex-col justify-between relative">
           <div className="flex items-start justify-between mb-4">
             <div>
               <h3 className="text-sm font-black text-slate-800">Logged Hours</h3>
@@ -714,7 +757,7 @@ function getCurrentWeekDays() {
             <div className="relative shrink-0">
               <button
                 onClick={() => setIsHoursMenuOpen(!isHoursMenuOpen)}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-450 hover:bg-slate-50 cursor-pointer transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-455 hover:bg-slate-50 cursor-pointer transition-colors"
               >
                 <MoreHorizontal className="h-4 w-4" />
               </button>
@@ -730,7 +773,7 @@ function getCurrentWeekDays() {
                       }}
                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-bold text-slate-755 hover:bg-slate-50 transition-colors cursor-pointer"
                     >
-                      <Clock className="h-4 w-4 text-indigo-550" />
+                      <Clock className="h-4 w-4 text-indigo-555" />
                       View Hours Report
                     </button>
                   </div>
@@ -739,21 +782,25 @@ function getCurrentWeekDays() {
             </div>
           </div>
 
-          <div className="flex items-end justify-between gap-3 h-48 mt-6 border-b border-slate-150 pb-2">
-            {weeklyTimeLogs.map((d) => {
-              const isEmployeeRole = (user?.role || '').toLowerCase() === 'employee';
-              const maxHours = Math.max(isEmployeeRole ? dailyCapacity : 1, ...weeklyTimeLogs.map(t => t.hours));
-              const uniqueLoggedProjects = Array.from(new Set(weeklyTimeLogs.flatMap(item => item.projects.map(p => p.projectName))));
-              const uniqueLoggedEmployees = Array.from(new Set(weeklyTimeLogs.flatMap(item => (item.employees || []).map(e => e.employeeName))));
-
-              return (
-                <div key={d.day} className="group relative flex flex-1 flex-col items-center gap-2 h-full justify-end">
-                  {/* Detailed Tooltip on Hover */}
-                  <div className="absolute bottom-[105%] left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] py-2 px-3 rounded-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 shadow-xl whitespace-nowrap z-20 min-w-[140px] border border-slate-700">
-                    <div className="font-black text-slate-200 border-b border-slate-700/80 pb-1 mb-1 flex items-center justify-between gap-3">
+          {/* Tooltip on Hover - Rendered outside overflow-x-auto container to avoid vertical clipping */}
+          {hoveredHoursIndex !== null && weeklyTimeLogs[hoveredHoursIndex] && (
+            <div 
+              className="absolute bottom-[100%] bg-slate-950/95 backdrop-blur-xs text-white text-[10px] py-2.5 px-3.5 rounded-2xl shadow-2xl z-30 min-w-[155px] border border-slate-800 transition-all duration-200 -translate-y-2 pointer-events-none"
+              style={{ 
+                left: `calc(${((hoveredHoursIndex + 0.5) / 7) * 100}% - 77.5px)`,
+              }}
+            >
+              {(() => {
+                const d = weeklyTimeLogs[hoveredHoursIndex];
+                const isEmployeeRole = (user?.role || '').toLowerCase() === 'employee';
+                const uniqueLoggedProjects = Array.from(new Set(weeklyTimeLogs.flatMap(item => item.projects.map(p => p.projectName))));
+                const uniqueLoggedEmployees = Array.from(new Set(weeklyTimeLogs.flatMap(item => (item.employees || []).map(e => e.employeeName))));
+                return (
+                  <>
+                    <div className="font-bold text-slate-200 border-b border-slate-800 pb-1.5 mb-1.5 flex items-center justify-between gap-3">
                       <span>{d.fullDayLabel || d.day}</span>
                       <span className="text-indigo-400 font-extrabold">
-                        {isEmployeeRole ? `${d.hours}h / ${dailyCapacity}h (${Math.round((d.hours / (dailyCapacity || 1)) * 100)}%)` : `${d.hours}h logged`}
+                        {isEmployeeRole ? `${d.hours}h / ${dailyCapacity}h` : `${d.hours}h`}
                       </span>
                     </div>
                     {isEmployeeRole ? (
@@ -761,82 +808,110 @@ function getCurrentWeekDays() {
                         d.projects.map((p) => {
                           const color = getProjColor(p.projectName, uniqueLoggedProjects);
                           return (
-                            <div key={p.projectName} className="flex items-center justify-between gap-3 font-semibold text-[10px]">
-                              <span className="flex items-center gap-1.5 text-slate-300">
-                                <span className={cn("h-2 w-2 rounded-full shrink-0", color.bg)} />
-                                <span>{p.projectName}</span>
+                            <div key={p.projectName} className="flex items-center justify-between gap-3 font-semibold text-[10px] mt-1">
+                              <span className="flex items-center gap-1.5 text-slate-400 max-w-[100px] truncate">
+                                <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", color.dotBg)} />
+                                <span className="truncate">{p.projectName}</span>
                               </span>
                               <span className="font-bold text-white ml-auto">{p.hours}h</span>
                             </div>
                           );
                         })
                       ) : (
-                        <div className="text-slate-400 italic text-[9px]">No hours logged</div>
+                        <div className="text-slate-500 italic text-[9px]">No hours logged</div>
                       )
                     ) : (
                       (d.employees || []).length > 0 ? (
                         (d.employees || []).map((e) => {
                           const color = getProjColor(e.employeeName, uniqueLoggedEmployees);
                           return (
-                            <div key={e.employeeName} className="flex items-center justify-between gap-3 font-semibold text-[10px]">
-                              <span className="flex items-center gap-1.5 text-slate-300">
-                                <span className={cn("h-2 w-2 rounded-full shrink-0", color.bg)} />
-                                <span>{e.employeeName}</span>
+                            <div key={e.employeeName} className="flex items-center justify-between gap-3 font-semibold text-[10px] mt-1">
+                              <span className="flex items-center gap-1.5 text-slate-400 max-w-[100px] truncate">
+                                <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", color.dotBg)} />
+                                <span className="truncate">{e.employeeName}</span>
                               </span>
                               <span className="font-bold text-white ml-auto">{e.hours}h</span>
                             </div>
                           );
                         })
                       ) : (
-                        <div className="text-slate-400 italic text-[9px]">No hours logged</div>
+                        <div className="text-slate-500 italic text-[9px]">No hours logged</div>
                       )
                     )}
-                  </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
 
-                  <span className="text-[9px] font-black text-slate-700">
-                    {isEmployeeRole ? `${d.hours}h / ${dailyCapacity}h` : `${d.hours}h`}
-                  </span>
+          <div className="overflow-x-auto scrollbar-none pb-2">
+            <div className="flex items-end justify-between gap-3 sm:gap-4 h-48 min-w-[460px] md:min-w-0 pb-2 border-b border-slate-100">
+              {weeklyTimeLogs.map((d, idx) => {
+                const isEmployeeRole = (user?.role || '').toLowerCase() === 'employee';
+                const maxHours = Math.max(isEmployeeRole ? dailyCapacity : 1, ...weeklyTimeLogs.map(t => t.hours));
+                const uniqueLoggedProjects = Array.from(new Set(weeklyTimeLogs.flatMap(item => item.projects.map(p => p.projectName))));
+                const uniqueLoggedEmployees = Array.from(new Set(weeklyTimeLogs.flatMap(item => (item.employees || []).map(e => e.employeeName))));
 
-                  <div className="w-full bg-slate-50 border border-slate-150 rounded-t-lg h-36 flex flex-col-reverse justify-start overflow-hidden cursor-pointer hover:bg-slate-100/70 transition-colors p-0.5">
-                    {isEmployeeRole ? (
-                      d.projects.length > 0 ? (
-                        d.projects.map((p) => {
-                          const color = getProjColor(p.projectName, uniqueLoggedProjects);
-                          const segmentPercent = maxHours > 0 ? (p.hours / maxHours) * 100 : 0;
-                          return (
-                            <div
-                              key={p.projectName}
-                              className={cn("w-full transition-all duration-500 rounded-xs border-t border-white/20 first:border-0", color.bg)}
-                              style={{ height: `${segmentPercent}%` }}
-                            />
-                          );
-                        })
+                return (
+                  <div 
+                    key={d.day} 
+                    className="group relative flex flex-1 flex-col items-center gap-2 h-full justify-end"
+                    onMouseEnter={() => setHoveredHoursIndex(idx)}
+                    onMouseLeave={() => setHoveredHoursIndex(null)}
+                  >
+                    {/* Floating badge for logged hours */}
+                    <span className="text-[10px] font-black text-slate-700 bg-slate-100 border border-slate-200/50 px-2 py-0.5 rounded-full shadow-3xs whitespace-nowrap transition-transform duration-200 group-hover:scale-105">
+                      {d.hours}h
+                    </span>
+
+                    {/* Constrain percentage calculations with a definite height container */}
+                    <div className="h-32 w-full flex flex-col justify-end items-center">
+                      {/* Stacked Visual Bar Capsule with Dynamic Height */}
+                      {d.hours > 0 ? (
+                        <div 
+                          className="w-full max-w-[32px] sm:max-w-[36px] flex flex-col-reverse justify-start rounded-t-xl rounded-b-sm overflow-hidden cursor-pointer hover:shadow-md hover:brightness-105 transition-all duration-300 relative border border-white/10"
+                          style={{ height: `${maxHours > 0 ? (d.hours / maxHours) * 100 : 0}%` }}
+                        >
+                          {isEmployeeRole ? (
+                            d.projects.map((p) => {
+                              const color = getProjColor(p.projectName, uniqueLoggedProjects);
+                              const segmentPercent = d.hours > 0 ? (p.hours / d.hours) * 100 : 0;
+                              return (
+                                <div
+                                  key={p.projectName}
+                                  className={cn("w-full transition-all duration-500 rounded-xs border-t border-white/20 first:border-0 shadow-inner", color.bg)}
+                                  style={{ height: `${segmentPercent}%` }}
+                                />
+                              );
+                            })
+                          ) : (
+                            (d.employees || []).map((e) => {
+                              const color = getProjColor(e.employeeName, uniqueLoggedEmployees);
+                              const segmentPercent = d.hours > 0 ? (e.hours / d.hours) * 100 : 0;
+                              return (
+                                <div
+                                  key={e.employeeName}
+                                  className={cn("w-full transition-all duration-500 rounded-xs border-t border-white/20 first:border-0 shadow-inner", color.bg)}
+                                  style={{ height: `${segmentPercent}%` }}
+                                />
+                              );
+                            })
+                          )}
+                        </div>
                       ) : (
-                        <div className="w-full h-full bg-slate-200/40 rounded-t-lg" />
-                      )
-                    ) : (
-                      (d.employees || []).length > 0 ? (
-                        (d.employees || []).map((e) => {
-                          const color = getProjColor(e.employeeName, uniqueLoggedEmployees);
-                          const segmentPercent = maxHours > 0 ? (e.hours / maxHours) * 100 : 0;
-                          return (
-                            <div
-                              key={e.employeeName}
-                              className={cn("w-full transition-all duration-500 rounded-xs border-t border-white/20 first:border-0", color.bg)}
-                              style={{ height: `${segmentPercent}%` }}
-                            />
-                          );
-                        })
-                      ) : (
-                        <div className="w-full h-full bg-slate-200/40 rounded-t-lg" />
-                      )
-                    )}
-                  </div>
+                        /* Subtle placeholder line for 0 hours */
+                        <div className="w-full max-w-[32px] sm:max-w-[36px] h-1.5 rounded bg-slate-200/50 border border-slate-300/20 shadow-3xs" />
+                      )}
+                    </div>
 
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">{d.day}</span>
-                </div>
-              );
-            })}
+                    {/* X-Axis day text label */}
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider text-center mt-1">
+                      {d.day}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Color Legend */}
@@ -852,7 +927,7 @@ function getCurrentWeekDays() {
                     const color = getProjColor(pName, uniqueLoggedProjects);
                     return (
                       <div key={pName} className="flex items-center gap-1.5 font-bold text-slate-700">
-                        <span className={cn("h-2.5 w-2.5 rounded-full", color.bg)} />
+                        <span className={cn("h-2.5 w-2.5 rounded-full", color.dotBg)} />
                         <span>{pName}</span>
                       </div>
                     );
@@ -869,7 +944,7 @@ function getCurrentWeekDays() {
                     const color = getProjColor(eName, uniqueLoggedEmployees);
                     return (
                       <div key={eName} className="flex items-center gap-1.5 font-bold text-slate-700">
-                        <span className={cn("h-2.5 w-2.5 rounded-full", color.bg)} />
+                        <span className={cn("h-2.5 w-2.5 rounded-full", color.dotBg)} />
                         <span>{eName}</span>
                       </div>
                     );
