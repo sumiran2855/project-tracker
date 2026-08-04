@@ -1,0 +1,181 @@
+import { X, Sliders, Check } from 'lucide-react';
+
+interface EditProfileModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  editName: string;
+  setEditName: (val: string) => void;
+  editEmail: string;
+  setEditEmail: (val: string) => void;
+  editRole: string;
+  setEditRole: (val: string) => void;
+  editLocation: string;
+  setEditLocation: (val: string) => void;
+  editDepartment: string;
+  setEditDepartment: (val: string) => void;
+  editSkills: string[];
+  newSkillText: string;
+  setNewSkillText: (val: string) => void;
+  onAddSkill: (e: React.KeyboardEvent) => void;
+  onRemoveSkill: (skill: string) => void;
+  onSave: (e: React.FormEvent) => Promise<void>;
+}
+
+export function EditProfileModal({
+  isOpen,
+  onClose,
+  editName,
+  setEditName,
+  editEmail,
+  setEditEmail,
+  editRole,
+  setEditRole,
+  editLocation,
+  setEditLocation,
+  editDepartment,
+  setEditDepartment,
+  editSkills,
+  newSkillText,
+  setNewSkillText,
+  onAddSkill,
+  onRemoveSkill,
+  onSave,
+}: EditProfileModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-fadeIn">
+      <div className="relative w-full max-w-xl bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-8 space-y-6 my-8 animate-scaleIn">
+
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-650">
+              <Sliders className="h-4.5 w-4.5" />
+            </div>
+            <h3 className="text-base font-black text-slate-800">Edit Profile & Directory</h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="h-7 w-7 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-150 flex items-center justify-center text-slate-500 cursor-pointer"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Scrollable container for forms */}
+        <div className="max-h-[60vh] overflow-y-auto pr-1 space-y-6">
+
+          {/* Primary Info Form */}
+          <form onSubmit={onSave} className="space-y-4">
+            <div className="text-xs font-black text-indigo-650 uppercase tracking-widest border-b border-slate-100 pb-1">
+              Primary Information
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-450">Display Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  className="w-full rounded-xl border border-slate-250 bg-white px-3.5 py-2 text-xs text-slate-855 focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-450">Role / Title</label>
+                <input
+                  type="text"
+                  required
+                  value={editRole}
+                  onChange={e => setEditRole(e.target.value)}
+                  className="w-full rounded-xl border border-slate-250 bg-white px-3.5 py-2 text-xs text-slate-855 focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-450">Location</label>
+                <input
+                  type="text"
+                  required
+                  value={editLocation}
+                  onChange={e => setEditLocation(e.target.value)}
+                  className="w-full rounded-xl border border-slate-250 bg-white px-3.5 py-2 text-xs text-slate-855 focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-450">Department</label>
+                <input
+                  type="text"
+                  required
+                  value={editDepartment}
+                  onChange={e => setEditDepartment(e.target.value)}
+                  className="w-full rounded-xl border border-slate-250 bg-white px-3.5 py-2 text-xs text-slate-855 focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-450">Email Address</label>
+              <input
+                type="email"
+                required
+                value={editEmail}
+                onChange={e => setEditEmail(e.target.value)}
+                className="w-full rounded-xl border border-slate-250 bg-white px-3.5 py-2 text-xs text-slate-855 focus:border-indigo-500 focus:outline-none"
+              />
+            </div>
+
+            {/* Skills tags field */}
+            <div className="space-y-2 pt-2">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-450 block">Skills (Press Enter to add)</label>
+              <div className="flex flex-wrap gap-1.5 rounded-xl border border-slate-255 bg-slate-50/50 p-2 min-h-12 items-center">
+                {editSkills.map(s => (
+                  <span key={s} className="inline-flex items-center gap-1 bg-white border border-slate-200 text-[9px] font-bold px-2 py-0.5 rounded-lg text-slate-700 shadow-3xs">
+                    {s}
+                    <button type="button" onClick={() => onRemoveSkill(s)} className="text-slate-400 hover:text-red-500 cursor-pointer">
+                      <X className="h-2.5 w-2.5" />
+                    </button>
+                  </span>
+                ))}
+                <input
+                  type="text"
+                  placeholder="Type & Enter..."
+                  value={newSkillText}
+                  onChange={e => setNewSkillText(e.target.value)}
+                  onKeyDown={onAddSkill}
+                  className="bg-transparent border-none text-xs outline-none text-slate-800 ml-1 flex-1 min-w-[80px]"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
+                className="inline-flex items-center gap-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 text-xs font-bold cursor-pointer transition-colors shadow-sm"
+              >
+                <Check className="h-4 w-4" />
+                <span>Save Profile & Skills</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Footer buttons to close modal */}
+        <div className="flex justify-end pt-4 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4.5 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-xs font-bold transition-all cursor-pointer"
+          >
+            Close Dialog
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+}
