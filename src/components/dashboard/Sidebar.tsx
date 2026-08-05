@@ -15,11 +15,6 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Map,
-  ListTodo,
-  Code,
-  Rocket,
-  Search,
-  FileText,
   Settings,
   AlertCircle,
   Users
@@ -30,18 +25,7 @@ import { useUser } from '@/contexts/UserContext';
 import { hasPermission } from '@/lib/auth/permissions';
 import { getProjectsAction } from '@/actions/projects';
 import { getAllTasksAction } from '@/actions/tasks';
-
-interface SidebarProps {
-  user?: {
-    name?: string | null;
-    email?: string | null;
-    role?: string | null;
-  } | null;
-  onClose?: () => void;
-  className?: string;
-  isCollapsed?: boolean;
-  onToggleCollapse?: () => void;
-}
+import type { SidebarProps } from '@/types/dashboard.types';
 
 export function Sidebar({ onClose, className, isCollapsed = false, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();

@@ -18,7 +18,6 @@ function getAttachmentUrl(path: string) {
   return `${serverBase}${path.startsWith('/') ? '' : '/'}${path}`;
 }
 
-
 export function AddIssueModal({ isOpen, onClose, projects, availableMembers, onSuccess, defaultType = 'Bug', defaultStatus = 'Open' }: AddIssueModalProps) {
   const { user } = useUser();
   const isEmployee = user?.role?.toLowerCase() === 'employee';

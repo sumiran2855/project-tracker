@@ -7,7 +7,6 @@ import { createTaskAction } from '@/actions/tasks';
 import { useUser } from '@/contexts/UserContext';
 import type { AddTaskModalProps } from '@/types/tasks.types';
 
-
 export function AddTaskModal({
   isOpen,
   onClose,

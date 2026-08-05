@@ -2,31 +2,7 @@
 
 import { X, Mail, CheckSquare, Folder, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-export interface EmployeeDetailModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  employee: {
-    id?: string;
-    name: string;
-    email?: string;
-    role?: string;
-    initials?: string;
-    bg?: string;
-  } | null;
-  assignedItems?: Array<{
-    id: string;
-    title: string;
-    description?: string;
-    status: string;
-    priority: string;
-    dueDate?: string;
-    actualHours?: number;
-    itemType?: 'task' | 'issue';
-    projectName?: string;
-  }>;
-  onSelectWorkItem?: (item: any) => void;
-}
+import type { EmployeeDetailModalProps } from '@/types/dashboard.types';
 
 export function EmployeeDetailModal({
   isOpen,

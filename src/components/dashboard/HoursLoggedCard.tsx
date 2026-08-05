@@ -2,76 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { MoreHorizontal, Clock, TrendingUp } from 'lucide-react';
+import { MoreHorizontal, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const GRADIENT_PALETTE = [
-  {
-    bg: 'bg-gradient-to-t from-indigo-600 via-indigo-550 to-cyan-400',
-    barBg: 'bg-gradient-to-r from-indigo-600 to-cyan-400',
-    dotBg: 'bg-indigo-600',
-    text: 'text-indigo-650',
-    accent: '#4F46E5',
-  },
-  {
-    bg: 'bg-gradient-to-t from-violet-600 via-violet-550 to-pink-400',
-    barBg: 'bg-gradient-to-r from-violet-600 to-pink-500',
-    dotBg: 'bg-violet-600',
-    text: 'text-violet-650',
-    accent: '#7C3AED',
-  },
-  {
-    bg: 'bg-gradient-to-t from-emerald-600 via-emerald-550 to-teal-400',
-    barBg: 'bg-gradient-to-r from-emerald-600 to-teal-400',
-    dotBg: 'bg-emerald-600',
-    text: 'text-emerald-650',
-    accent: '#10B981',
-  },
-  {
-    bg: 'bg-gradient-to-t from-orange-600 via-orange-550 to-amber-400',
-    barBg: 'bg-gradient-to-r from-orange-600 to-amber-400',
-    dotBg: 'bg-orange-600',
-    text: 'text-orange-650',
-    accent: '#F97316',
-  },
-  {
-    bg: 'bg-gradient-to-t from-rose-600 via-rose-550 to-pink-400',
-    barBg: 'bg-gradient-to-r from-rose-600 to-pink-400',
-    dotBg: 'bg-rose-600',
-    text: 'text-rose-650',
-    accent: '#F43F5E',
-  },
-  {
-    bg: 'bg-gradient-to-t from-cyan-600 via-cyan-550 to-sky-400',
-    barBg: 'bg-gradient-to-r from-cyan-600 to-sky-400',
-    dotBg: 'bg-cyan-600',
-    text: 'text-cyan-650',
-    accent: '#06B6D4',
-  },
-  {
-    bg: 'bg-gradient-to-t from-amber-600 via-amber-550 to-yellow-400',
-    barBg: 'bg-gradient-to-r from-amber-600 to-yellow-400',
-    dotBg: 'bg-amber-600',
-    text: 'text-amber-650',
-    accent: '#D97706',
-  },
-];
-
-function getElementColor(name: string, allNames: string[]) {
-  const idx = allNames.indexOf(name);
-  return GRADIENT_PALETTE[(idx >= 0 ? idx : 0) % GRADIENT_PALETTE.length];
-}
-
-interface HoursLoggedCardProps {
-  weeklyHoursList: any[];
-  weeklyCapacity: number;
-  dailyCapacity: number;
-  isEmployeeRole: boolean;
-  canViewWorkload: boolean;
-  maxHours: number;
-  uniqueLoggedProjects: string[];
-  uniqueLoggedEmployees: string[];
-}
+import type { HoursLoggedCardProps } from '@/types/dashboard.types';
+import { getElementColor } from '@/helpers/report.helpers';
 
 export function HoursLoggedCard({
   weeklyHoursList = [],

@@ -1,13 +1,8 @@
 import { getSprintSummaryAction } from '@/actions/projects';
+import { Task } from '@/types/tasks.types';
 import { Issue } from '@/types/issues.types';
 import { Project } from '@/types/projects.types';
-import { Task } from '@/types/tasks.types';
-
-interface SprintDataResult {
-  tasks: Task[];
-  issues: Issue[];
-  projects: Project[];
-}
+import type { SprintDataResult } from '@/types/sprint.types';
 
 let sprintDataCache: { data: SprintDataResult; timestamp: number } | null = null;
 let activeSprintPromise: Promise<SprintDataResult> | null = null;

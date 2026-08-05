@@ -4,10 +4,6 @@ import { getProjectsAction } from '@/actions/projects';
 import type { Project } from '@/types/projects.types';
 import type { MilestoneItem } from '@/types/roadmap.types';
 
-export const TIMELINE_START = new Date('2026-06-01');
-export const TIMELINE_END = new Date('2026-11-30');
-export const TOTAL_TIMELINE_DAYS = 183; // Approx days in 6 months (Jun-Nov)
-
 export function useRoadmapService() {
   const { user } = useUser();
   const canManageRoadmap = usePermission('roadmap:manage');

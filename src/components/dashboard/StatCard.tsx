@@ -1,6 +1,7 @@
 'use client';
 
 import { Folder, CheckCircle2, AlertTriangle, Clock, type LucideIcon } from 'lucide-react';
+import type { StatCardProps } from '@/types/dashboard.types';
 
 const iconMap: Record<string, LucideIcon> = {
   Folder,
@@ -9,14 +10,6 @@ const iconMap: Record<string, LucideIcon> = {
   Clock,
 };
 
-interface StatCardProps {
-  label: string;
-  value: string;
-  change: string;
-  iconName: string;
-  tint: string;
-  positive?: boolean;
-}
 
 export function StatCard({ label, value, change, iconName, tint, positive }: StatCardProps) {
   const Icon = iconMap[iconName] ?? Folder;

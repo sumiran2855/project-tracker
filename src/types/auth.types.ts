@@ -3,6 +3,8 @@
  * Keep types in one place to avoid duplication.
  */
 
+import { Permission } from "@/lib/auth/permissions";
+
 /** JWT payload stored in the session cookie */
 export interface SessionPayload {
   userId: string;
@@ -14,6 +16,12 @@ export interface SessionPayload {
   expiresAt: Date;
 }
 
+export interface UserContextType {
+  user: SafeUser | null;
+  loading: boolean;
+  setUser: React.Dispatch<React.SetStateAction<SafeUser | null>>;
+  hasPermission: (permission: Permission) => boolean;
+}
 
 /** Verified session data returned from the DAL */
 export interface VerifiedSession {

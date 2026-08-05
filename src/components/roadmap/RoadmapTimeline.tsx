@@ -1,11 +1,6 @@
 import { SquareChartGantt, Edit2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { 
-  TIMELINE_START, 
-  TIMELINE_END, 
-  TOTAL_TIMELINE_DAYS 
-} from '@/services/useRoadmapService';
-import type { RoadmapTimelineProps } from '@/types/roadmap.types';
+import { TIMELINE_END, TIMELINE_START, TOTAL_TIMELINE_DAYS, type RoadmapTimelineProps } from '@/types/roadmap.types';
 
 export function RoadmapTimeline({
   filteredProjects,

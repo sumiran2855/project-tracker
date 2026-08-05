@@ -7,9 +7,7 @@ import { fetchAllSprintData, clearSprintDataCache } from '@/lib/sprintLoader';
 import { getCurrentWeekBounds, isItemInSprint } from '@/lib/utils';
 import type { Task, Subtask } from '@/types/tasks.types';
 import type { Issue } from '@/types/issues.types';
-
 import type { SprintItem } from '@/types/sprint.types';
-
 
 export function getAttachmentUrl(path: string) {
   if (!path) return '';

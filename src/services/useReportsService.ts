@@ -4,7 +4,7 @@ import { useUser, usePermission } from '@/contexts/UserContext';
 import { getProjectsAction } from '@/actions/projects';
 import { getAllTasksAction } from '@/actions/tasks';
 import { getIssuesByProjectAction } from '@/actions/issues';
-import type { Task, ProjectStats, PriorityStats, TeamStats, DayLog } from '@/types/reports.types';
+import type { ProjectStats, PriorityStats, TeamStats, DayLog } from '@/types/reports.types';
 
 function getCurrentWeekDays() {
   const now = new Date();

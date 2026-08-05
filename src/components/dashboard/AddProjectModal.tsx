@@ -7,7 +7,6 @@ import { createProjectAction, updateProjectAction } from '@/actions/projects';
 import { useUser } from '@/contexts/UserContext';
 import type { AddProjectModalProps } from '@/types/projects.types';
 
-
 export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, projectToEdit }: AddProjectModalProps) {
   const { user } = useUser();
   const userRole = user?.role || '';

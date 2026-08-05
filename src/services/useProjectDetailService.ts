@@ -10,7 +10,6 @@ import type { Task, Subtask, Comment } from '@/types/tasks.types';
 export function useProjectDetailService() {
   const { user } = useUser();
   const canCreateTask = usePermission('task:create');
-  const canAssignTask = usePermission('task:assign');
   const canDeleteTask = usePermission('task:delete');
 
   const params = useParams();

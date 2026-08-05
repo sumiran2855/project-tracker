@@ -1,15 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState } from 'react';
-import type { SafeUser } from '@/types/auth.types';
+import type { SafeUser, UserContextType } from '@/types/auth.types';
 import { hasPermission, Permission } from '@/lib/auth/permissions';
-
-interface UserContextType {
-  user: SafeUser | null;
-  loading: boolean;
-  setUser: React.Dispatch<React.SetStateAction<SafeUser | null>>;
-  hasPermission: (permission: Permission) => boolean;
-}
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 

@@ -1,15 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useUser, usePermission } from '@/contexts/UserContext';
 import { getProjectsAction, getEmployeesAction } from '@/actions/projects';
-import type { Employee } from '@/types/projects.types';
+import type { Employee, Project } from '@/types/projects.types';
 import { getIssuesByProjectAction, updateIssueAction, deleteIssueAction, uploadIssueAttachmentAction } from '@/actions/issues';
 import type { Issue } from '@/types/issues.types';
 import { getTasksByProjectAction } from '@/actions/tasks';
-
-interface Project {
-  id: string;
-  name: string;
-}
 
 const fallbackIssues: Issue[] = [];
 

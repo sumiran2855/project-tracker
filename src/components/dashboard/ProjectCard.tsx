@@ -2,25 +2,7 @@
 
 import { Folder, Calendar } from 'lucide-react';
 import Link from 'next/link';
-
-interface TeamMember {
-  initials: string;
-  name: string;
-  bg: string;
-}
-
-interface Project {
-  id?: string;
-  name: string;
-  category: string;
-  status: string;
-  progress: number;
-  due: string;
-  bar: string;
-  tasks: { completed: number; total: number };
-  team: TeamMember[];
-  updatedAt: string;
-}
+import type { DashboardProject } from '@/types/dashboard.types';
 
 const statusStyles: Record<string, string> = {
   'In Progress': 'bg-indigo-50 text-indigo-700 border border-indigo-100/60',
@@ -29,7 +11,7 @@ const statusStyles: Record<string, string> = {
   Done: 'bg-emerald-50 text-emerald-700 border border-emerald-100/60',
 };
 
-export function ProjectCard({ p }: { p: Project }) {
+export function ProjectCard({ p }: { p: DashboardProject }) {
   const cardContent = (
     <div
       className="group relative flex flex-col rounded-2xl bg-white border border-slate-100 overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1.5 h-full"

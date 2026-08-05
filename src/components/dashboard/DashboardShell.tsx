@@ -5,14 +5,7 @@ import { Sidebar } from './Sidebar';
 import { Navbar } from './Navbar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-
-interface DashboardShellProps {
-  user: {
-    name?: string | null;
-    email?: string | null;
-  } | null;
-  children: React.ReactNode;
-}
+import type { DashboardShellProps } from '@/types/dashboard.types';
 
 export function DashboardShell({ user, children }: DashboardShellProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);

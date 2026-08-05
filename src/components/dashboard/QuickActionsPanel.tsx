@@ -5,11 +5,8 @@ import { Plus, Play, Bug, X, Loader2, Clock } from 'lucide-react';
 import { updateProjectAction } from '@/actions/projects';
 import { AddProjectModal } from './AddProjectModal';
 import { AddIssueModal } from './AddIssueModal';
+import type { QuickActionsPanelProps } from '@/types/dashboard.types';
 
-interface QuickActionsPanelProps {
-  projects: any[];
-  employees: any[];
-}
 
 export function QuickActionsPanel({ projects, employees }: QuickActionsPanelProps) {
   // Modal open states

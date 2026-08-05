@@ -1,8 +1,6 @@
 import { Users } from 'lucide-react';
+import type { TeamHierarchyCardProps } from '@/types/dashboard.types';
 
-interface TeamHierarchyCardProps {
-  hierarchyTree: any[];
-}
 
 export function TeamHierarchyCard({ hierarchyTree }: TeamHierarchyCardProps) {
   return (

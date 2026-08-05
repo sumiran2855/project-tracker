@@ -16,11 +16,7 @@ import { Sidebar } from './Sidebar';
 import { cn } from '@/lib/utils';
 import { fetchLiveNotifications } from '@/lib/sprintLoader';
 import { useUser } from '@/contexts/UserContext';
-
-interface NavbarProps {
-  userName?: string | null;
-  userEmail?: string | null;
-}
+import type { NavbarProps } from '@/types/dashboard.types';
 
 export function Navbar({ userName, userEmail }: NavbarProps) {
   const [open, setOpen] = useState(false);

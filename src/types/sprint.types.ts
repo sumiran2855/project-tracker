@@ -1,5 +1,7 @@
 import React from 'react';
 import type { Task } from '@/types/tasks.types';
+import { Issue } from '@/types/issues.types';
+import { Project } from '@/types/projects.types';
 
 export interface SprintItem {
   id: string;
@@ -29,6 +31,12 @@ export interface SprintItem {
 export interface ProjectOption {
   id: string;
   name: string;
+}
+
+export interface SprintDataResult {
+  tasks: Task[];
+  issues: Issue[];
+  projects: Project[];
 }
 
 export interface SprintFiltersProps {
