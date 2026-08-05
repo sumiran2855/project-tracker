@@ -76,7 +76,6 @@ export default function ProjectsPage() {
             formatDate={formatDate}
           />
         )}
-
       </div>
 
       {/* Modal - New Project Form */}

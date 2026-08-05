@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { useSprintService } from '@/services/useSprintService';
 import { SprintHeader } from '@/components/sprint/SprintHeader';
 import { SprintKpis } from '@/components/sprint/SprintKpis';

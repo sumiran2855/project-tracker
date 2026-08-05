@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { useWorkshopService } from '@/services/useWorkshopService';
 import { WorkshopHeader } from '@/components/workshop/WorkshopHeader';
 import { WorkshopKpis } from '@/components/workshop/WorkshopKpis';

@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { useTasksService } from '@/services/useTasksService';
 import { TasksHeader } from '@/components/tasks/TasksHeader';
 import { TasksKpis } from '@/components/tasks/TasksKpis';

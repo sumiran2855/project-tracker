@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { useRoadmapService } from '@/services/useRoadmapService';
 import { RoadmapHeader } from '@/components/roadmap/RoadmapHeader';
 import { RoadmapKpis } from '@/components/roadmap/RoadmapKpis';

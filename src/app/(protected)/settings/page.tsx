@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { useSettingsService } from '@/services/useSettingsService';
 import { SettingsHeader } from '@/components/settings/SettingsHeader';
 import { SettingsNavigation } from '@/components/settings/SettingsNavigation';

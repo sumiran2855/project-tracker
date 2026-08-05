@@ -15,10 +15,8 @@ import { AddProjectModal } from '@/components/dashboard/AddProjectModal';
 export default function ProjectDetailPage() {
   const {
     user,
-    projectId,
     router,
     project,
-    setProject,
     tasks,
     displayTasks,
     isEmployee,
@@ -158,7 +156,6 @@ export default function ProjectDetailPage() {
             />
           )}
         </div>
-
       </div>
 
       {/* Hours Spent Modal */}

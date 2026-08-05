@@ -2,7 +2,6 @@
 
 import { getSession } from '@/lib/auth/dal';
 import { apiClient } from '@/lib/api/apiClient';
-
 import { Project, Employee } from '@/types/projects.types';
 
 function filterAdminMembersFromProjects(projects: Project[], employees?: Employee[]): Project[] {

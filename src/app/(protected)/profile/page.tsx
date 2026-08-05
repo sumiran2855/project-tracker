@@ -90,7 +90,6 @@ export default function ProfilePage() {
             onCopyInviteLink={handleCopyClientInviteLink}
           />
         </div>
-
       </div>
 
       {/* modal - Edit Profile & Collaborators Modal */}

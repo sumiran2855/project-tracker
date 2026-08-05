@@ -15,7 +15,6 @@ export function ResetPasswordForm() {
   const [showPassword, setShowPassword] = useState(false);
   const searchParams = useSearchParams();
   const token = searchParams.get('token') || '';
-
   const hasToken = token.trim().length > 0;
 
   return (

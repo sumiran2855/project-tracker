@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { useReportsService } from '@/services/useReportsService';
 import { ReportsHeader } from '@/components/reports/ReportsHeader';
 import { ReportsKpis } from '@/components/reports/ReportsKpis';

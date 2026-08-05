@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { verifyEmailAction, resendVerificationAction } from '@/actions/auth';
 import type { VerifyEmailActionState } from '@/types/auth.types';
-import { Mail, ShieldCheck, AlertCircle, CheckCircle2, RotateCw } from 'lucide-react';
+import { Mail, AlertCircle, CheckCircle2, RotateCw } from 'lucide-react';
 
 export function VerifyEmailForm() {
   const searchParams = useSearchParams();

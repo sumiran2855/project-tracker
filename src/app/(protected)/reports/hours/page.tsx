@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { useReportsHoursService } from '@/services/useReportsHoursService';
 import { ReportsHoursHeader } from '@/components/reports-hours/ReportsHoursHeader';
 import { ReportsHoursKpis } from '@/components/reports-hours/ReportsHoursKpis';
@@ -69,7 +68,6 @@ export default function EnhancedHoursReportPage() {
         )}
 
       </div>
-
     </div>
   );
 }
