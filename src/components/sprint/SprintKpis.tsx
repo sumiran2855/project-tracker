@@ -1,16 +1,5 @@
-import React from 'react';
 import { CheckCircle2, AlertCircle, Clock } from 'lucide-react';
-
-interface SprintKpisProps {
-  completionPercentage: number;
-  completedItems: number;
-  totalItems: number;
-  completedTasksCount: number;
-  totalTasksCount: number;
-  resolvedIssuesCount: number;
-  totalIssuesCount: number;
-  totalLoggedHours: number;
-}
+import type { SprintKpisProps } from '@/types/sprint.types';
 
 export function SprintKpis({
   completionPercentage,

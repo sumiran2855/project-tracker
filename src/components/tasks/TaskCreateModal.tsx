@@ -1,35 +1,7 @@
-import React from 'react';
 import { CheckSquare, X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Project } from '@/services/useTasksService';
 import type { Employee } from '@/types/projects.types';
-import type { Task } from '@/types/tasks.types';
-
-interface TaskCreateModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  newTaskProject: string;
-  setNewTaskProject: (val: string) => void;
-  newTaskTitle: string;
-  setNewTaskTitle: (val: string) => void;
-  newTaskDesc: string;
-  setNewTaskDesc: (val: string) => void;
-  newTaskStatus: Task['status'];
-  setNewTaskStatus: (val: Task['status']) => void;
-  newTaskPriority: Task['priority'];
-  setNewTaskPriority: (val: Task['priority']) => void;
-  newTaskStartDate: string;
-  setNewTaskStartDate: (val: string) => void;
-  newTaskDueDate: string;
-  setNewTaskDueDate: (val: string) => void;
-  newTaskAssignees: string[];
-  setNewTaskAssignees: (val: string[] | ((prev: string[]) => string[])) => void;
-  projects: Project[];
-  availableMembers: Employee[];
-  user: any;
-  isEmployee: boolean;
-  onSubmit: (e: React.FormEvent) => void;
-}
+import type { Task, TaskCreateModalProps } from '@/types/tasks.types';
 
 export function TaskCreateModal({
   isOpen,

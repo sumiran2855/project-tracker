@@ -1,10 +1,5 @@
-import React from 'react';
 import { BarChart3, RefreshCw, Printer, Sparkles } from 'lucide-react';
-
-interface ReportsHeaderProps {
-  onRefresh: () => void;
-  onPrint: () => void;
-}
+import type { ReportsHeaderProps } from '@/types/reports.types';
 
 export function ReportsHeader({ onRefresh, onPrint }: ReportsHeaderProps) {
   return (

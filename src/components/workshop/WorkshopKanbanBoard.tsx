@@ -1,28 +1,7 @@
-import React from 'react';
 import { Loader2, ListTodo, Bug, Clock3, Bookmark } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import type { Task } from '@/types/tasks.types';
-import type { Issue } from '@/types/issues.types';
-
-interface KanbanColumn {
-  id: string;
-  title: string;
-  tasks: Task[];
-  issues: Issue[];
-}
-
-interface WorkshopKanbanBoardProps {
-  kanbanLoading: boolean;
-  kanbanColumns: KanbanColumn[];
-  draggedOverCol: string | null;
-  isClient: boolean;
-  handleDragOver: (e: React.DragEvent, colId: string) => void;
-  handleDragLeave: () => void;
-  handleDrop: (e: React.DragEvent, colId: string) => void;
-  handleDragStart: (e: React.DragEvent, cardId: string, cardType: 'task' | 'issue') => void;
-  handleCardClick: (cardId: string, cardType: 'task' | 'issue') => void;
-}
+import type { WorkshopKanbanBoardProps } from '@/types/workshop.types';
 
 export function WorkshopKanbanBoard({
   kanbanLoading,

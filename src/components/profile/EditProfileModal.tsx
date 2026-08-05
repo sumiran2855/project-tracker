@@ -1,25 +1,5 @@
 import { X, Sliders, Check } from 'lucide-react';
-
-interface EditProfileModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  editName: string;
-  setEditName: (val: string) => void;
-  editEmail: string;
-  setEditEmail: (val: string) => void;
-  editRole: string;
-  setEditRole: (val: string) => void;
-  editLocation: string;
-  setEditLocation: (val: string) => void;
-  editDepartment: string;
-  setEditDepartment: (val: string) => void;
-  editSkills: string[];
-  newSkillText: string;
-  setNewSkillText: (val: string) => void;
-  onAddSkill: (e: React.KeyboardEvent) => void;
-  onRemoveSkill: (skill: string) => void;
-  onSave: (e: React.FormEvent) => Promise<void>;
-}
+import type { EditProfileModalProps } from '@/types/profile.types';
 
 export function EditProfileModal({
   isOpen,

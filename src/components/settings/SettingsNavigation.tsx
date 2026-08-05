@@ -1,13 +1,6 @@
-import React from 'react';
 import { User, Bell, Sliders, Database } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-type TabType = 'profile' | 'notifications' | 'workspace' | 'data';
-
-interface SettingsNavigationProps {
-  activeTab: TabType;
-  setActiveTab: (tab: TabType) => void;
-}
+import type { TabType, SettingsNavigationProps } from '@/types/settings.types';
 
 export function SettingsNavigation({
   activeTab,

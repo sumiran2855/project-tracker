@@ -1,21 +1,5 @@
-import React from 'react';
 import { Search, ChevronDown } from 'lucide-react';
-
-interface ProjectOption {
-  id: string;
-  name: string;
-}
-
-interface SprintFiltersProps {
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  filterProject: string;
-  setFilterProject: (project: string) => void;
-  filterType: string;
-  setFilterType: (type: string) => void;
-  projects: ProjectOption[];
-  filteredCount: number;
-}
+import type { SprintFiltersProps } from '@/types/sprint.types';
 
 export function SprintFilters({
   searchQuery,

@@ -1,12 +1,6 @@
 import { Columns, ListTodo, CalendarDays, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface ProjectTasksTabControllerProps {
-  activeTab: 'kanban' | 'list' | 'timeline';
-  setActiveTab: (val: 'kanban' | 'list' | 'timeline') => void;
-  canCreateTask: boolean;
-  onAddTaskClick: () => void;
-}
+import type { ProjectTasksTabControllerProps } from '@/types/tasks.types';
 
 export function ProjectTasksTabController({
   activeTab,

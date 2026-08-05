@@ -1,29 +1,7 @@
 import { X, Bookmark, ChevronDown, Clock, CalendarDays, CheckSquare, CheckCircle2, MessageSquare, Trash2 } from 'lucide-react';
 import { cn, formatCommentTime, getCommentTimestamp } from '@/lib/utils';
 import { updateTaskAction } from '@/actions/tasks';
-import type { Task } from '@/types/tasks.types';
-
-interface TaskDetailDrawerProps {
-  selectedTask: Task;
-  onClose: () => void;
-  isClient: boolean;
-  canEditHours: boolean;
-  canDeleteTask: boolean;
-  tasks: Task[];
-  saveTasks: (t: Task[]) => void;
-  onMoveTask: (taskId: string, targetStatus: Task['status']) => void;
-  setSelectedTask: (task: Task | null) => void;
-  onDeleteTask: (taskId: string) => void;
-  newSubtaskTitle: string;
-  setNewSubtaskTitle: (v: string) => void;
-  newCommentText: string;
-  setNewCommentText: (v: string) => void;
-  onAddSubtask: (e: React.FormEvent) => void;
-  onToggleSubtask: (subId: string) => void;
-  onDeleteSubtask: (subId: string) => void;
-  onAddComment: (e: React.FormEvent) => void;
-  user: any;
-}
+import type { Task, ProjectDetailTaskDetailDrawerProps } from '@/types/tasks.types';
 
 export function TaskDetailDrawer({
   selectedTask,
@@ -45,7 +23,7 @@ export function TaskDetailDrawer({
   onDeleteSubtask,
   onAddComment,
   user,
-}: TaskDetailDrawerProps) {
+}: ProjectDetailTaskDetailDrawerProps) {
   const initials = user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2) : 'DU';
 
   return (

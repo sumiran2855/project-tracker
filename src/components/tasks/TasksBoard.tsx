@@ -1,19 +1,6 @@
-import React from 'react';
 import { Plus, CheckSquare, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { GlobalTask } from '@/services/useTasksService';
-import type { Task } from '@/types/tasks.types';
-
-interface TasksBoardProps {
-  filteredTasks: GlobalTask[];
-  isClient: boolean;
-  canCreateTask: boolean;
-  setIsTaskModalOpen: (open: boolean) => void;
-  setNewTaskStatus: (status: Task['status']) => void;
-  handleDragStart: (e: React.DragEvent, taskId: string) => void;
-  handleDrop: (e: React.DragEvent, targetStatus: Task['status']) => void;
-  setSelectedTask: (task: GlobalTask) => void;
-}
+import type { Task, GlobalTask, TasksBoardProps } from '@/types/tasks.types';
 
 export function TasksBoard({
   filteredTasks,

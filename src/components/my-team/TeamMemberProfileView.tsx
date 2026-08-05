@@ -1,12 +1,5 @@
 import { ArrowLeft, Briefcase, User, Mail, Award, FileText, Folder, TrendingUp } from 'lucide-react';
-import type { TeamMember } from '@/services/useMyTeamService';
-
-interface TeamMemberProfileViewProps {
-  member: TeamMember;
-  onBack: () => void;
-  getInitials: (name: string) => string;
-  getBgColor: (name: string) => string;
-}
+import type { TeamMemberProfileViewProps } from '@/types/my-team.types';
 
 export function TeamMemberProfileView({
   member,

@@ -1,13 +1,5 @@
-import React from 'react';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
-import type { GlobalTask } from '@/services/useTasksService';
-
-interface TasksCalendarProps {
-  filteredTasks: GlobalTask[];
-  currentCalendarDate: Date;
-  setCurrentCalendarDate: (date: Date) => void;
-  setSelectedTask: (task: GlobalTask) => void;
-}
+import type { GlobalTask, TasksCalendarProps } from '@/types/tasks.types';
 
 export function TasksCalendar({
   filteredTasks,

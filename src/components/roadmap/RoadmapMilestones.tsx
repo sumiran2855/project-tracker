@@ -1,17 +1,6 @@
-import React from 'react';
 import { Milestone, CheckCircle2, Calendar, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Project, MilestoneItem } from '@/services/useRoadmapService';
-
-interface RoadmapMilestonesProps {
-  filteredMilestones: MilestoneItem[];
-  completedMilestones: number;
-  totalMilestones: number;
-  projects: Project[];
-  canManageRoadmap: boolean;
-  handleToggleMilestone: (id: string) => void;
-  handleDeleteMilestone: (id: string) => void;
-}
+import type { RoadmapMilestonesProps } from '@/types/roadmap.types';
 
 export function RoadmapMilestones({
   filteredMilestones,

@@ -1,15 +1,6 @@
 import { Users, Plus, Trash2, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Member } from '@/services/useProfileService';
-
-interface CollaboratorsPanelProps {
-  collabs: Member[];
-  isAdmin: boolean;
-  lastLogin?: string;
-  onManageClick: () => void;
-  onDeleteCollab: (name: string) => Promise<void>;
-  onCopyInviteLink: () => Promise<void>;
-}
+import type { CollaboratorsPanelProps } from '@/types/profile.types';
 
 export function CollaboratorsPanel({
   collabs,

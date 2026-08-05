@@ -1,19 +1,5 @@
-import React from 'react';
 import { CalendarDays, X, ChevronDown } from 'lucide-react';
-import { Project } from '@/services/useRoadmapService';
-
-interface EditProjectModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  project: Project | null;
-  editStartDate: string;
-  setEditStartDate: (val: string) => void;
-  editDueDate: string;
-  setEditDueDate: (val: string) => void;
-  editQuarter: Project['targetQuarter'];
-  setEditQuarter: (val: Project['targetQuarter']) => void;
-  handleSaveProjectDates: (e: React.FormEvent) => void;
-}
+import type { EditProjectModalProps } from '@/types/projects.types';
 
 export function EditProjectModal({
   isOpen,

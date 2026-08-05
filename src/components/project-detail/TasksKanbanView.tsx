@@ -1,17 +1,6 @@
 import { Clock, Plus, CheckSquare, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Task } from '@/types/tasks.types';
-
-interface TasksKanbanViewProps {
-  displayTasks: Task[];
-  isClient: boolean;
-  canCreateTask: boolean;
-  onDragStart: (e: React.DragEvent, id: string) => void;
-  onDrop: (e: React.DragEvent, status: Task['status']) => void;
-  onSelectTask: (task: Task) => void;
-  onAddTaskClick: (status: Task['status']) => void;
-  getPriorityColor: (prio: Task['priority']) => string;
-}
+import type { Task, TasksKanbanViewProps } from '@/types/tasks.types';
 
 export function TasksKanbanView({
   displayTasks,

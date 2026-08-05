@@ -1,12 +1,5 @@
-import React from 'react';
 import { Map, Plus, Sparkles } from 'lucide-react';
-import { Project } from '@/services/useRoadmapService';
-
-interface RoadmapHeaderProps {
-  canManageRoadmap: boolean;
-  projectsCount: number;
-  onOpenMilestoneModal: () => void;
-}
+import type { RoadmapHeaderProps } from '@/types/roadmap.types';
 
 export function RoadmapHeader({
   canManageRoadmap,

@@ -1,15 +1,7 @@
-import React from 'react';
 import { Folder, PieChart, User, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { ReportsHoursAnalyticsProps } from '@/types/reports.types';
 import { getWidgetTheme } from '@/services/useReportsHoursService';
-
-interface ReportsHoursAnalyticsProps {
-  projectBreakdown: { name: string; hours: number }[];
-  totalHours: number;
-  uniqueLoggedProjectsReport: string[];
-  employeeBreakdown: { name: string; hours: number }[];
-  dayBreakdown: { date: Date; dateStr: string; hours: number }[];
-}
 
 export function ReportsHoursAnalytics({
   projectBreakdown,

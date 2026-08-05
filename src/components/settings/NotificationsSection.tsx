@@ -1,12 +1,6 @@
-import React from 'react';
 import { Mail, Monitor } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { NotificationPrefs } from '@/types/auth.types';
-
-interface NotificationsSectionProps {
-  notifications: NotificationPrefs;
-  toggleNotification: (key: keyof NotificationPrefs) => void;
-}
+import type { NotificationsSectionProps } from '@/types/settings.types';
 
 export function NotificationsSection({
   notifications,

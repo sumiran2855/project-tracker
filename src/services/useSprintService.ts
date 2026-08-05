@@ -8,30 +8,8 @@ import { getCurrentWeekBounds, isItemInSprint } from '@/lib/utils';
 import type { Task, Subtask } from '@/types/tasks.types';
 import type { Issue } from '@/types/issues.types';
 
-export interface SprintItem {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  priority: string;
-  dueDate: string;
-  startDate?: string;
-  assignees: any[];
-  actualHours?: number;
-  workLogs?: any[];
-  comments?: any[];
-  projectId?: string;
-  projectName?: string;
-  itemType: 'task' | 'issue';
-  // Issue specific
-  type?: string;
-  commentsCount?: number;
-  relatedTaskId?: string;
-  relatedTaskTitle?: string;
-  attachments?: string[];
-  // Task specific
-  subtasks?: any[];
-}
+import type { SprintItem } from '@/types/sprint.types';
+
 
 export function getAttachmentUrl(path: string) {
   if (!path) return '';

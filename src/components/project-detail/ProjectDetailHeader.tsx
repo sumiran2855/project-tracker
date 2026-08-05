@@ -1,22 +1,6 @@
-import { ArrowLeft, ChevronDown, Pencil, Calendar, Sparkles } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Pencil, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface ProjectDetailHeaderProps {
-  project: {
-    id: string;
-    name: string;
-    description: string;
-    status: 'In Progress' | 'Completed' | 'Planning' | 'In Review';
-    dueDate: string;
-    tags: string[];
-    techStack?: string[];
-  };
-  isEmployee: boolean;
-  onBackToHub: () => void;
-  onUpdateStatus: (val: any) => void;
-  onEditDetailsClick: () => void;
-  getProjectStatusBadge: (status: any) => string;
-}
+import type { ProjectDetailHeaderProps } from '@/types/projects.types';
 
 export function ProjectDetailHeader({
   project,

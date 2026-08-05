@@ -1,16 +1,7 @@
 import { Plus, Clock, Bookmark } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Issue } from '@/types/issues.types';
+import type { Issue, IssuesBoardViewProps } from '@/types/issues.types';
 
-interface IssuesBoardViewProps {
-  filteredIssues: Issue[];
-  isClient: boolean;
-  handleDragStart: (e: React.DragEvent, issueId: string) => void;
-  handleDrop: (e: React.DragEvent, targetStatus: Issue['status']) => void;
-  handleCardClick: (issue: Issue) => void;
-  setModalStatus: (status: Issue['status']) => void;
-  setIsModalOpen: (isOpen: boolean) => void;
-}
 
 export function getPriorityColor(prio: Issue['priority']) {
   switch (prio) {

@@ -1,26 +1,7 @@
 import { X, Users, Plus, Check, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Employee } from '@/types/projects.types';
-import type { Member } from '@/services/useProfileService';
+import type { ManageCollaboratorsModalProps } from '@/types/profile.types';
 import { bgOptions } from '@/services/useProfileService';
-
-interface ManageCollaboratorsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  userEmail?: string;
-  systemEmployees: Employee[];
-  selectedColleagueId: string;
-  setSelectedColleagueId: (val: string) => void;
-  newCollabRole: string;
-  setNewCollabName: (val: string) => void;
-  setNewCollabRole: (val: string) => void;
-  newCollabBg: string;
-  setNewCollabBg: (val: string) => void;
-  isAddingColleague: boolean;
-  collabs: Member[];
-  onAddCollaborator: (e: React.FormEvent) => Promise<void>;
-  onDeleteCollab: (name: string) => Promise<void>;
-}
 
 export function ManageCollaboratorsModal({
   isOpen,

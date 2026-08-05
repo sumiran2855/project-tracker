@@ -1,13 +1,6 @@
 import { AlertCircle, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface FeedbackModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  message: string;
-  type: 'success' | 'error';
-}
+import type { FeedbackModalProps } from '@/types/profile.types';
 
 export function FeedbackModal({
   isOpen,

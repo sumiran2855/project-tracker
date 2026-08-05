@@ -1,32 +1,5 @@
 import { ArrowLeft, Save, X, Search, Plus, Briefcase, User, Folder } from 'lucide-react';
-import type { ManagerData } from '@/services/useManagerAssignmentsService';
-
-interface ManagerAssignmentEditorProps {
-  selectedManager: ManagerData | null;
-  saving: boolean;
-  assignedTeamLeadIds: string[];
-  setAssignedTeamLeadIds: React.Dispatch<React.SetStateAction<string[]>>;
-  assignedEmployeeIds: string[];
-  setAssignedEmployeeIds: React.Dispatch<React.SetStateAction<string[]>>;
-  teamLeadSearch: string;
-  setTeamLeadSearch: (val: string) => void;
-  employeeSearch: string;
-  setEmployeeSearch: (val: string) => void;
-  showTeamLeadDropdown: boolean;
-  setShowTeamLeadDropdown: (show: boolean) => void;
-  showEmployeeDropdown: boolean;
-  setShowEmployeeDropdown: (show: boolean) => void;
-  availableTeamLeads: any[];
-  availableEmployees: any[];
-  allUsers: any[];
-  managers: ManagerData[];
-  selectedManagerId: string | null;
-  handleSave: () => Promise<void>;
-  setSelectedManagerId: (id: string | null) => void;
-  getInitials: (name: string) => string;
-  getGradient: (name: string) => string;
-  getBgColor: (name: string) => string;
-}
+import type { ManagerAssignmentEditorProps } from '@/types/manager-assignments.types';
 
 export function ManagerAssignmentEditor({
   selectedManager,

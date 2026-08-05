@@ -1,12 +1,5 @@
-import React from 'react';
 import { cn } from '@/lib/utils';
-import type { SprintItem } from '@/services/useSprintService';
-
-interface SprintSpreadsheetProps {
-  filteredSprintItems: SprintItem[];
-  monday: Date;
-  handleItemClick: (item: SprintItem) => void;
-}
+import type { SprintSpreadsheetProps } from '@/types/sprint.types';
 
 export function SprintSpreadsheet({
   filteredSprintItems,

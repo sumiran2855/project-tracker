@@ -1,13 +1,5 @@
-import React from 'react';
 import { Sparkles, CheckSquare, Plus } from 'lucide-react';
-import type { Project } from '@/services/useTasksService';
-
-interface TasksHeaderProps {
-  canCreateTask: boolean;
-  projects: Project[];
-  setNewTaskProject: (projectId: string) => void;
-  setIsTaskModalOpen: (open: boolean) => void;
-}
+import type { TasksHeaderProps } from '@/types/tasks.types';
 
 export function TasksHeader({
   canCreateTask,

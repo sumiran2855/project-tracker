@@ -1,9 +1,5 @@
-import React from 'react';
 import { Database, RefreshCcw } from 'lucide-react';
-
-interface DataSectionProps {
-  handleResetData: () => void;
-}
+import type { DataSectionProps } from '@/types/settings.types';
 
 export function DataSection({
   handleResetData,

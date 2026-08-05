@@ -1,10 +1,5 @@
-import React from 'react';
 import { cn } from '@/lib/utils';
-import { TeamStats } from '@/services/useReportsService';
-
-interface TeamCapacityListProps {
-  teamStatsList: TeamStats[];
-}
+import type { TeamCapacityListProps } from '@/types/reports.types';
 
 export function TeamCapacityList({ teamStatsList }: TeamCapacityListProps) {
   return (

@@ -1,9 +1,8 @@
-import React from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { 
-  Bookmark, 
-  X, 
-  Clock, 
+import {
+  Bookmark,
+  X,
+  Clock,
   ChevronDown, 
   Trash2, 
   UploadCloud, 
@@ -11,34 +10,8 @@ import {
   MessageSquare 
 } from 'lucide-react';
 import { cn, formatCommentTime, getCommentTimestamp } from '@/lib/utils';
-import { getAttachmentUrl, type SprintItem } from '@/services/useSprintService';
-import type { Task } from '@/types/tasks.types';
-
-interface SprintDetailDrawerProps {
-  isOpen: boolean;
-  activeDetailItem: SprintItem | null;
-  onClose: () => void;
-  isClient: boolean;
-  canEditHours: boolean;
-  tasks: Task[];
-  user: any;
-  newCommentText: string;
-  setNewCommentText: (text: string) => void;
-  newSubtaskText: string;
-  setNewSubtaskText: (text: string) => void;
-  uploadingImage: boolean;
-  handleUpdateStatus: (newStatus: string) => void;
-  handleUpdatePriority: (newPriority: string) => void;
-  handleUpdateTargetDate: (newVal: string) => void;
-  handleSaveHoursValue: () => void;
-  handleUpdateRelatedTask: (newTaskId: string) => void;
-  handleAddAttachment: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleRemoveAttachment: (urlToRemove: string) => void;
-  handleAddComment: () => void;
-  handleToggleSubtask: (subId: string) => void;
-  handleAddSubtask: () => void;
-  handleDeleteActiveItem: () => void;
-}
+import { getAttachmentUrl } from '@/services/useSprintService';
+import type { SprintDetailDrawerProps } from '@/types/sprint.types';
 
 export function SprintDetailDrawer({
   isOpen,

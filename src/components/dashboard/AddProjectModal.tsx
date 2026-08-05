@@ -5,14 +5,8 @@ import { X, ChevronDown, Folder, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createProjectAction, updateProjectAction } from '@/actions/projects';
 import { useUser } from '@/contexts/UserContext';
+import type { AddProjectModalProps } from '@/types/projects.types';
 
-interface AddProjectModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  availableMembers: any[];
-  onSuccess?: () => void;
-  projectToEdit?: any;
-}
 
 export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, projectToEdit }: AddProjectModalProps) {
   const { user } = useUser();

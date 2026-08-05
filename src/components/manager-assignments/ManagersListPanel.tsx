@@ -1,16 +1,5 @@
 import { Users, Search, X, ChevronRight, Briefcase, User } from 'lucide-react';
-import type { ManagerData } from '@/services/useManagerAssignmentsService';
-
-interface ManagersListPanelProps {
-  managers: ManagerData[];
-  filteredManagers: ManagerData[];
-  managerSearch: string;
-  setManagerSearch: (search: string) => void;
-  selectedManagerId: string | null;
-  setSelectedManagerId: (id: string | null) => void;
-  getInitials: (name: string) => string;
-  getGradient: (name: string) => string;
-}
+import type { ManagersListPanelProps } from '@/types/manager-assignments.types';
 
 export function ManagersListPanel({
   managers,

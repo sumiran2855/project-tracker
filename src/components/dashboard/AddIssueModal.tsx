@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { createIssueAction, uploadIssueAttachmentAction } from '@/actions/issues';
 import { getTasksByProjectAction } from '@/actions/tasks';
 import { useUser } from '@/contexts/UserContext';
-import { Issue } from '@/types/issues.types';
+import { Issue, AddIssueModalProps } from '@/types/issues.types';
 
 function getAttachmentUrl(path: string) {
   if (!path) return '';
@@ -18,15 +18,6 @@ function getAttachmentUrl(path: string) {
   return `${serverBase}${path.startsWith('/') ? '' : '/'}${path}`;
 }
 
-interface AddIssueModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  projects: any[];
-  availableMembers: any[];
-  onSuccess?: () => void;
-  defaultType?: 'Bug' | 'Security' | 'Improvement' | 'Task';
-  defaultStatus?: Issue['status'];
-}
 
 export function AddIssueModal({ isOpen, onClose, projects, availableMembers, onSuccess, defaultType = 'Bug', defaultStatus = 'Open' }: AddIssueModalProps) {
   const { user } = useUser();

@@ -1,22 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getManagerTeamAction } from '@/actions/managers';
+import type { TeamMember } from '@/types/my-team.types';
 
-export interface ProjectInfo {
-  id: string;
-  name: string;
-  status: string;
-}
-
-export interface TeamMember {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  status: string;
-  skills?: string[];
-  projects: ProjectInfo[];
-  totalProjects: number;
-}
 
 export function useMyTeamService() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);

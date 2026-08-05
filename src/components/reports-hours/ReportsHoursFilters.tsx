@@ -1,19 +1,6 @@
-import React from 'react';
 import { Calendar, ChevronDown, Search, X, PieChart, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface ReportsHoursFiltersProps {
-  presetFilter: string;
-  setPresetFilter: (val: string) => void;
-  customStartDate: string;
-  setCustomStartDate: (val: string) => void;
-  customEndDate: string;
-  setCustomEndDate: (val: string) => void;
-  searchText: string;
-  setSearchText: (val: string) => void;
-  activeTab: 'analytics' | 'ledger';
-  setActiveTab: (val: 'analytics' | 'ledger') => void;
-}
+import type { ReportsHoursFiltersProps } from '@/types/reports.types';
 
 export function ReportsHoursFilters({
   presetFilter,

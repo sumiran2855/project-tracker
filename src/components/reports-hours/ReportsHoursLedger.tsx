@@ -1,17 +1,6 @@
-import React from 'react';
 import { BarChart3, Filter, ChevronDown, RefreshCw, Folder, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface ReportsHoursLedgerProps {
-  loading: boolean;
-  sortBy: string;
-  setSortBy: (val: string) => void;
-  paginatedLogs: any[];
-  filteredLogs: any[];
-  currentPage: number;
-  setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
-  totalPages: number;
-}
+import type { ReportsHoursLedgerProps } from '@/types/reports.types';
 
 export function ReportsHoursLedger({
   loading,

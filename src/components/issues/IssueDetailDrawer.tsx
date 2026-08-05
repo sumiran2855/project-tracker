@@ -2,29 +2,8 @@ import { useState } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Bookmark, X, ChevronDown, Clock, UploadCloud, MessageSquare, Trash2 } from 'lucide-react';
 import { cn, formatCommentTime, getCommentTimestamp } from '@/lib/utils';
-import type { Issue } from '@/types/issues.types';
+import type { Issue, IssueDetailDrawerProps } from '@/types/issues.types';
 
-interface IssueDetailDrawerProps {
-  activeDetailItem: any | null;
-  onClose: () => void;
-  isClient: boolean;
-  canEditHours: boolean;
-  activeProjectTasks: any[];
-  uploadingImage: boolean;
-  user: any;
-  newCommentText: string;
-  setNewCommentText: (text: string) => void;
-  handleUpdateStatus: (status: Issue['status']) => void;
-  handleUpdatePriority: (priority: Issue['priority']) => void;
-  handleUpdateType: (type: Issue['type']) => void;
-  handleUpdateTargetDate: (date: string) => void;
-  handleUpdateRelatedTask: (taskId: string) => void;
-  handleAddAttachment: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleRemoveAttachment: (url: string) => void;
-  handleLogHours: (hours: number) => Promise<boolean>;
-  handleAddComment: () => void;
-  handleDeleteActiveItem: () => void;
-}
 
 function getAttachmentUrl(path: string) {
   if (!path) return '';

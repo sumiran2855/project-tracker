@@ -5,15 +5,8 @@ import { X, ChevronDown, ListTodo, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createTaskAction } from '@/actions/tasks';
 import { useUser } from '@/contexts/UserContext';
+import type { AddTaskModalProps } from '@/types/tasks.types';
 
-interface AddTaskModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  projects: any[];
-  availableMembers: any[];
-  onSuccess?: () => void;
-  defaultProjectId?: string;
-}
 
 export function AddTaskModal({
   isOpen,

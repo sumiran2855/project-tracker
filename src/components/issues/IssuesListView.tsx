@@ -1,15 +1,8 @@
 import { AlertCircle, Trash2, Folder, Bookmark } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Issue } from '@/types/issues.types';
+import type { Issue, IssuesListViewProps } from '@/types/issues.types';
 import { getPriorityColor, getTypeStyle } from './IssuesBoardView';
 
-interface IssuesListViewProps {
-  filteredIssues: Issue[];
-  canDeleteIssue: boolean;
-  handleToggleStatus: (issue: Issue, e: React.MouseEvent) => void;
-  handleCardClick: (issue: Issue) => void;
-  handleDeleteIssue: (id: string, e: React.MouseEvent) => void;
-}
 
 export function IssuesListView({
   filteredIssues,

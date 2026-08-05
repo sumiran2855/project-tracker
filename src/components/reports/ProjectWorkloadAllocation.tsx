@@ -1,11 +1,6 @@
-import React from 'react';
 import { Folder } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ProjectStats } from '@/services/useReportsService';
-
-interface ProjectWorkloadAllocationProps {
-  projectStatsList: ProjectStats[];
-}
+import type { ProjectWorkloadAllocationProps } from '@/types/reports.types';
 
 export function ProjectWorkloadAllocation({ projectStatsList }: ProjectWorkloadAllocationProps) {
   return (

@@ -1,23 +1,6 @@
-import React from 'react';
 import { User } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface MemberAnalytic {
-  id: string;
-  name: string;
-  email?: string;
-  role?: string;
-  initials: string;
-  bg?: string;
-  assignedCount: number;
-  completedCount: number;
-  pct: number;
-}
-
-interface SprintWorkloadProps {
-  memberAnalytics: MemberAnalytic[];
-  setSelectedEmployee: (employee: any) => void;
-}
+import type { SprintWorkloadProps } from '@/types/sprint.types';
 
 export function SprintWorkload({
   memberAnalytics,

@@ -1,11 +1,5 @@
-import React from 'react';
 import { Check } from 'lucide-react';
-import type { WorkspacePrefs } from '@/types/auth.types';
-
-interface WorkspaceSectionProps {
-  workspace: WorkspacePrefs;
-  setWorkspace: React.Dispatch<React.SetStateAction<WorkspacePrefs>>;
-}
+import type { WorkspaceSectionProps } from '@/types/settings.types';
 
 export function WorkspaceSection({
   workspace,

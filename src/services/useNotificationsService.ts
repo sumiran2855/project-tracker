@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchLiveNotifications, NotificationItem } from '@/lib/sprintLoader';
+import { fetchLiveNotifications } from '@/lib/sprintLoader';
+import { NotificationItem } from '@/types/notifications.types';
 import { useUser } from '@/contexts/UserContext';
 import { updateNotificationStateAction } from '@/actions/auth';
 
@@ -194,4 +195,4 @@ export function useNotificationsService() {
     handleClearAll
   };
 }
-export type { NotificationItem };
+

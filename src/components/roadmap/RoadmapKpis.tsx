@@ -1,13 +1,5 @@
-import React from 'react';
 import { FolderOpen, Layers, Milestone, TrendingUp } from 'lucide-react';
-
-interface RoadmapKpisProps {
-  totalInitiatives: number;
-  activeQuarters: number;
-  completedMilestones: number;
-  totalMilestones: number;
-  onTrackInitiatives: number;
-}
+import type { RoadmapKpisProps } from '@/types/roadmap.types';
 
 export function RoadmapKpis({
   totalInitiatives,

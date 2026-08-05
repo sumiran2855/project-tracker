@@ -1,17 +1,5 @@
-import React from 'react';
 import { Check, AlertCircle, Loader2, Save } from 'lucide-react';
-
-interface ProfileSectionProps {
-  user: any;
-  profileName: string;
-  setProfileName: (val: string) => void;
-  profileEmail: string;
-  setProfileEmail: (val: string) => void;
-  isSavingProfile: boolean;
-  profileSaveSuccess: boolean;
-  profileSaveError: string;
-  handleSaveProfile: (e: React.FormEvent) => void;
-}
+import type { ProfileSectionProps } from '@/types/settings.types';
 
 export function ProfileSection({
   user,

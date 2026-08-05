@@ -1,18 +1,7 @@
-import React from 'react';
 import { Milestone, Edit2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Project, MilestoneItem } from '@/services/useRoadmapService';
-
-interface RoadmapQuarterlyBoardProps {
-  filteredProjects: Project[];
-  milestones: MilestoneItem[];
-  isEmployee: boolean;
-  handleDragStart: (e: React.DragEvent, projectId: string) => void;
-  handleDrop: (e: React.DragEvent, targetQuarter: Project['targetQuarter']) => void;
-  handleDragOver: (e: React.DragEvent) => void;
-  onOpenEditProjectModal: (project: Project) => void;
-  getStatusStyles: (status: Project['status']) => string;
-}
+import type { RoadmapQuarterlyBoardProps } from '@/types/roadmap.types';
+import type { Project } from '@/types/projects.types';
 
 export function RoadmapQuarterlyBoard({
   filteredProjects,

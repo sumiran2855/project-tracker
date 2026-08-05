@@ -1,15 +1,5 @@
-import React from 'react';
 import { Clock3 } from 'lucide-react';
-
-interface WorkshopHoursModalProps {
-  showHoursModal: boolean;
-  hoursModalTarget: { id: string; type: 'task' | 'issue'; newStatus: string } | null;
-  inputHours: string;
-  setInputHours: (val: string) => void;
-  handleSaveTransitionHours: () => void;
-  setShowHoursModal: (val: boolean) => void;
-  setHoursModalTarget: (val: any) => void;
-}
+import type { WorkshopHoursModalProps } from '@/types/workshop.types';
 
 export function WorkshopHoursModal({
   showHoursModal,

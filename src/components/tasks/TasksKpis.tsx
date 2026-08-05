@@ -1,14 +1,6 @@
-import React from 'react';
 import { ListTodo, Clock, CheckSquare, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface TasksKpisProps {
-  totalCount: number;
-  pendingCount: number;
-  inProgressCount: number;
-  inReviewCount: number;
-  doneCount: number;
-}
+import type { TasksKpisProps } from '@/types/tasks.types';
 
 export function TasksKpis({
   totalCount,

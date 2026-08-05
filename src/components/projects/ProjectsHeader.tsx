@@ -1,9 +1,5 @@
 import { Sparkles, Folder, Plus } from 'lucide-react';
-
-interface ProjectsHeaderProps {
-  canCreateProject: boolean;
-  onNewProjectClick: () => void;
-}
+import type { ProjectsHeaderProps } from '@/types/projects.types';
 
 export function ProjectsHeader({
   canCreateProject,

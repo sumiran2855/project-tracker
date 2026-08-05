@@ -62,61 +62,8 @@ export function getProjColor(projName: string, allProjNames: string[]) {
   return GRADIENT_PALETTE[(idx >= 0 ? idx : 0) % GRADIENT_PALETTE.length];
 }
 
-export interface Member {
-  name: string;
-  initials: string;
-  bg: string;
-}
+import type { Member, Project, Task, ProjectStats, PriorityStats, TeamStats, DayLog } from '@/types/reports.types';
 
-export interface Project {
-  id: string;
-  name: string;
-  dueDate: string;
-  members: Member[];
-  status: string;
-}
-
-export interface Task {
-  id: string;
-  title: string;
-  status: 'To Do' | 'In Progress' | 'In Review' | 'Done';
-  priority: 'Low' | 'Medium' | 'High' | 'Urgent';
-  dueDate: string;
-  assignees: Member[];
-}
-
-export interface ProjectStats {
-  id: string;
-  name: string;
-  totalTasks: number;
-  completedTasks: number;
-  progress: number;
-}
-
-export interface PriorityStats {
-  name: string;
-  value: number;
-  color: string;
-  percentage: number;
-}
-
-export interface TeamStats {
-  name: string;
-  initials: string;
-  bg: string;
-  taskCount: number;
-  load: number;
-}
-
-export interface DayLog {
-  day: string;
-  shortLabel?: string;
-  fullDayLabel?: string;
-  dateFormatted?: string;
-  hours: number;
-  projects: { projectName: string; hours: number }[];
-  employees?: { employeeName: string; hours: number }[];
-}
 
 const fallbackTasks: Record<string, Task[]> = {
   '1': [

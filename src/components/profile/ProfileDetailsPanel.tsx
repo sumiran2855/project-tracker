@@ -1,9 +1,5 @@
 import { User, Mail, Shield, Code, Sparkles } from 'lucide-react';
-import type { UserProfile } from '@/services/useProfileService';
-
-interface ProfileDetailsPanelProps {
-  profile: UserProfile;
-}
+import type { ProfileDetailsPanelProps } from '@/types/profile.types';
 
 export function ProfileDetailsPanel({ profile }: ProfileDetailsPanelProps) {
   return (

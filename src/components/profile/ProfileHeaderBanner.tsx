@@ -1,11 +1,5 @@
 import { Briefcase, MapPin, Shield, Calendar, Sliders } from 'lucide-react';
-import type { UserProfile } from '@/services/useProfileService';
-
-interface ProfileHeaderBannerProps {
-  profile: UserProfile;
-  initials: string;
-  onEditClick: () => void;
-}
+import type { ProfileHeaderBannerProps } from '@/types/profile.types';
 
 export function ProfileHeaderBanner({
   profile,

@@ -1,23 +1,5 @@
-import React from 'react';
 import { Milestone, X, ChevronDown } from 'lucide-react';
-import { Project } from '@/services/useRoadmapService';
-
-interface MilestoneModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  newMilestoneTitle: string;
-  setNewMilestoneTitle: (val: string) => void;
-  newMilestoneDesc: string;
-  setNewMilestoneDesc: (val: string) => void;
-  newMilestoneDueDate: string;
-  setNewMilestoneDueDate: (val: string) => void;
-  newMilestoneProject: string;
-  setNewMilestoneProject: (val: string) => void;
-  newMilestoneAssignee: string;
-  setNewMilestoneAssignee: (val: string) => void;
-  projects: Project[];
-  handleCreateMilestone: (e: React.FormEvent) => void;
-}
+import type { MilestoneModalProps } from '@/types/roadmap.types';
 
 export function MilestoneModal({
   isOpen,

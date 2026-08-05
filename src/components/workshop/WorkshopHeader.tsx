@@ -1,11 +1,5 @@
-import React from 'react';
 import { Sparkles, FolderDot, Download, Plus } from 'lucide-react';
-
-interface WorkshopHeaderProps {
-  exportToCSV: () => void;
-  canCreateProject: boolean;
-  setActiveModal: (modal: 'project' | 'task' | 'issue' | null) => void;
-}
+import type { WorkshopHeaderProps } from '@/types/workshop.types';
 
 export function WorkshopHeader({
   exportToCSV,

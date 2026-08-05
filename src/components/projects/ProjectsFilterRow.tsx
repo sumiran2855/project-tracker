@@ -1,13 +1,5 @@
 import { Search, Filter, X } from 'lucide-react';
-
-interface ProjectsFilterRowProps {
-  searchQuery: string;
-  setSearchQuery: (val: string) => void;
-  statusFilter: string;
-  setStatusFilter: (val: string) => void;
-  sortBy: string;
-  setSortBy: (val: string) => void;
-}
+import type { ProjectsFilterRowProps } from '@/types/projects.types';
 
 export function ProjectsFilterRow({
   searchQuery,

@@ -1,12 +1,5 @@
-import React from 'react';
 import { Check, AlertCircle, Loader2, Save } from 'lucide-react';
-
-interface SettingsFooterProps {
-  isSavingPrefs: boolean;
-  saveSuccess: boolean;
-  prefsSaveError: string;
-  handleSave: () => void;
-}
+import type { SettingsFooterProps } from '@/types/settings.types';
 
 export function SettingsFooter({
   isSavingPrefs,

@@ -2,29 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { getManagersAction, updateManagerAssignmentsAction } from '@/actions/managers';
 import { getEmployeesAction } from '@/actions/projects';
 import { toast } from 'react-toastify';
-
-export interface ProjectInfo {
-  id: string;
-  name: string;
-  status: string;
-}
-
-export interface TeamMember {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  projects: ProjectInfo[];
-}
-
-export interface ManagerData {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  employees: TeamMember[];
-  teamLeads: TeamMember[];
-}
+import type { ManagerData } from '@/types/manager-assignments.types';
 
 export function useManagerAssignmentsService() {
   const [managers, setManagers] = useState<ManagerData[]>([]);

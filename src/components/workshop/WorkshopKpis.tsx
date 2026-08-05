@@ -1,13 +1,5 @@
-import React from 'react';
 import { cn } from '@/lib/utils';
-
-interface WorkshopKpisProps {
-  totalProjects: number;
-  inProgressCount: number;
-  inReviewCount: number;
-  planningCount: number;
-  completedCount: number;
-}
+import type { WorkshopKpisProps } from '@/types/workshop.types';
 
 export function WorkshopKpis({
   totalProjects,

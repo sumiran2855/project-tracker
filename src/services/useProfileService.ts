@@ -9,59 +9,8 @@ import {
 } from '@/actions/auth';
 import { getEmployeesAction } from '@/actions/projects';
 import { fetchAllSprintData } from '@/lib/sprintLoader';
-import type { Employee } from '@/types/projects.types';
-
-export interface Member {
-  name: string;
-  initials: string;
-  bg: string;
-  role: string;
-  email?: string;
-  status?: 'Pending' | 'Accepted';
-}
-
-export interface ProjectStats {
-  assignedTasks: number;
-  completedTasks: number;
-  loggedIssues: number;
-  projectsCount: number;
-
-  totalProjects: number;
-  totalEmployees: number;
-  totalPendingTasks: number;
-  totalActiveIssues: number;
-
-  clientProjectsCount: number;
-  clientTasksCount: number;
-  clientEmployeesCount: number;
-  clientIssuesCount: number;
-}
-
-export interface UserProfile {
-  name: string;
-  email: string;
-  role: string;
-  location: string;
-  department: string;
-  joinDate: string;
-  skills: string[];
-}
-
-export const defaultProfile: UserProfile = {
-  name: 'Sarah Connor',
-  email: 'sarah.connor@cyberdyne.io',
-  role: 'Workspace Administrator',
-  location: 'Los Angeles, CA',
-  department: 'Product Development',
-  joinDate: 'Jan 2026',
-  skills: ['TypeScript', 'Next.js', 'React', 'Tailwind CSS', 'Agile Planning', 'UI Design']
-};
-
-export const defaultCollaborators: Member[] = [
-  { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500', role: 'Senior Developer' },
-  { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500', role: 'DevOps Lead' },
-  { name: 'Emma Watson', initials: 'EW', bg: 'bg-rose-500', role: 'UI/UX Designer' }
-];
+import type { Member, ProjectStats, UserProfile } from '@/types/profile.types';
+import { Employee } from '@/types/projects.types';
 
 export const bgOptions = [
   'bg-indigo-500',
@@ -76,15 +25,15 @@ export function useProfileService() {
   const { user, setUser } = useUser();
 
   const [profile, setProfile] = useState<UserProfile>({
-    name: user?.name || defaultProfile.name,
-    email: user?.email || defaultProfile.email,
-    role: user?.role || defaultProfile.role,
-    location: user?.location || defaultProfile.location,
-    department: user?.department || defaultProfile.department,
-    joinDate: user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : defaultProfile.joinDate,
-    skills: user?.skills || defaultProfile.skills,
+    name: user?.name || "",
+    email: user?.email || "",
+    role: user?.role || "",
+    location: user?.location || "",
+    department: user?.department || "",
+    joinDate: user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "",
+    skills: user?.skills || [],
   });
-  const [collabs, setCollabs] = useState<Member[]>(user?.collaborators && user.collaborators.length > 0 ? user.collaborators : defaultCollaborators);
+  const [collabs, setCollabs] = useState<Member[]>(user?.collaborators && user.collaborators.length > 0 ? user.collaborators : []);
   const [stats, setStats] = useState<ProjectStats>({
     assignedTasks: 0,
     completedTasks: 0,

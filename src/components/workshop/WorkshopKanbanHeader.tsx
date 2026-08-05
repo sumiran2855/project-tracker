@@ -1,16 +1,8 @@
-import React from 'react';
 import { ArrowLeft, FolderDot, RefreshCw, Plus, Bug } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import type { Project } from '@/services/useWorkshopService';
-
-interface WorkshopKanbanHeaderProps {
-  selectedProject: Project;
-  setViewMode: (mode: 'sheet' | 'kanban') => void;
-  handleRefreshKanban: () => void;
-  isEmployee: boolean;
-  setActiveModal: (modal: 'project' | 'task' | 'issue' | null) => void;
-}
+import type { WorkshopKanbanHeaderProps } from '@/types/workshop.types';
+import type { Project } from '@/types/projects.types';
 
 export function WorkshopKanbanHeader({
   selectedProject,

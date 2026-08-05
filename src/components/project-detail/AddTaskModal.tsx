@@ -1,30 +1,6 @@
 import { X, CheckSquare, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Task } from '@/types/tasks.types';
-import type { Employee } from '@/types/projects.types';
-
-interface AddTaskModalProps {
-  onClose: () => void;
-  newTaskTitle: string;
-  setNewTaskTitle: (v: string) => void;
-  newTaskDesc: string;
-  setNewTaskDesc: (v: string) => void;
-  newTaskStatus: Task['status'];
-  setNewTaskStatus: (v: Task['status']) => void;
-  newTaskPriority: Task['priority'];
-  setNewTaskPriority: (v: Task['priority']) => void;
-  newTaskStartDate: string;
-  setNewTaskStartDate: (v: string) => void;
-  newTaskDueDate: string;
-  setNewTaskDueDate: (v: string) => void;
-  newTaskAssignees: string[];
-  setNewTaskAssignees: (v: string[]) => void;
-  isEmployee: boolean;
-  user: any;
-  project: any;
-  availableMembers: Employee[];
-  onCreateTask: (e: React.FormEvent) => void;
-}
+import type { Task, ProjectDetailAddTaskModalProps } from '@/types/tasks.types';
 
 export function AddTaskModal({
   onClose,
@@ -47,7 +23,7 @@ export function AddTaskModal({
   project,
   availableMembers,
   onCreateTask,
-}: AddTaskModalProps) {
+}: ProjectDetailAddTaskModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-955/40 backdrop-blur-md animate-fadeIn">
       <div className="relative w-full max-w-lg bg-white rounded-3xl border border-slate-100 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.12)] p-6 sm:p-8 space-y-6 animate-scaleIn">

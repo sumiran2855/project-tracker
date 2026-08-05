@@ -83,15 +83,8 @@ export async function fetchAllSprintData(): Promise<SprintDataResult> {
   return activeSprintPromise;
 }
 
-export interface NotificationItem {
-  id: string;
-  title: string;
-  description: string;
-  time: string;
-  read: boolean;
-  type: 'task' | 'issue' | 'project' | 'system';
-  rawDate: Date;
-}
+import { NotificationItem } from '@/types/notifications.types';
+
 
 export function getRelativeTimeString(dateStr: string | Date | undefined): string {
   if (!dateStr) return 'Unknown time';

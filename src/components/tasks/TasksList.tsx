@@ -1,16 +1,6 @@
-import React from 'react';
 import { Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { GlobalTask } from '@/services/useTasksService';
-import type { Task } from '@/types/tasks.types';
-
-interface TasksListProps {
-  filteredTasks: GlobalTask[];
-  canDeleteTask: boolean;
-  handleUpdateTask: (task: GlobalTask) => void;
-  handleDeleteTask: (taskId: string) => void;
-  setSelectedTask: (task: GlobalTask) => void;
-}
+import type { Task, TasksListProps } from '@/types/tasks.types';
 
 export function TasksList({
   filteredTasks,

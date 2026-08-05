@@ -12,24 +12,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { cn, formatCommentTime, getCommentTimestamp } from '@/lib/utils';
-import type { GlobalTask } from '@/services/useTasksService';
-import type { Task } from '@/types/tasks.types';
-
-interface TaskDetailDrawerProps {
-  selectedTask: GlobalTask | null;
-  setSelectedTask: (task: GlobalTask | null) => void;
-  isClient: boolean;
-  canEditHours: boolean;
-  canDeleteTask: boolean;
-  newSubtaskTitle: string;
-  setNewSubtaskTitle: (text: string) => void;
-  newCommentText: string;
-  setNewCommentText: (text: string) => void;
-  user: any;
-  handleUpdateTask: (task: GlobalTask) => void;
-  handleDeleteTask: (taskId: string) => void;
-  submitUpdateTask: (task: GlobalTask, hoursInput: number, isAdditional: boolean) => Promise<void>;
-}
+import type { Task, GlobalTask, TasksTaskDetailDrawerProps } from '@/types/tasks.types';
 
 export function TaskDetailDrawer({
   selectedTask,
@@ -45,7 +28,7 @@ export function TaskDetailDrawer({
   handleUpdateTask,
   handleDeleteTask,
   submitUpdateTask,
-}: TaskDetailDrawerProps) {
+}: TasksTaskDetailDrawerProps) {
   if (!selectedTask) return null;
 
   return (

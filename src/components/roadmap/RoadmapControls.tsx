@@ -1,22 +1,6 @@
-import React from 'react';
 import { Search, X, SquareChartGantt, Layers, Milestone } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Project } from '@/services/useRoadmapService';
-
-interface RoadmapControlsProps {
-  activeTab: 'timeline' | 'board' | 'milestones';
-  setActiveTab: (tab: 'timeline' | 'board' | 'milestones') => void;
-  searchQuery: string;
-  setSearchQuery: (val: string) => void;
-  projectFilter: string;
-  setProjectFilter: (val: string) => void;
-  statusFilter: string;
-  setStatusFilter: (val: string) => void;
-  employeeFilter: string;
-  setEmployeeFilter: (val: string) => void;
-  projects: Project[];
-  isEmployee: boolean;
-}
+import type { RoadmapControlsProps } from '@/types/roadmap.types';
 
 export function RoadmapControls({
   activeTab,

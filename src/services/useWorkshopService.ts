@@ -8,59 +8,7 @@ import { getTasksByProjectAction, updateTaskAction, deleteTaskAction } from '@/a
 import type { Task, Subtask, Comment } from '@/types/tasks.types';
 import { getIssuesByProjectAction, updateIssueAction, deleteIssueAction, uploadIssueAttachmentAction } from '@/actions/issues';
 import type { Issue } from '@/types/issues.types';
-
-export interface Member {
-  userId?: string;
-  id?: string;
-  name: string;
-  initials: string;
-  bg: string;
-}
-
-export interface Project {
-  id: string;
-  name: string;
-  description: string;
-  status: 'In Progress' | 'Completed' | 'Planning' | 'In Review';
-  progress: number;
-  tags: string[];
-  tasksCount: number;
-  completedTasks: number;
-  commentsCount: number;
-  attachmentsCount: number;
-  dueDate: string;
-  members: Member[];
-  techStack?: string[];
-  priority?: 'Low' | 'Medium' | 'High' | 'Critical';
-  budget?: string;
-  repositoryUrl?: string;
-  slackChannel?: string;
-  startDate?: string;
-  targetQuarter?: 'Q2 2026' | 'Q3 2026' | 'Q4 2026' | 'Future';
-}
-
-export type ViewMode = 'sheet' | 'kanban';
-
-export interface CardDetailItem {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  priority: string;
-  type?: string;
-  dueDate?: string;
-  startDate?: string;
-  assignees: Member[];
-  actualHours?: number;
-  workLogs?: any[];
-  comments: Comment[];
-  subtasks?: Subtask[];
-  itemType: 'task' | 'issue';
-  relatedTaskId?: string;
-  relatedTaskTitle?: string;
-  attachments?: string[];
-  projectId?: string;
-}
+import type { Project, ViewMode, CardDetailItem } from '@/types/workshop.types';
 
 const fallbackTasks: Record<string, Task[]> = {
   '1': [

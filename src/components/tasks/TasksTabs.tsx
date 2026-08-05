@@ -1,11 +1,6 @@
-import React from 'react';
 import { Columns, ListTodo, CalendarDays } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface TasksTabsProps {
-  activeTab: 'board' | 'list' | 'calendar';
-  setActiveTab: (tab: 'board' | 'list' | 'calendar') => void;
-}
+import type { TasksTabsProps } from '@/types/tasks.types';
 
 export function TasksTabs({
   activeTab,

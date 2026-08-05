@@ -1,21 +1,6 @@
-import React from 'react';
 import { Bookmark, Folder, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { SprintItem } from '@/services/useSprintService';
-
-interface SprintBoardProps {
-  filteredSprintItems: SprintItem[];
-  columns: string[];
-  draggedOverCol: string | null;
-  isClient: boolean;
-  monday: Date;
-  handleDragOver: (e: React.DragEvent, col: string) => void;
-  handleDragLeave: () => void;
-  handleDrop: (e: React.DragEvent, col: string) => void;
-  handleDragStart: (e: React.DragEvent, cardId: string, cardType: 'task' | 'issue') => void;
-  handleItemClick: (item: SprintItem) => void;
-  setSelectedEmployee: (employee: any) => void;
-}
+import type { SprintBoardProps } from '@/types/sprint.types';
 
 export function SprintBoard({
   filteredSprintItems,

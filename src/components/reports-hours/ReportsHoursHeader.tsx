@@ -1,12 +1,6 @@
-import React from 'react';
 import { Clock, RefreshCw, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface ReportsHoursHeaderProps {
-  loading: boolean;
-  onSync: () => void;
-  onBack: () => void;
-}
+import type { ReportsHoursHeaderProps } from '@/types/reports.types';
 
 export function ReportsHoursHeader({ loading, onSync, onBack }: ReportsHoursHeaderProps) {
   return (

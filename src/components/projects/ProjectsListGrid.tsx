@@ -1,16 +1,7 @@
 import Link from 'next/link';
 import { Calendar, MessageSquare, Paperclip, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Project } from '@/services/useProjectsService';
-
-interface ProjectsListGridProps {
-  filteredProjects: Project[];
-  canDeleteProject: boolean;
-  onDeleteProject: (id: string, e: React.MouseEvent) => Promise<void>;
-  getStatusStyles: (status: Project['status']) => string;
-  getPriorityStyles: (priority?: Project['priority']) => string;
-  formatDate: (dateStr: string) => string;
-}
+import type { Project, ProjectsListGridProps } from '@/types/projects.types';
 
 export function ProjectsListGrid({
   filteredProjects,

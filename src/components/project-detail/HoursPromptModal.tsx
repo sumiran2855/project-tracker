@@ -1,12 +1,5 @@
 import { X, Clock } from 'lucide-react';
-import type { Task } from '@/types/tasks.types';
-
-interface HoursPromptModalProps {
-  promptValue: string;
-  setPromptValue: (val: string) => void;
-  onClose: () => void;
-  onConfirm: () => void;
-}
+import type { HoursPromptModalProps } from '@/types/tasks.types';
 
 export function HoursPromptModal({
   promptValue,

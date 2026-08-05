@@ -1,15 +1,5 @@
 import { Building, ChevronDown, ChevronRight, Briefcase, User, Folder } from 'lucide-react';
-import type { ManagerData } from '@/services/useManagerAssignmentsService';
-
-interface CorporateHierarchyTreeProps {
-  managers: ManagerData[];
-  expandedNodes: Record<string, boolean>;
-  toggleNode: (nodeId: string) => void;
-  setSelectedManagerId: (id: string | null) => void;
-  getInitials: (name: string) => string;
-  getGradient: (name: string) => string;
-  getBgColor: (name: string) => string;
-}
+import type { CorporateHierarchyTreeProps } from '@/types/manager-assignments.types';
 
 export function CorporateHierarchyTree({
   managers,

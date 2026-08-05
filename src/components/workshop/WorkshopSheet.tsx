@@ -1,22 +1,7 @@
-import React from 'react';
 import { ArrowUpDown, Folder, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Project } from '@/services/useWorkshopService';
-
-interface WorkshopSheetProps {
-  filteredProjects: Project[];
-  handleSort: (field: 'name' | 'progress' | 'priority' | 'status' | 'dueDate') => void;
-  visibleColumns: {
-    quarter: boolean;
-    priority: boolean;
-    status: boolean;
-    progress: boolean;
-    techStack: boolean;
-    budget: boolean;
-    team: boolean;
-  };
-  handleProjectClick: (project: Project) => void;
-}
+import type { WorkshopSheetProps } from '@/types/workshop.types';
+import type { Project } from '@/types/projects.types';
 
 export function WorkshopSheet({
   filteredProjects,

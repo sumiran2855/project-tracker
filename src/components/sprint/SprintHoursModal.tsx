@@ -1,20 +1,5 @@
-import React from 'react';
 import { Clock } from 'lucide-react';
-
-interface HoursModalTarget {
-  id: string;
-  type: 'task' | 'issue';
-  newStatus: string;
-}
-
-interface SprintHoursModalProps {
-  isOpen: boolean;
-  hoursModalTarget: HoursModalTarget | null;
-  inputHours: string;
-  setInputHours: (hours: string) => void;
-  onClose: () => void;
-  onSave: () => void;
-}
+import type { SprintHoursModalProps } from '@/types/sprint.types';
 
 export function SprintHoursModal({
   isOpen,

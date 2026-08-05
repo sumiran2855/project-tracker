@@ -1,26 +1,5 @@
-import React from 'react';
 import { Search, X, Eye } from 'lucide-react';
-
-interface WorkshopFiltersProps {
-  searchQuery: string;
-  setSearchQuery: (val: string) => void;
-  statusFilter: string;
-  setStatusFilter: (val: string) => void;
-  priorityFilter: string;
-  setPriorityFilter: (val: string) => void;
-  visibleColumns: {
-    quarter: boolean;
-    priority: boolean;
-    status: boolean;
-    progress: boolean;
-    techStack: boolean;
-    budget: boolean;
-    team: boolean;
-  };
-  setVisibleColumns: (cols: any) => void;
-  showColMenu: boolean;
-  setShowColMenu: (val: boolean) => void;
-}
+import type { WorkshopFiltersProps } from '@/types/workshop.types';
 
 export function WorkshopFilters({
   searchQuery,

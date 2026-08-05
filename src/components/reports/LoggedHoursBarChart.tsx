@@ -1,19 +1,7 @@
-import React from 'react';
 import { MoreHorizontal, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { DayLog, getProjColor } from '@/services/useReportsService';
-
-interface LoggedHoursBarChartProps {
-  user: any;
-  router: any;
-  weeklyTimeLogs: DayLog[];
-  dailyCapacity: number;
-  weeklyCapacity: number;
-  isHoursMenuOpen: boolean;
-  setIsHoursMenuOpen: (val: boolean) => void;
-  hoveredHoursIndex: number | null;
-  setHoveredHoursIndex: (idx: number | null) => void;
-}
+import type { LoggedHoursBarChartProps } from '@/types/reports.types';
+import { getProjColor } from '@/services/useReportsService';
 
 export function LoggedHoursBarChart({
   user,

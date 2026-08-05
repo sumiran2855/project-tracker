@@ -1,12 +1,5 @@
-import React from 'react';
 import { Clock, Layers, TrendingUp, Briefcase } from 'lucide-react';
-
-interface ReportsHoursKpisProps {
-  totalHours: number;
-  entriesCount: number;
-  avgDailyHours: number;
-  mostActiveProject: string;
-}
+import type { ReportsHoursKpisProps } from '@/types/reports.types';
 
 export function ReportsHoursKpis({
   totalHours,

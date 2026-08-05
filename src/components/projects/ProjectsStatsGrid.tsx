@@ -1,13 +1,6 @@
 import { FolderOpen, Clock, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface ProjectsStatsGridProps {
-  totalProjects: number;
-  inProgressCount: number;
-  inReviewCount: number;
-  planningCount: number;
-  completedCount: number;
-}
+import type { ProjectsStatsGridProps } from '@/types/projects.types';
 
 export function ProjectsStatsGrid({
   totalProjects,

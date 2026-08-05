@@ -1,36 +1,8 @@
-import React from 'react';
 import { Bookmark, X, ChevronDown, Calendar, Clock, UploadCloud, Trash2, CheckSquare, MessageSquare } from 'lucide-react';
 import { cn, formatCommentTime, getCommentTimestamp } from '@/lib/utils';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import type { CardDetailItem, Project, Member } from '@/services/useWorkshopService';
+import type { WorkshopDetailDrawerProps } from '@/types/workshop.types';
 import { getAttachmentUrl } from '@/services/useWorkshopService';
-import type { Task } from '@/types/tasks.types';
-
-interface WorkshopDetailDrawerProps {
-  activeDetailItem: CardDetailItem | null;
-  setActiveDetailItem: (item: CardDetailItem | null) => void;
-  isClient: boolean;
-  canEditHours: boolean;
-  user: any;
-  selectedProjTasks: Task[];
-  handleUpdateStatus: (status: any) => Promise<void>;
-  handleUpdatePriority: (priority: any) => Promise<void>;
-  handleUpdateStartDate: (val: string) => Promise<void>;
-  handleSaveHoursValue: (hours: number) => Promise<void>;
-  handleUpdateTargetDate: (val: string) => Promise<void>;
-  handleUpdateRelatedTask: (val: string) => Promise<void>;
-  handleAddAttachment: (files: FileList | null) => Promise<void>;
-  handleRemoveAttachment: (url: string) => Promise<void>;
-  handleToggleSubtask: (subId: string) => Promise<void>;
-  handleAddSubtask: () => Promise<void>;
-  handleAddComment: () => Promise<void>;
-  handleDeleteActiveItem: () => Promise<boolean>;
-  newSubtaskText: string;
-  setNewSubtaskText: (val: string) => void;
-  newCommentText: string;
-  setNewCommentText: (val: string) => void;
-  uploadingImage: boolean;
-}
 
 export function WorkshopDetailDrawer({
   activeDetailItem,

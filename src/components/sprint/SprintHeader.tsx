@@ -1,12 +1,6 @@
-import React from 'react';
 import { Sparkles, Calendar, FlameKindling, Kanban, Grid } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface SprintHeaderProps {
-  weekRangeStr: string;
-  viewMode: 'sheet' | 'board';
-  setViewMode: (mode: 'sheet' | 'board') => void;
-}
+import type { SprintHeaderProps } from '@/types/sprint.types';
 
 export function SprintHeader({
   weekRangeStr,

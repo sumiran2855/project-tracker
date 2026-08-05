@@ -1,11 +1,5 @@
-import React from 'react';
 import { cn } from '@/lib/utils';
-import { PriorityStats } from '@/services/useReportsService';
-
-interface TaskPrioritiesChartProps {
-  tasksCount: number;
-  priorityStatsList: PriorityStats[];
-}
+import type { TaskPrioritiesChartProps } from '@/types/reports.types';
 
 export function TaskPrioritiesChart({ tasksCount, priorityStatsList }: TaskPrioritiesChartProps) {
   return (

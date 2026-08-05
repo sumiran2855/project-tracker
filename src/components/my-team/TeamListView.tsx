@@ -1,23 +1,5 @@
 import { Sparkles, Users, Search, Briefcase, User, Folder, Mail, ArrowRight } from 'lucide-react';
-import type { TeamMember } from '@/services/useMyTeamService';
-
-interface TeamListViewProps {
-  teamMembers: TeamMember[];
-  filteredMembers: TeamMember[];
-  stats: {
-    totalCount: number;
-    leadsCount: number;
-    employeesCount: number;
-    uniqueProjectsCount: number;
-  };
-  searchTerm: string;
-  setSearchTerm: (val: string) => void;
-  roleFilter: string;
-  setRoleFilter: (val: string) => void;
-  setSelectedMember: (member: TeamMember) => void;
-  getInitials: (name: string) => string;
-  getBgColor: (name: string) => string;
-}
+import type { TeamListViewProps } from '@/types/my-team.types';
 
 export function TeamListView({
   teamMembers,

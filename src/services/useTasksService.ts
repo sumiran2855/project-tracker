@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useUser, usePermission } from '@/contexts/UserContext';
 import { getProjectsAction, getEmployeesAction } from '@/actions/projects';
 import type { Employee } from '@/types/projects.types';
-import { getTasksByProjectAction, getAllTasksAction, createTaskAction, updateTaskAction, deleteTaskAction } from '@/actions/tasks';
-import type { Task, Subtask, Comment } from '@/types/tasks.types';
+import { getAllTasksAction, createTaskAction, updateTaskAction, deleteTaskAction } from '@/actions/tasks';
+import type { Task, GlobalTask } from '@/types/tasks.types';
 
 export interface Member {
   userId?: string;
@@ -33,11 +33,6 @@ export interface Project {
   slackChannel?: string;
   startDate?: string;
   targetQuarter?: 'Q2 2026' | 'Q3 2026' | 'Q4 2026' | 'Future';
-}
-
-export interface GlobalTask extends Task {
-  projectId: string;
-  projectName: string;
 }
 
 const defaultMembers: Member[] = [

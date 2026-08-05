@@ -1,45 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useUser, usePermission } from '@/contexts/UserContext';
 import { getProjectsAction } from '@/actions/projects';
-
-// Interfaces
-export interface Member {
-  name: string;
-  initials: string;
-  bg: string;
-}
-
-export interface Project {
-  id: string;
-  name: string;
-  description: string;
-  status: 'In Progress' | 'Completed' | 'Planning' | 'In Review';
-  progress: number;
-  tags: string[];
-  tasksCount: number;
-  completedTasks: number;
-  commentsCount: number;
-  attachmentsCount: number;
-  dueDate: string;
-  startDate?: string;
-  targetQuarter?: 'Q2 2026' | 'Q3 2026' | 'Q4 2026' | 'Future';
-  members: Member[];
-  techStack?: string[];
-  priority?: 'Low' | 'Medium' | 'High' | 'Critical';
-  budget?: string;
-  repositoryUrl?: string;
-  slackChannel?: string;
-}
-
-export interface MilestoneItem {
-  id: string;
-  title: string;
-  description: string;
-  dueDate: string;
-  projectId: string;
-  completed: boolean;
-  assignedTo?: string;
-}
+import type { Project } from '@/types/projects.types';
+import type { MilestoneItem } from '@/types/roadmap.types';
 
 export const TIMELINE_START = new Date('2026-06-01');
 export const TIMELINE_END = new Date('2026-11-30');

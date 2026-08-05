@@ -1,15 +1,6 @@
 import { Search, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface NotificationFilterRibbonProps {
-  filterTab: 'all' | 'unread' | 'read';
-  setFilterTab: (tab: 'all' | 'unread' | 'read') => void;
-  unreadCount: number;
-  searchQuery: string;
-  setSearchQuery: (val: string) => void;
-  typeFilter: string;
-  setTypeFilter: (val: string) => void;
-}
+import type { NotificationFilterRibbonProps } from '@/types/notifications.types';
 
 export function NotificationFilterRibbon({
   filterTab,

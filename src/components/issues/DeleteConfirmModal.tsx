@@ -1,10 +1,6 @@
 import { X, Trash2 } from 'lucide-react';
+import type { DeleteConfirmModalProps } from '@/types/issues.types';
 
-interface DeleteConfirmModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-}
 
 export function DeleteConfirmModal({
   isOpen,

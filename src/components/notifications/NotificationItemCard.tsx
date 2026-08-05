@@ -1,12 +1,6 @@
 import { Clock, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { NotificationItem } from '@/services/useNotificationsService';
-
-interface NotificationItemCardProps {
-  item: NotificationItem;
-  onMarkAsRead: (id: string) => Promise<void>;
-  onDelete: (id: string, e: React.MouseEvent) => Promise<void>;
-}
+import type { NotificationItemCardProps } from '@/types/notifications.types';
 
 export function NotificationItemCard({
   item,

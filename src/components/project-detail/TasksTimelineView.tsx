@@ -1,11 +1,5 @@
 import { cn } from '@/lib/utils';
-import type { Task } from '@/types/tasks.types';
-
-interface TasksTimelineViewProps {
-  displayTasks: Task[];
-  onSelectTask: (task: Task) => void;
-  getPriorityColor: (prio: Task['priority']) => string;
-}
+import type { TasksTimelineViewProps } from '@/types/tasks.types';
 
 export function TasksTimelineView({
   displayTasks,

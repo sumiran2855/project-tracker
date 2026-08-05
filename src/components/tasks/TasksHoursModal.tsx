@@ -1,15 +1,5 @@
-import React from 'react';
 import { Clock, X } from 'lucide-react';
-import type { GlobalTask } from '@/services/useTasksService';
-
-interface TasksHoursModalProps {
-  isOpen: boolean;
-  promptTask: GlobalTask | null;
-  promptValue: string;
-  setPromptValue: (val: string) => void;
-  onClose: () => void;
-  onSave: () => void;
-}
+import type { TasksHoursModalProps } from '@/types/tasks.types';
 
 export function TasksHoursModal({
   isOpen,

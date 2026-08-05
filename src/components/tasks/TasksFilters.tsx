@@ -1,18 +1,5 @@
-import React from 'react';
 import { Search, X } from 'lucide-react';
-import type { Project } from '@/services/useTasksService';
-
-interface TasksFiltersProps {
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  projectFilter: string;
-  setProjectFilter: (project: string) => void;
-  priorityFilter: string;
-  setPriorityFilter: (priority: string) => void;
-  statusFilter: string;
-  setStatusFilter: (status: string) => void;
-  projects: Project[];
-}
+import type { TasksFiltersProps } from '@/types/tasks.types';
 
 export function TasksFilters({
   searchQuery,

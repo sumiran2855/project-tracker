@@ -1,15 +1,6 @@
 import { Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Task } from '@/types/tasks.types';
-
-interface TasksListViewProps {
-  displayTasks: Task[];
-  canDeleteTask: boolean;
-  onMoveTask: (id: string, nextStatus: Task['status']) => void;
-  onDeleteTask: (id: string) => void;
-  onSelectTask: (task: Task) => void;
-  getPriorityColor: (prio: Task['priority']) => string;
-}
+import type { TasksListViewProps } from '@/types/tasks.types';
 
 export function TasksListView({
   displayTasks,

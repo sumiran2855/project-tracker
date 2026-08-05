@@ -1,25 +1,6 @@
 import { Calendar, Sparkles, Coins, Hash, Link2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Member } from '@/services/useProjectsService';
-
-interface ProjectStatsRibbonProps {
-  project: {
-    progress: number;
-    completedTasks: number;
-    tasksCount: number;
-    members: Member[];
-    startDate?: string;
-    targetQuarter?: string;
-    priority?: string;
-    budget?: string;
-    slackChannel?: string;
-    repositoryUrl?: string;
-  };
-  projectBudgetHours: number;
-  totalLoggedProjectHours: number;
-  remainingProjectHours: number;
-  getPriorityColor: (prio: any) => string;
-}
+import type { ProjectStatsRibbonProps } from '@/types/projects.types';
 
 export function ProjectStatsRibbon({
   project,

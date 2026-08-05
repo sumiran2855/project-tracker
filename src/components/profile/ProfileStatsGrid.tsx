@@ -1,12 +1,5 @@
 import { Layers, CheckCircle2, AlertCircle, Folder, Users } from 'lucide-react';
-import type { ProjectStats } from '@/services/useProfileService';
-
-interface ProfileStatsGridProps {
-  stats: ProjectStats;
-  isEmployeeOrLead: boolean;
-  isAdminOrManager: boolean;
-  isClient: boolean;
-}
+import type { ProfileStatsGridProps } from '@/types/profile.types';
 
 export function ProfileStatsGrid({
   stats,

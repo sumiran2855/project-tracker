@@ -1,21 +1,11 @@
-import React from 'react';
 import { SquareChartGantt, Edit2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
-  Project, 
-  MilestoneItem, 
   TIMELINE_START, 
   TIMELINE_END, 
   TOTAL_TIMELINE_DAYS 
 } from '@/services/useRoadmapService';
-
-interface RoadmapTimelineProps {
-  filteredProjects: Project[];
-  milestones: MilestoneItem[];
-  isEmployee: boolean;
-  onOpenEditProjectModal: (project: Project) => void;
-  getStatusStyles: (status: Project['status']) => string;
-}
+import type { RoadmapTimelineProps } from '@/types/roadmap.types';
 
 export function RoadmapTimeline({
   filteredProjects,
