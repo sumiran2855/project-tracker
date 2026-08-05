@@ -1,116 +1,101 @@
 'use server';
 
-import { getSession } from '@/lib/auth/dal';
-import { apiClient } from '@/lib/api/apiClient';
+import { getValidSession } from '@/helpers/auth.helpers';
+import { issuesApi } from '@/api-services/issues.api';
 import { Issue } from '@/types/issues.types';
 
 export async function uploadIssueAttachmentAction(formData: FormData): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
-    const session = await getSession();
-    if (!session?.token) {
-      return { success: false, error: 'Unauthorized' };
+    const session = await getValidSession();
+
+    const { data, error } = await issuesApi.uploadAttachment(formData, session.token);
+
+    if (error) {
+      return { success: false, error: error.message };
     }
 
-    const res = await apiClient.post<{ success: boolean; data: { url: string } }>(
-      'issues/upload',
-      formData,
-      { token: session.token }
-    );
-
-    return { success: true, url: res.data.url };
-  } catch (error: any) {
-    return { success: false, error: error?.message || 'Failed to upload image' };
+    return { success: true, url: data!.url };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Unauthorized' };
   }
 }
 
 export async function getIssuesByProjectAction(projectId: string): Promise<{ success: boolean; data?: Issue[]; error?: string }> {
   try {
-    const session = await getSession();
-    if (!session?.token) {
-      return { success: false, error: 'Unauthorized' };
+    const session = await getValidSession();
+
+    const { data, error } = await issuesApi.getIssuesByProject(projectId, session.token);
+
+    if (error) {
+      return { success: false, error: error.message };
     }
 
-    const res = await apiClient.get<{ success: boolean; data: { issues: Issue[] } }>(
-      `issues/project/${projectId}`,
-      { token: session.token }
-    );
-
-    return { success: true, data: res.data.issues };
-  } catch (error: any) {
-    return { success: false, error: error?.message || 'Failed to fetch issues' };
+    return { success: true, data: data!.issues };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Unauthorized' };
   }
 }
 
 export async function getIssueByIdAction(id: string): Promise<{ success: boolean; data?: Issue; error?: string }> {
   try {
-    const session = await getSession();
-    if (!session?.token) {
-      return { success: false, error: 'Unauthorized' };
+    const session = await getValidSession();
+
+    const { data, error } = await issuesApi.getIssueById(id, session.token);
+
+    if (error) {
+      return { success: false, error: error.message };
     }
 
-    const res = await apiClient.get<{ success: boolean; data: { issue: Issue } }>(
-      `issues/${id}`,
-      { token: session.token }
-    );
-
-    return { success: true, data: res.data.issue };
-  } catch (error: any) {
-    return { success: false, error: error?.message || 'Failed to fetch issue' };
+    return { success: true, data: data!.issue };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Unauthorized' };
   }
 }
 
 export async function createIssueAction(issueData: any): Promise<{ success: boolean; data?: Issue; error?: string }> {
   try {
-    const session = await getSession();
-    if (!session?.token) {
-      return { success: false, error: 'Unauthorized' };
+    const session = await getValidSession();
+
+    const { data, error } = await issuesApi.createIssue(issueData, session.token);
+
+    if (error) {
+      return { success: false, error: error.message };
     }
 
-    const res = await apiClient.post<{ success: boolean; data: { issue: Issue } }>(
-      'issues',
-      issueData,
-      { token: session.token }
-    );
-
-    return { success: true, data: res.data.issue };
-  } catch (error: any) {
-    return { success: false, error: error?.message || 'Failed to create issue' };
+    return { success: true, data: data!.issue };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Unauthorized' };
   }
 }
 
 export async function updateIssueAction(id: string, issueData: Partial<Issue>): Promise<{ success: boolean; data?: Issue; error?: string }> {
   try {
-    const session = await getSession();
-    if (!session?.token) {
-      return { success: false, error: 'Unauthorized' };
+    const session = await getValidSession();
+
+    const { data, error } = await issuesApi.updateIssue(id, issueData, session.token);
+
+    if (error) {
+      return { success: false, error: error.message };
     }
 
-    const res = await apiClient.put<{ success: boolean; data: { issue: Issue } }>(
-      `issues/${id}`,
-      issueData,
-      { token: session.token }
-    );
-
-    return { success: true, data: res.data.issue };
-  } catch (error: any) {
-    return { success: false, error: error?.message || 'Failed to update issue' };
+    return { success: true, data: data!.issue };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Unauthorized' };
   }
 }
 
 export async function deleteIssueAction(id: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const session = await getSession();
-    if (!session?.token) {
-      return { success: false, error: 'Unauthorized' };
+    const session = await getValidSession();
+
+    const { error } = await issuesApi.deleteIssue(id, session.token);
+
+    if (error) {
+      return { success: false, error: error.message };
     }
 
-    await apiClient.delete(
-      `issues/${id}`,
-      { token: session.token }
-    );
-
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error?.message || 'Failed to delete issue' };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Unauthorized' };
   }
 }

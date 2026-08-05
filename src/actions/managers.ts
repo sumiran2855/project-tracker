@@ -1,23 +1,21 @@
 'use server';
 
-import { getSession } from '@/lib/auth/dal';
-import { apiClient } from '@/lib/api/apiClient';
+import { getValidSession } from '@/helpers/auth.helpers';
+import { managersApi } from '@/api-services/managers.api';
 
 export async function getManagersAction(): Promise<{ success: boolean; data?: any[]; error?: string }> {
   try {
-    const session = await getSession();
-    if (!session?.token) {
-      return { success: false, error: 'Unauthorized' };
+    const session = await getValidSession();
+
+    const { data, error } = await managersApi.getManagers(session.token);
+
+    if (error) {
+      return { success: false, error: error.message };
     }
 
-    const res = await apiClient.get<{ success: boolean; data: { managers: any[] } }>(
-      'managers',
-      { token: session.token }
-    );
-
-    return { success: true, data: res.data.managers };
-  } catch (error: any) {
-    return { success: false, error: error?.message || 'Failed to fetch managers' };
+    return { success: true, data: data!.managers };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Unauthorized' };
   }
 }
 
@@ -27,37 +25,32 @@ export async function updateManagerAssignmentsAction(
   teamLeadIds: string[]
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const session = await getSession();
-    if (!session?.token) {
-      return { success: false, error: 'Unauthorized' };
+    const session = await getValidSession();
+
+    const { error } = await managersApi.updateAssignments(managerId, employeeIds, teamLeadIds, session.token);
+
+    if (error) {
+      return { success: false, error: error.message };
     }
 
-    await apiClient.put(
-      `managers/${managerId}/assignments`,
-      { employeeIds, teamLeadIds },
-      { token: session.token }
-    );
-
     return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error?.message || 'Failed to update assignments' };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Unauthorized' };
   }
 }
 
 export async function getManagerTeamAction(): Promise<{ success: boolean; data?: any[]; error?: string }> {
   try {
-    const session = await getSession();
-    if (!session?.token) {
-      return { success: false, error: 'Unauthorized' };
+    const session = await getValidSession();
+
+    const { data, error } = await managersApi.getManagerTeam(session.token);
+
+    if (error) {
+      return { success: false, error: error.message };
     }
 
-    const res = await apiClient.get<{ success: boolean; data: { team: any[] } }>(
-      'managers/my-team',
-      { token: session.token }
-    );
-
-    return { success: true, data: res.data.team };
-  } catch (error: any) {
-    return { success: false, error: error?.message || 'Failed to fetch team' };
+    return { success: true, data: data!.team };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Unauthorized' };
   }
 }
