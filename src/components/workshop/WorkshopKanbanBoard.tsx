@@ -47,7 +47,7 @@ export function WorkshopKanbanBoard({
               onDrop={(e) => handleDrop(e, col.id)}
               className={cn(
                 "flex flex-col bg-slate-50 border rounded-2xl p-3 space-y-3 min-h-[500px] transition-colors duration-200",
-                isOver ? "border-indigo-500 bg-indigo-50/20" : "border-slate-205"
+                isOver ? "border-indigo-500 bg-indigo-50/20" : "border-slate-200"
               )}
             >
               {/* Column Header */}

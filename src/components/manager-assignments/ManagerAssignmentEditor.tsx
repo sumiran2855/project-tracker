@@ -37,7 +37,7 @@ export function ManagerAssignmentEditor({
         <div className="flex items-center gap-3">
           <button
             onClick={() => setSelectedManagerId(null)}
-            className="p-2 rounded-xl border border-slate-205 hover:bg-slate-50 transition-colors shadow-3xs hover:border-slate-300 cursor-pointer"
+            className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors shadow-3xs hover:border-slate-300 cursor-pointer"
             title="Back to Overview"
           >
             <ArrowLeft className="h-4 w-4 text-slate-500" />
@@ -198,7 +198,7 @@ export function ManagerAssignmentEditor({
                       setAssignedEmployeeIds(prev => [...prev, emp.id]);
                       setEmployeeSearch('');
                     }}
-                    className="flex items-center gap-2.5 p-3 hover:bg-slate-55 cursor-pointer text-xs font-bold text-slate-700 transition-colors border-b border-slate-50/50 last:border-b-0"
+                    className="flex items-center gap-2.5 p-3 hover:bg-slate-50 cursor-pointer text-xs font-bold text-slate-700 transition-colors border-b border-slate-50/50 last:border-b-0"
                   >
                     <Plus className="h-4 w-4 text-indigo-500 shrink-0" />
                     <span>{emp.name}</span>

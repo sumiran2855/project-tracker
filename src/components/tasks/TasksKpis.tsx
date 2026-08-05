@@ -13,7 +13,7 @@ export function TasksKpis({
     <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
       {[
         { label: 'Total Tasks', value: totalCount, icon: ListTodo, color: 'bg-slate-100 border-slate-200 text-slate-605' },
-        { label: 'Pending', value: pendingCount, icon: Clock, color: 'bg-slate-100 border-slate-205 text-slate-500' },
+        { label: 'Pending', value: pendingCount, icon: Clock, color: 'bg-slate-100 border-slate-200 text-slate-500' },
         { label: 'In Progress', value: inProgressCount, icon: CheckSquare, color: 'bg-indigo-50/50 border-indigo-150 text-indigo-650' },
         { label: 'In Review', value: inReviewCount, icon: TrendingUp, color: 'bg-amber-50/50 border-amber-150 text-amber-600' },
         { label: 'Completed', value: doneCount, icon: CheckCircle2, color: 'bg-emerald-50/50 border-emerald-150 text-emerald-600' },

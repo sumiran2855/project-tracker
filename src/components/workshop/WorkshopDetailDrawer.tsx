@@ -45,7 +45,7 @@ export function WorkshopDetailDrawer({
               <button
                 type="button"
                 onClick={() => setActiveDetailItem(null)}
-                className="h-8 w-8 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-205 flex items-center justify-center text-slate-400 cursor-pointer transition-colors"
+                className="h-8 w-8 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 cursor-pointer transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>

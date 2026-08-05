@@ -171,7 +171,7 @@ export default function IssuesPage() {
         </div>
 
         {/* Advanced Filters */}
-        <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-3 bg-white border border-slate-205 p-3 rounded-2xl shadow-xs">
+        <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-3 bg-white border border-slate-200 p-3 rounded-2xl shadow-xs">
 
           {/* Search */}
           <div className="relative w-full xl:flex-1">

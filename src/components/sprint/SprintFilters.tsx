@@ -23,7 +23,7 @@ export function SprintFilters({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search sprint work..."
-            className="w-full bg-slate-50 border border-slate-205 rounded-2xl py-2 pl-10 pr-4 text-xs font-bold text-slate-700 placeholder:text-slate-455 focus:outline-none focus:border-indigo-500 transition-colors"
+            className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2 pl-10 pr-4 text-xs font-bold text-slate-700 placeholder:text-slate-455 focus:outline-none focus:border-indigo-500 transition-colors"
           />
         </div>
 
@@ -32,7 +32,7 @@ export function SprintFilters({
           <select
             value={filterProject}
             onChange={(e) => setFilterProject(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-205 rounded-2xl py-2.5 px-3.5 text-xs font-bold text-slate-700 focus:outline-none appearance-none cursor-pointer"
+            className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 px-3.5 text-xs font-bold text-slate-700 focus:outline-none appearance-none cursor-pointer"
           >
             <option value="All">All Projects</option>
             {projects.map(p => (
@@ -47,7 +47,7 @@ export function SprintFilters({
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-205 rounded-2xl py-2.5 px-3.5 text-xs font-bold text-slate-700 focus:outline-none appearance-none cursor-pointer"
+            className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-2.5 px-3.5 text-xs font-bold text-slate-700 focus:outline-none appearance-none cursor-pointer"
           >
             <option value="All">All Types</option>
             <option value="Tasks">Tasks Only</option>

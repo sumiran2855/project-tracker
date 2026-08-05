@@ -57,7 +57,7 @@ export default function SprintPage() {
         </div>
       ) : service.filteredSprintItems.length === 0 ? (
         <div className="bg-white rounded-3xl border border-slate-200/80 py-16 px-4 text-center shadow-3xs animate-fadeIn">
-          <div className="h-12 w-12 rounded-full bg-slate-50 border border-slate-205 flex items-center justify-center mx-auto text-slate-400 mb-4">
+          <div className="h-12 w-12 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mx-auto text-slate-400 mb-4">
             <CheckSquare className="h-5 w-5" />
           </div>
           <h3 className="text-sm font-black text-slate-805 tracking-tight">No active sprint items</h3>

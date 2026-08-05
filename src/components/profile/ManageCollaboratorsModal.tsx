@@ -91,7 +91,7 @@ export function ManageCollaboratorsModal({
                   readOnly
                   placeholder="Role will be auto-filled"
                   value={newCollabRole}
-                  className="w-full rounded-xl border border-slate-205 bg-slate-50 px-3.5 py-2 text-xs text-slate-500 focus:outline-none cursor-not-allowed"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-500 focus:outline-none cursor-not-allowed"
                 />
               </div>
 
