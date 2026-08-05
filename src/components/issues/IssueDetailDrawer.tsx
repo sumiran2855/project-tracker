@@ -46,8 +46,8 @@ export function IssueDetailDrawer({
             {/* Header */}
             <div className="px-6 py-4.5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
               <div className="flex items-center gap-2">
-                <Bookmark className="h-4.5 w-4.5 text-indigo-655 fill-indigo-650/10" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-655 font-sans">
+                <Bookmark className="h-4.5 w-4.5 text-indigo-650 fill-indigo-650/10" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-650 font-sans">
                   Issue Workspace Details
                 </span>
               </div>
@@ -306,7 +306,7 @@ export function IssueDetailDrawer({
 
               {/* Discussion */}
               <div className="space-y-4 pt-2">
-                <h3 className="text-[10px] font-black uppercase tracking-wider text-indigo-655 flex items-center gap-1.5 pb-1 font-sans">
+                <h3 className="text-[10px] font-black uppercase tracking-wider text-indigo-650 flex items-center gap-1.5 pb-1 font-sans">
                   <MessageSquare className="h-3.5 w-3.5 text-indigo-650" />
                   Discussion ({activeDetailItem.comments?.length || 0})
                 </h3>
@@ -327,7 +327,7 @@ export function IssueDetailDrawer({
                     <div className="flex justify-end">
                       <button
                         onClick={handleAddComment}
-                        className="inline-flex items-center justify-center rounded-xl bg-indigo-655 hover:bg-indigo-755 text-white px-5 py-2 text-xs font-black transition-all cursor-pointer shadow-3xs"
+                        className="inline-flex items-center justify-center rounded-xl bg-indigo-650 hover:bg-indigo-755 text-white px-5 py-2 text-xs font-black transition-all cursor-pointer shadow-3xs"
                       >
                         Comment
                       </button>

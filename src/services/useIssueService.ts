@@ -212,13 +212,6 @@ export function useIssueService() {
 
   // Open card details drawer
   const handleCardClick = (issue: Issue) => {
-    const issueCommentsKey = `pwt_comments_issue_${issue.id}`;
-    let savedComments: any[] = [];
-    try {
-      const stored = localStorage.getItem(issueCommentsKey);
-      if (stored) savedComments = JSON.parse(stored);
-    } catch { }
-
     setActiveDetailItem({
       id: issue.id,
       title: issue.title,
@@ -229,7 +222,7 @@ export function useIssueService() {
       dueDate: issue.dueDate,
       assignees: issue.assignees,
       actualHours: (issue as any).actualHours || 0,
-      comments: savedComments,
+      comments: issue.comments || [],
       relatedTaskId: (issue as any).relatedTaskId || '',
       relatedTaskTitle: (issue as any).relatedTaskTitle || '',
       attachments: (issue as any).attachments || [],
@@ -386,19 +379,18 @@ export function useIssueService() {
     };
     const nextComments = [newComment, ...(activeDetailItem.comments || [])];
 
-    const res = await updateIssueAction(activeDetailItem.id, { commentsCount: nextComments.length });
-    if (res.success) {
-      localStorage.setItem(`pwt_comments_issue_${activeDetailItem.id}`, JSON.stringify(nextComments));
-      setActiveDetailItem((prev: any) => prev ? { ...prev, comments: nextComments } : null);
-      setIssues(prev => prev.map(i => i.id === activeDetailItem.id ? { ...i, commentsCount: nextComments.length } : i));
-      setNewCommentText('');
+    // Optimistically update
+    setActiveDetailItem((prev: any) => prev ? { ...prev, comments: nextComments, commentsCount: nextComments.length } : null);
+    setIssues(prev => prev.map(i => i.id === activeDetailItem.id ? { ...i, comments: nextComments, commentsCount: nextComments.length } : i));
+    setNewCommentText('');
+
+    const res = await updateIssueAction(activeDetailItem.id, { comments: nextComments });
+    if (res.success && res.data) {
+      const updatedData = res.data;
+      setActiveDetailItem((prev: any) => prev ? { ...prev, ...updatedData, comments: updatedData.comments || nextComments } : null);
+      setIssues(prev => prev.map(i => i.id === activeDetailItem.id ? (updatedData as any) : i));
     } else {
-      localStorage.setItem(`pwt_comments_issue_${activeDetailItem.id}`, JSON.stringify(nextComments));
-      setActiveDetailItem((prev: any) => prev ? { ...prev, comments: nextComments } : null);
-      const updated = issues.map(i => i.id === activeDetailItem.id ? { ...i, commentsCount: nextComments.length } : i);
-      setIssues(updated);
-      localStorage.setItem('pwt_issues', JSON.stringify(updated));
-      setNewCommentText('');
+      console.error('Failed to update issue comments on backend:', res.error);
     }
   };
 

@@ -83,7 +83,7 @@ export function IssuesListView({
                 {/* Metadata Row */}
                 <div className="flex flex-wrap items-center gap-1.5 pl-7 pt-1">
                   {/* Project tag */}
-                  <span className="inline-flex items-center gap-1 text-[9px] font-bold text-indigo-655 bg-indigo-50/50 border border-indigo-100/30 rounded-lg px-2 py-0.5 max-w-[120px]">
+                  <span className="inline-flex items-center gap-1 text-[9px] font-bold text-indigo-650 bg-indigo-50/50 border border-indigo-100/30 rounded-lg px-2 py-0.5 max-w-[120px]">
                     <Folder className="h-2.5 w-2.5 shrink-0" />
                     <span className="truncate">{issue.projectName}</span>
                   </span>

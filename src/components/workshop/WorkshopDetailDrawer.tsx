@@ -372,7 +372,7 @@ export function WorkshopDetailDrawer({
               {activeDetailItem.itemType === 'task' && (
                 <div className="space-y-3 pt-2">
                   <h3 className="text-[10px] font-black uppercase tracking-wider text-indigo-650 flex items-center gap-1.5 pb-1 font-sans">
-                    <CheckSquare className="h-3.5 w-3.5 text-indigo-655" />
+                    <CheckSquare className="h-3.5 w-3.5 text-indigo-650" />
                     Subtask Checklist
                   </h3>
 
@@ -425,7 +425,7 @@ export function WorkshopDetailDrawer({
 
               {/* Discussion */}
               <div className="space-y-4 pt-2">
-                <h3 className="text-[10px] font-black uppercase tracking-wider text-indigo-655 flex items-center gap-1.5 pb-1 font-sans">
+                <h3 className="text-[10px] font-black uppercase tracking-wider text-indigo-650 flex items-center gap-1.5 pb-1 font-sans">
                   <MessageSquare className="h-3.5 w-3.5 text-indigo-650" />
                   Discussion ({activeDetailItem.comments?.length || 0})
                 </h3>

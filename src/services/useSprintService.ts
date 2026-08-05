@@ -166,18 +166,6 @@ export function useSprintService() {
       subtasks: t.subtasks || []
     })),
     ...sprintIssues.map(i => {
-      // Load local comments for issues
-      let localComments: any[] = [];
-      if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem(`pwt_comments_issue_${i.id}`);
-        if (stored) {
-          try {
-            localComments = JSON.parse(stored);
-          } catch (e) {
-            console.error(e);
-          }
-        }
-      }
       return {
         id: i.id,
         title: i.title,
@@ -188,7 +176,7 @@ export function useSprintService() {
         assignees: i.assignees || [],
         actualHours: (i as any).actualHours || 0,
         workLogs: (i as any).workLogs || [],
-        comments: localComments,
+        comments: i.comments || [],
         projectId: i.projectId,
         projectName: i.projectName,
         itemType: 'issue' as const,
@@ -427,10 +415,9 @@ export function useSprintService() {
         dispatchUpdate();
       }
     } else {
-      const res = await updateIssueAction(activeDetailItem.id, { commentsCount: nextComments.length });
+      const res = await updateIssueAction(activeDetailItem.id, { comments: nextComments });
       if (res.success) {
-        localStorage.setItem(`pwt_comments_issue_${activeDetailItem.id}`, JSON.stringify(nextComments));
-        setActiveDetailItem((prev: any) => prev ? { ...prev, comments: nextComments } : null);
+        setActiveDetailItem((prev: any) => prev ? { ...prev, comments: nextComments, commentsCount: nextComments.length } : null);
         setNewCommentText('');
         dispatchUpdate();
       }

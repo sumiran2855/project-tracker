@@ -174,7 +174,7 @@ export function TaskDetailDrawer({
             <div className="flex flex-wrap gap-2.5">
               {selectedTask.assignees?.map((assignee, idx) => (
                 <div key={idx} className="flex items-center gap-1.8 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
-                  <div className={cn("h-5 w-5 rounded-md flex items-center justify-center text-[7px] text-white font-extrabold shadow-3xs", assignee.bg)}>
+                  <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center text-[9px] text-white font-black shadow-3xs", assignee.bg)}>
                     {assignee.initials}
                   </div>
                   <span className="text-[10px] font-bold text-slate-650">{assignee.name}</span>
@@ -282,7 +282,7 @@ export function TaskDetailDrawer({
                 .sort((a, b) => getCommentTimestamp(b) - getCommentTimestamp(a))
                 .map(comment => (
                   <div key={comment.id} className="flex gap-3 bg-slate-50/50 border border-slate-100 p-3 rounded-2xl">
-                    <div className={cn("h-7 w-7 rounded-lg text-[9px] font-black text-white flex items-center justify-center shrink-0 shadow-3xs", comment.initials === 'DU' ? 'bg-indigo-600' : 'bg-slate-500')}>
+                    <div className={cn("h-7 w-7 rounded-lg text-[9px] font-black text-white flex items-center justify-center shrink-0 shadow-3xs bg-indigo-600")}>
                       {comment.initials}
                     </div>
                     <div className="space-y-1 flex-1 min-w-0">

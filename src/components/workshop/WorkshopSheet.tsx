@@ -18,7 +18,7 @@ export function WorkshopSheet({
       case 'Planning':
         return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
       default:
-        return 'bg-indigo-500/10 text-indigo-655 border-indigo-500/20';
+        return 'bg-indigo-500/10 text-indigo-650 border-indigo-500/20';
     }
   };
 
@@ -29,7 +29,7 @@ export function WorkshopSheet({
       case 'High':
         return 'bg-orange-500/10 text-orange-655 border-orange-500/20';
       case 'Medium':
-        return 'bg-indigo-500/10 text-indigo-655 border-indigo-500/20';
+        return 'bg-indigo-500/10 text-indigo-650 border-indigo-500/20';
       default:
         return 'bg-slate-500/10 text-slate-500 border-slate-500/20';
     }

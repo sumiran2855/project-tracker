@@ -1,5 +1,6 @@
 import React from 'react';
 import { Member } from './projects.types';
+import { Comment } from './tasks.types';
 
 export interface WorkLog {
   id?: string;
@@ -21,6 +22,7 @@ export interface Issue {
   dueDate: string;
   assignees: Member[];
   commentsCount: number;
+  comments?: Comment[];
   actualHours?: number;
   workLogs?: WorkLog[];
   newWorkLog?: { hours: number; date?: string; userName?: string; userId?: string };

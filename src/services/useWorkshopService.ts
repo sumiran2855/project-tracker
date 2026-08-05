@@ -353,13 +353,6 @@ export function useWorkshopService() {
     } else {
       const issue = selectedProjIssues.find(i => i.id === cardId);
       if (issue) {
-        const issueCommentsKey = `pwt_comments_issue_${issue.id}`;
-        let savedComments: Comment[] = [];
-        try {
-          const stored = localStorage.getItem(issueCommentsKey);
-          if (stored) savedComments = JSON.parse(stored);
-        } catch { }
-
         setActiveDetailItem({
           id: issue.id,
           title: issue.title,
@@ -371,7 +364,7 @@ export function useWorkshopService() {
           assignees: issue.assignees,
           actualHours: (issue as any).actualHours || 0,
           workLogs: (issue as any).workLogs || [],
-          comments: savedComments,
+          comments: issue.comments || [],
           relatedTaskId: (issue as any).relatedTaskId || '',
           relatedTaskTitle: (issue as any).relatedTaskTitle || '',
           attachments: (issue as any).attachments || [],
@@ -433,11 +426,10 @@ export function useWorkshopService() {
         setNewCommentText('');
       }
     } else {
-      const res = await updateIssueAction(activeDetailItem.id, { commentsCount: nextComments.length });
-      if (res.success) {
-        localStorage.setItem(`pwt_comments_issue_${activeDetailItem.id}`, JSON.stringify(nextComments));
-        setActiveDetailItem({ ...activeDetailItem, comments: nextComments });
-        setSelectedProjIssues(prev => prev.map(i => i.id === activeDetailItem.id ? { ...i, commentsCount: nextComments.length } : i));
+      const res = await updateIssueAction(activeDetailItem.id, { comments: nextComments });
+      if (res.success && res.data) {
+        setActiveDetailItem({ ...activeDetailItem, comments: nextComments, commentsCount: nextComments.length });
+        setSelectedProjIssues(prev => prev.map(i => i.id === activeDetailItem.id ? (res.data as any) : i));
         setNewCommentText('');
       }
     }

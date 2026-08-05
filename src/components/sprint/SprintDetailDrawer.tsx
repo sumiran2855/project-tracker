@@ -47,7 +47,7 @@ export function SprintDetailDrawer({
             <div className="px-6 py-4.5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
               <div className="flex items-center gap-2">
                 <Bookmark className="h-4.5 w-4.5 text-indigo-650 fill-indigo-650/10" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-655 font-sans">
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-650 font-sans">
                   {activeDetailItem.itemType === 'task' ? 'Task Workspace Details' : 'Issue Workspace Details'}
                 </span>
               </div>
@@ -210,7 +210,7 @@ export function SprintDetailDrawer({
                   ) : (
                     activeDetailItem.assignees.map((a: any, idx: number) => (
                       <div key={idx} className="flex items-center gap-2 bg-slate-55 border border-slate-150 px-3 py-1.5 rounded-xl shadow-3xs text-xs font-bold text-slate-700">
-                        <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-[7px] text-white font-extrabold shadow-3xs", a.bg || "bg-indigo-600")}>
+                        <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center text-[9px] text-white font-black shadow-3xs", a.bg || "bg-indigo-600")}>
                           {a.initials}
                         </div>
                         <span>{a.name}</span>
@@ -273,7 +273,7 @@ export function SprintDetailDrawer({
               {/* Subtask Checklist */}
               {activeDetailItem.itemType === 'task' && (
                 <div className="space-y-3 pt-2">
-                  <h3 className="text-[10px] font-black uppercase tracking-wider text-indigo-655 flex items-center gap-1.5 pb-1 font-sans">
+                  <h3 className="text-[10px] font-black uppercase tracking-wider text-indigo-650 flex items-center gap-1.5 pb-1 font-sans">
                     <CheckSquare className="h-3.5 w-3.5 text-indigo-650" />
                     Subtask Checklist
                   </h3>
@@ -327,7 +327,7 @@ export function SprintDetailDrawer({
 
               {/* Discussion */}
               <div className="space-y-4 pt-2">
-                <h3 className="text-[10px] font-black uppercase tracking-wider text-indigo-655 flex items-center gap-1.5 pb-1 font-sans">
+                <h3 className="text-[10px] font-black uppercase tracking-wider text-indigo-650 flex items-center gap-1.5 pb-1 font-sans">
                   <MessageSquare className="h-3.5 w-3.5 text-indigo-650" />
                   Discussion ({activeDetailItem.comments?.length || 0})
                 </h3>

@@ -47,6 +47,7 @@ export interface CardDetailItem {
   actualHours?: number;
   workLogs?: any[];
   comments: Comment[];
+  commentsCount?: number;
   subtasks?: Subtask[];
   itemType: 'task' | 'issue';
   relatedTaskId?: string;

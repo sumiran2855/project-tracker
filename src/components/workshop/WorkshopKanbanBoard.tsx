@@ -22,7 +22,7 @@ export function WorkshopKanbanBoard({
       case 'High':
         return 'bg-orange-50 text-orange-655 border border-orange-150';
       case 'Medium':
-        return 'bg-indigo-50 text-indigo-655 border border-indigo-150';
+        return 'bg-indigo-50 text-indigo-650 border border-indigo-150';
       default:
         return 'bg-slate-50 text-slate-500 border border-slate-150';
     }
