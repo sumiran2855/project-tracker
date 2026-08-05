@@ -1,43 +1,7 @@
 import { useState, useEffect } from 'react';
 import { usePermission } from '@/contexts/UserContext';
 import { getProjectsAction, deleteProjectAction, getEmployeesAction } from '@/actions/projects';
-import type { Employee } from '@/types/projects.types';
-
-export interface Member {
-  name: string;
-  initials: string;
-  bg: string;
-}
-
-export interface Project {
-  id: string;
-  name: string;
-  description: string;
-  status: 'In Progress' | 'Completed' | 'Planning' | 'In Review';
-  progress: number;
-  tags: string[];
-  tasksCount: number;
-  completedTasks: number;
-  commentsCount: number;
-  attachmentsCount: number;
-  dueDate: string;
-  members: Member[];
-  techStack?: string[];
-  priority?: 'Low' | 'Medium' | 'High' | 'Critical';
-  budget?: string;
-  repositoryUrl?: string;
-  slackChannel?: string;
-  startDate?: string;
-  targetQuarter?: 'Q2 2026' | 'Q3 2026' | 'Q4 2026' | 'Future';
-}
-
-const staticAvailableMembers: Member[] = [
-  { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
-  { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
-  { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
-  { name: 'Emma Watson', initials: 'EW', bg: 'bg-rose-500' },
-  { name: 'Oliver Twist', initials: 'OT', bg: 'bg-amber-500' },
-];
+import type { Employee, Project } from '@/types/projects.types';
 
 export function useProjectsService() {
   const canCreateProject = usePermission('project:create');
@@ -79,16 +43,7 @@ export function useProjectsService() {
       if (empRes.success && empRes.data) {
         setAvailableMembers(empRes.data.filter(e => e.role?.toLowerCase() !== 'admin'));
       } else {
-        setAvailableMembers(
-          staticAvailableMembers.map((m, i) => ({
-            id: String(i + 1),
-            name: m.name,
-            initials: m.initials,
-            bg: m.bg,
-            email: '',
-            role: 'Employee'
-          }))
-        );
+        setAvailableMembers([]);
       }
       setLoading(false);
     }

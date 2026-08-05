@@ -1,7 +1,6 @@
 import { X, Users, Plus, Check, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { ManageCollaboratorsModalProps } from '@/types/profile.types';
-import { bgOptions } from '@/services/useProfileService';
+import { ManageCollaboratorsModalProps, bgOptions } from '@/types/profile.types';
 
 export function ManageCollaboratorsModal({
   isOpen,

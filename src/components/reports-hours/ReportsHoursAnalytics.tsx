@@ -1,7 +1,7 @@
 import { Folder, PieChart, User, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ReportsHoursAnalyticsProps } from '@/types/reports.types';
-import { getWidgetTheme } from '@/services/useReportsHoursService';
+import { getWidgetTheme } from '@/helpers/report.helpers';
 
 export function ReportsHoursAnalytics({
   projectBreakdown,

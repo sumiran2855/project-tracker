@@ -2,22 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { updateProfileAction, updatePreferencesAction } from '@/actions/auth';
 import type { WorkspacePrefs, NotificationPrefs } from '@/types/auth.types';
-
-const defaultNotifications: NotificationPrefs = {
-  emailTasks: true,
-  emailDueDates: true,
-  emailDigests: false,
-  pushMentions: true,
-  pushStatusChanges: false,
-  soundAlerts: true
-};
-
-const defaultWorkspace: WorkspacePrefs = {
-  defaultView: 'Dashboard',
-  theme: 'light',
-  weekStart: 'Monday',
-  accentTint: '#6366f1' // indigo
-};
+import { defaultNotifications, defaultWorkspace } from '@/types/settings.types';
 
 export function useSettingsService() {
   const { user, setUser } = useUser();

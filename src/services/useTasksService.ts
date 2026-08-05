@@ -1,129 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useUser, usePermission } from '@/contexts/UserContext';
 import { getProjectsAction, getEmployeesAction } from '@/actions/projects';
-import type { Employee } from '@/types/projects.types';
+import type { Employee, Project } from '@/types/projects.types';
 import { getAllTasksAction, createTaskAction, updateTaskAction, deleteTaskAction } from '@/actions/tasks';
 import type { Task, GlobalTask } from '@/types/tasks.types';
-
-export interface Member {
-  userId?: string;
-  id?: string;
-  name: string;
-  initials: string;
-  bg: string;
-}
-
-export interface Project {
-  id: string;
-  name: string;
-  description: string;
-  status: 'In Progress' | 'Completed' | 'Planning' | 'In Review';
-  progress: number;
-  tags: string[];
-  tasksCount: number;
-  completedTasks: number;
-  commentsCount: number;
-  attachmentsCount: number;
-  dueDate: string;
-  members: Member[];
-  techStack?: string[];
-  priority?: 'Low' | 'Medium' | 'High' | 'Critical';
-  budget?: string;
-  repositoryUrl?: string;
-  slackChannel?: string;
-  startDate?: string;
-  targetQuarter?: 'Q2 2026' | 'Q3 2026' | 'Q4 2026' | 'Future';
-}
-
-const defaultMembers: Member[] = [
-  { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
-  { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
-  { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
-  { name: 'Emma Watson', initials: 'EW', bg: 'bg-rose-500' },
-  { name: 'Oliver Twist', initials: 'OT', bg: 'bg-amber-500' },
-];
-
-const fallbackTasks: Record<string, Task[]> = {
-  '1': [
-    {
-      id: 't1',
-      title: 'Analyze user drop-off logs',
-      description: 'Review the Mixpanel and Datadog logs to find which step in signup has the highest drop-off rate.',
-      status: 'Done',
-      priority: 'High',
-      startDate: '2026-07-01',
-      dueDate: '2026-07-06',
-      assignees: [{ name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' }],
-      subtasks: [
-        { id: 's1', title: 'Export CSV of funnel statistics', completed: true },
-        { id: 's2', title: 'Identify core drop-off screens', completed: true },
-      ],
-      comments: [
-        { id: 'c1', author: 'John Doe', initials: 'JD', text: 'Seems like the password validation rule screen causes 25% dropouts.', time: '2 days ago' },
-      ],
-      attachmentsCount: 2,
-    },
-    {
-      id: 't2',
-      title: 'Create low-fidelity wireframes',
-      description: 'Draft initial paper/Figma wireframes focusing on clean, single-input onboarding screens.',
-      status: 'In Progress',
-      priority: 'Medium',
-      startDate: '2026-07-06',
-      dueDate: '2026-07-12',
-      assignees: [{ name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' }],
-      subtasks: [
-        { id: 's3', title: 'Design step-1 wireframe', completed: true },
-        { id: 's4', title: 'Design step-2 personalization wireframe', completed: false },
-      ],
-      comments: [],
-      attachmentsCount: 1,
-    },
-    {
-      id: 't3',
-      title: 'Draft copy recommendations',
-      description: 'Rewrite validation messages and help bubbles to be friendlier and clearer.',
-      status: 'To Do',
-      priority: 'Low',
-      startDate: '2026-07-14',
-      dueDate: '2026-07-20',
-      assignees: [{ name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' }],
-      subtasks: [],
-      comments: [],
-      attachmentsCount: 0,
-    }
-  ],
-  '2': [
-    {
-      id: 't6',
-      title: 'Review JWT signing algorithm',
-      description: 'Evaluate HMAC vs RS256 signing for multi-region protected API workloads.',
-      status: 'Done',
-      priority: 'High',
-      startDate: '2026-07-01',
-      dueDate: '2026-07-04',
-      assignees: [{ name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' }],
-      subtasks: [],
-      comments: [],
-      attachmentsCount: 1,
-    },
-    {
-      id: 't7',
-      title: 'Write custom JWT verify middleware',
-      description: 'Develop Next.js edge-compatible auth middleware parsing headers and validating sessions.',
-      status: 'In Progress',
-      priority: 'Urgent',
-      startDate: '2026-07-05',
-      dueDate: '2026-07-12',
-      assignees: [{ name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' }],
-      subtasks: [
-        { id: 's12', title: 'Write token parser utils', completed: true },
-      ],
-      comments: [],
-      attachmentsCount: 0,
-    }
-  ]
-};
 
 export function useTasksService() {
   const { user } = useUser();
@@ -243,16 +123,7 @@ export function useTasksService() {
       if (empRes.success && empRes.data) {
         setAvailableMembers(empRes.data.filter(e => e.role?.toLowerCase() !== 'admin'));
       } else {
-        setAvailableMembers(
-          defaultMembers.map((m, i) => ({
-            id: String(i + 1),
-            name: m.name,
-            initials: m.initials,
-            bg: m.bg,
-            email: '',
-            role: 'Employee'
-          }))
-        );
+        setAvailableMembers([]);
       }
 
       // 3. Load all tasks in 1 single call
@@ -280,8 +151,6 @@ export function useTasksService() {
             } catch (e) {
               console.error(e);
             }
-          } else {
-            projTasks = fallbackTasks[proj.id] || [];
           }
           allFallbackTasks.push(...projTasks.map(t => ({
             ...t,
@@ -488,9 +357,9 @@ export function useTasksService() {
       } else {
         finalAssignees = [{
           id: availableMembers[0]?.id || '1',
-          name: availableMembers[0]?.name || defaultMembers[0].name,
-          initials: availableMembers[0]?.initials || defaultMembers[0].initials,
-          bg: availableMembers[0]?.bg || defaultMembers[0].bg,
+          name: availableMembers[0]?.name || user?.name || '',
+          initials: availableMembers[0]?.initials || user?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || '',
+          bg: availableMembers[0]?.bg || 'bg-indigo-500',
         }];
       }
     }

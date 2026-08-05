@@ -4,85 +4,7 @@ import { useUser, usePermission } from '@/contexts/UserContext';
 import { getProjectsAction } from '@/actions/projects';
 import { getAllTasksAction } from '@/actions/tasks';
 import { getIssuesByProjectAction } from '@/actions/issues';
-
-export const GRADIENT_PALETTE = [
-  {
-    bg: 'bg-gradient-to-t from-indigo-650 via-indigo-50 to-cyan-400',
-    barBg: 'bg-gradient-to-r from-indigo-650 to-cyan-400',
-    dotBg: 'bg-indigo-600',
-    text: 'text-indigo-650',
-    accent: '#4F46E5',
-  },
-  {
-    bg: 'bg-gradient-to-t from-violet-600 via-purple-500 to-pink-400',
-    barBg: 'bg-gradient-to-r from-violet-600 to-pink-400',
-    dotBg: 'bg-violet-600',
-    text: 'text-violet-650',
-    accent: '#7C3AED',
-  },
-  {
-    bg: 'bg-gradient-to-t from-emerald-600 via-teal-500 to-cyan-400',
-    barBg: 'bg-gradient-to-r from-emerald-600 to-cyan-400',
-    dotBg: 'bg-emerald-600',
-    text: 'text-emerald-650',
-    accent: '#059669',
-  },
-  {
-    bg: 'bg-gradient-to-t from-rose-600 via-pink-500 to-orange-400',
-    barBg: 'bg-gradient-to-r from-rose-600 to-orange-400',
-    dotBg: 'bg-rose-600',
-    text: 'text-rose-650',
-    accent: '#E11D48',
-  },
-  {
-    bg: 'bg-gradient-to-t from-blue-600 via-sky-500 to-indigo-400',
-    barBg: 'bg-gradient-to-r from-blue-600 to-indigo-400',
-    dotBg: 'bg-blue-600',
-    text: 'text-blue-650',
-    accent: '#2563EB',
-  },
-  {
-    bg: 'bg-gradient-to-t from-cyan-600 via-teal-500 to-emerald-400',
-    barBg: 'bg-gradient-to-r from-cyan-600 to-emerald-400',
-    dotBg: 'bg-cyan-600',
-    text: 'text-cyan-655',
-    accent: '#0891B2',
-  },
-  {
-    bg: 'bg-gradient-to-t from-amber-600 via-amber-550 to-yellow-400',
-    barBg: 'bg-gradient-to-r from-amber-600 to-yellow-400',
-    dotBg: 'bg-amber-600',
-    text: 'text-amber-650',
-    accent: '#D97706',
-  },
-];
-
-export function getProjColor(projName: string, allProjNames: string[]) {
-  const idx = allProjNames.indexOf(projName);
-  return GRADIENT_PALETTE[(idx >= 0 ? idx : 0) % GRADIENT_PALETTE.length];
-}
-
-import type { Member, Project, Task, ProjectStats, PriorityStats, TeamStats, DayLog } from '@/types/reports.types';
-
-
-const fallbackTasks: Record<string, Task[]> = {
-  '1': [
-    { id: 't1', title: 'Task 1', status: 'Done', priority: 'High', dueDate: '2026-07-06', assignees: [{ name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' }] },
-    { id: 't2', title: 'Task 2', status: 'In Progress', priority: 'Medium', dueDate: '2026-07-12', assignees: [{ name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' }] },
-    { id: 't3', title: 'Task 3', status: 'To Do', priority: 'Low', dueDate: '2026-07-20', assignees: [{ name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' }] },
-    { id: 't4', title: 'Task 4', status: 'In Review', priority: 'High', dueDate: '2026-07-15', assignees: [{ name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' }] },
-    { id: 't5', title: 'Task 5', status: 'To Do', priority: 'Urgent', dueDate: '2026-07-24', assignees: [{ name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' }] },
-  ],
-  '2': [
-    { id: 't6', title: 'Task 6', status: 'Done', priority: 'High', dueDate: '2026-07-04', assignees: [{ name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' }] },
-    { id: 't7', title: 'Task 7', status: 'In Progress', priority: 'Urgent', dueDate: '2026-07-12', assignees: [{ name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' }, { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' }] },
-    { id: 't8', title: 'Task 8', status: 'To Do', priority: 'Medium', dueDate: '2026-07-18', assignees: [{ name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' }] },
-  ],
-  '3': [
-    { id: 't9', title: 'Task 9', status: 'In Progress', priority: 'Medium', dueDate: '2026-07-28', assignees: [{ name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' }] },
-    { id: 't10', title: 'Task 10', status: 'To Do', priority: 'Low', dueDate: '2026-08-01', assignees: [{ name: 'Emma Watson', initials: 'EW', bg: 'bg-rose-500' }] },
-  ]
-};
+import type { Task, ProjectStats, PriorityStats, TeamStats, DayLog } from '@/types/reports.types';
 
 function getCurrentWeekDays() {
   const now = new Date();
@@ -169,9 +91,9 @@ export function useReportsService() {
           try {
             const parsed = JSON.parse(storedTasksStr);
             allTasks.push(...parsed);
-          } catch (e) {}
-        } else if (fallbackTasks[proj.id || proj._id]) {
-          allTasks.push(...fallbackTasks[proj.id || proj._id]);
+          } catch (e) {
+            console.error(e);
+          }
         }
       });
     }

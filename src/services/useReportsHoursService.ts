@@ -5,20 +5,6 @@ import { getProjectsAction, getEmployeesAction } from '@/actions/projects';
 import { getTasksByProjectAction } from '@/actions/tasks';
 import { getIssuesByProjectAction } from '@/actions/issues';
 
-export const WIDGET_COLORS = [
-  { bg: 'bg-indigo-50 border-indigo-100', text: 'text-indigo-605', bar: 'bg-gradient-to-r from-indigo-500 to-violet-500', glow: 'shadow-indigo-500/20' },
-  { bg: 'bg-emerald-50 border-emerald-100', text: 'text-emerald-600', bar: 'bg-gradient-to-r from-emerald-500 to-teal-500', glow: 'shadow-emerald-500/20' },
-  { bg: 'bg-amber-50 border-amber-100', text: 'text-amber-600', bar: 'bg-gradient-to-r from-amber-500 to-orange-500', glow: 'shadow-amber-500/20' },
-  { bg: 'bg-rose-50 border-rose-100', text: 'text-rose-650', bar: 'bg-gradient-to-r from-rose-500 to-pink-500', glow: 'shadow-rose-500/20' },
-  { bg: 'bg-violet-50 border-violet-100', text: 'text-violet-600', bar: 'bg-gradient-to-r from-violet-500 to-purple-500', glow: 'shadow-violet-500/20' },
-  { bg: 'bg-cyan-50 border-cyan-100', text: 'text-cyan-600', bar: 'bg-gradient-to-r from-cyan-500 to-blue-500', glow: 'shadow-cyan-500/20' },
-];
-
-export function getWidgetTheme(name: string, allNames: string[]) {
-  const idx = allNames.indexOf(name);
-  return WIDGET_COLORS[(idx >= 0 ? idx : 0) % WIDGET_COLORS.length];
-}
-
 export function getDateRange(preset: string, customStart?: string, customEnd?: string) {
   const now = new Date();
   let start = new Date(now);

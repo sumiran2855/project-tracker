@@ -40,3 +40,19 @@ export interface ProfileSectionProps {
   profileSaveError: string;
   handleSaveProfile: (e: React.FormEvent) => void;
 }
+
+export const defaultNotifications: NotificationPrefs = {
+  emailTasks: true,
+  emailDueDates: true,
+  emailDigests: false,
+  pushMentions: true,
+  pushStatusChanges: false,
+  soundAlerts: true
+};
+
+export const defaultWorkspace: WorkspacePrefs = {
+  defaultView: 'Dashboard',
+  theme: 'light',
+  weekStart: 'Monday',
+  accentTint: '#6366f1'
+};

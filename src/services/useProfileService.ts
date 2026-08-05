@@ -12,15 +12,6 @@ import { fetchAllSprintData } from '@/lib/sprintLoader';
 import type { Member, ProjectStats, UserProfile } from '@/types/profile.types';
 import { Employee } from '@/types/projects.types';
 
-export const bgOptions = [
-  'bg-indigo-500',
-  'bg-emerald-500',
-  'bg-violet-500',
-  'bg-rose-500',
-  'bg-amber-500',
-  'bg-sky-500'
-];
-
 export function useProfileService() {
   const { user, setUser } = useUser();
 

@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { getManagerTeamAction } from '@/actions/managers';
 import type { TeamMember } from '@/types/my-team.types';
 
-
 export function useMyTeamService() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);

@@ -141,3 +141,64 @@ export interface ReportsHoursLedgerProps {
   setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
   totalPages: number;
 }
+
+export const WIDGET_COLORS = [
+  { bg: 'bg-indigo-50 border-indigo-100', text: 'text-indigo-605', bar: 'bg-gradient-to-r from-indigo-500 to-violet-500', glow: 'shadow-indigo-500/20' },
+  { bg: 'bg-emerald-50 border-emerald-100', text: 'text-emerald-600', bar: 'bg-gradient-to-r from-emerald-500 to-teal-500', glow: 'shadow-emerald-500/20' },
+  { bg: 'bg-amber-50 border-amber-100', text: 'text-amber-600', bar: 'bg-gradient-to-r from-amber-500 to-orange-500', glow: 'shadow-amber-500/20' },
+  { bg: 'bg-rose-50 border-rose-100', text: 'text-rose-650', bar: 'bg-gradient-to-r from-rose-500 to-pink-500', glow: 'shadow-rose-500/20' },
+  { bg: 'bg-violet-50 border-violet-100', text: 'text-violet-600', bar: 'bg-gradient-to-r from-violet-500 to-purple-500', glow: 'shadow-violet-500/20' },
+  { bg: 'bg-cyan-50 border-cyan-100', text: 'text-cyan-600', bar: 'bg-gradient-to-r from-cyan-500 to-blue-500', glow: 'shadow-cyan-500/20' },
+];
+ 
+export const GRADIENT_PALETTE = [
+  {
+    bg: 'bg-gradient-to-t from-indigo-650 via-indigo-50 to-cyan-400',
+    barBg: 'bg-gradient-to-r from-indigo-650 to-cyan-400',
+    dotBg: 'bg-indigo-600',
+    text: 'text-indigo-650',
+    accent: '#4F46E5',
+  },
+  {
+    bg: 'bg-gradient-to-t from-violet-600 via-purple-500 to-pink-400',
+    barBg: 'bg-gradient-to-r from-violet-600 to-pink-400',
+    dotBg: 'bg-violet-600',
+    text: 'text-violet-650',
+    accent: '#7C3AED',
+  },
+  {
+    bg: 'bg-gradient-to-t from-emerald-600 via-teal-500 to-cyan-400',
+    barBg: 'bg-gradient-to-r from-emerald-600 to-cyan-400',
+    dotBg: 'bg-emerald-600',
+    text: 'text-emerald-650',
+    accent: '#059669',
+  },
+  {
+    bg: 'bg-gradient-to-t from-rose-600 via-pink-500 to-orange-400',
+    barBg: 'bg-gradient-to-r from-rose-600 to-orange-400',
+    dotBg: 'bg-rose-600',
+    text: 'text-rose-650',
+    accent: '#E11D48',
+  },
+  {
+    bg: 'bg-gradient-to-t from-blue-600 via-sky-500 to-indigo-400',
+    barBg: 'bg-gradient-to-r from-blue-600 to-indigo-400',
+    dotBg: 'bg-blue-600',
+    text: 'text-blue-650',
+    accent: '#2563EB',
+  },
+  {
+    bg: 'bg-gradient-to-t from-cyan-600 via-teal-500 to-emerald-400',
+    barBg: 'bg-gradient-to-r from-cyan-600 to-emerald-400',
+    dotBg: 'bg-cyan-600',
+    text: 'text-cyan-655',
+    accent: '#0891B2',
+  },
+  {
+    bg: 'bg-gradient-to-t from-amber-600 via-amber-550 to-yellow-400',
+    barBg: 'bg-gradient-to-r from-amber-600 to-yellow-400',
+    dotBg: 'bg-amber-600',
+    text: 'text-amber-650',
+    accent: '#D97706',
+  },
+];

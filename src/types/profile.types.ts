@@ -109,3 +109,12 @@ export interface CollaboratorsPanelProps {
   onDeleteCollab: (name: string) => Promise<void>;
   onCopyInviteLink: () => Promise<void>;
 }
+
+export const bgOptions = [
+  'bg-indigo-500',
+  'bg-emerald-500',
+  'bg-violet-500',
+  'bg-rose-500',
+  'bg-amber-500',
+  'bg-sky-500'
+];

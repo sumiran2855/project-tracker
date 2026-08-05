@@ -4,178 +4,8 @@ import { useUser, usePermission } from '@/contexts/UserContext';
 import { getProjectByIdAction, updateProjectAction, getEmployeesAction } from '@/actions/projects';
 import { getTasksByProjectAction, createTaskAction, updateTaskAction, deleteTaskAction } from '@/actions/tasks';
 import { getIssuesByProjectAction } from '@/actions/issues';
-import type { Employee } from '@/types/projects.types';
+import type { Employee, Project } from '@/types/projects.types';
 import type { Task, Subtask, Comment } from '@/types/tasks.types';
-import type { Member } from '@/services/useProjectsService';
-
-interface Project {
-  id: string;
-  name: string;
-  description: string;
-  status: 'In Progress' | 'Completed' | 'Planning' | 'In Review';
-  progress: number;
-  tags: string[];
-  tasksCount: number;
-  completedTasks: number;
-  commentsCount: number;
-  attachmentsCount: number;
-  dueDate: string;
-  members: Member[];
-  techStack?: string[];
-  priority?: 'Low' | 'Medium' | 'High' | 'Critical';
-  budget?: string;
-  repositoryUrl?: string;
-  slackChannel?: string;
-  startDate?: string;
-  targetQuarter?: 'Q2 2026' | 'Q3 2026' | 'Q4 2026' | 'Future';
-}
-
-const initialTasksData: Record<string, Task[]> = {
-  '1': [
-    {
-      id: 't1',
-      title: 'Analyze user drop-off logs',
-      description: 'Review the Mixpanel and Datadog logs to find which step in signup has the highest drop-off rate.',
-      status: 'Done',
-      priority: 'High',
-      startDate: '2026-07-01',
-      dueDate: '2026-07-06',
-      assignees: [{ name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' }],
-      subtasks: [
-        { id: 's1', title: 'Export CSV of funnel statistics', completed: true },
-        { id: 's2', title: 'Identify core drop-off screens', completed: true },
-      ],
-      comments: [
-        { id: 'c1', author: 'John Doe', initials: 'JD', text: 'Seems like the password validation rule screen causes 25% dropouts.', time: '2 days ago' },
-        { id: 'c2', author: 'Sarah Connor', initials: 'SC', text: 'Agreed, it requires too many special characters. Let us simplify it.', time: '1 day ago' },
-      ],
-      attachmentsCount: 2,
-    },
-    {
-      id: 't2',
-      title: 'Create low-fidelity wireframes',
-      description: 'Draft initial paper/Figma wireframes focusing on clean, single-input onboarding screens.',
-      status: 'In Progress',
-      priority: 'Medium',
-      startDate: '2026-07-06',
-      dueDate: '2026-07-12',
-      assignees: [{ name: 'Emma Watson', initials: 'EW', bg: 'bg-rose-500' }, { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' }],
-      subtasks: [
-        { id: 's3', title: 'Design step-1 wireframe', completed: true },
-        { id: 's4', title: 'Design step-2 personalization wireframe', completed: false },
-        { id: 's5', title: 'Design final dashboard preview screen', completed: false },
-      ],
-      comments: [],
-      attachmentsCount: 1,
-    },
-    {
-      id: 't3',
-      title: 'Draft copy recommendations',
-      description: 'Rewrite validation messages and help bubbles to be friendlier and clearer.',
-      status: 'To Do',
-      priority: 'Low',
-      startDate: '2026-07-14',
-      dueDate: '2026-07-20',
-      assignees: [{ name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' }],
-      subtasks: [
-        { id: 's6', title: 'Draft welcoming headline options', completed: false },
-      ],
-      comments: [],
-      attachmentsCount: 0,
-    },
-    {
-      id: 't4',
-      title: 'Setup onboarding AB test config',
-      description: 'Prepare LaunchDarkly flags to swap between the legacy multi-step flow and the new simplified flow.',
-      status: 'In Review',
-      priority: 'High',
-      startDate: '2026-07-08',
-      dueDate: '2026-07-15',
-      assignees: [{ name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' }],
-      subtasks: [
-        { id: 's7', title: 'Add feature flags to signup route', completed: true },
-        { id: 's8', title: 'Verify event track telemetry payload', completed: true },
-      ],
-      comments: [
-        { id: 'c3', author: 'Alex Mercer', initials: 'AM', text: 'Checked on staging and analytics fire correctly.', time: '3 hours ago' }
-      ],
-      attachmentsCount: 0,
-    },
-    {
-      id: 't5',
-      title: 'Conduct focus group reviews',
-      description: 'Coordinate user interviews with 5 external testers to gather qualitative feedback.',
-      status: 'To Do',
-      priority: 'Urgent',
-      startDate: '2026-07-21',
-      dueDate: '2026-07-24',
-      assignees: [{ name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' }],
-      subtasks: [
-        { id: 's9', title: 'Book Zoom calendar dates', completed: false },
-        { id: 's10', title: 'Send questionnaire sheet', completed: false },
-      ],
-      comments: [],
-      attachmentsCount: 3,
-    }
-  ],
-  '2': [
-    {
-      id: 't6',
-      title: 'Review JWT signing algorithm',
-      description: 'Evaluate HMAC vs RS256 signing for multi-region protected API workloads.',
-      status: 'Done',
-      priority: 'High',
-      startDate: '2026-07-01',
-      dueDate: '2026-07-04',
-      assignees: [{ name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' }],
-      subtasks: [
-        { id: 's11', title: 'Benchmark key verify speeds', completed: true },
-      ],
-      comments: [],
-      attachmentsCount: 1,
-    },
-    {
-      id: 't7',
-      title: 'Write custom JWT verify middleware',
-      description: 'Develop Next.js edge-compatible auth middleware parsing headers and validating sessions.',
-      status: 'In Progress',
-      priority: 'Urgent',
-      startDate: '2026-07-05',
-      dueDate: '2026-07-12',
-      assignees: [{ name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' }, { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' }],
-      subtasks: [
-        { id: 's12', title: 'Write token parser utils', completed: true },
-        { id: 's13', title: 'Implement cookie-based fallback check', completed: false },
-      ],
-      comments: [],
-      attachmentsCount: 0,
-    },
-    {
-      id: 't8',
-      title: 'OAuth2 credential setup',
-      description: 'Register client client-ids and secrets for Google, GitHub, and Apple SSO credentials.',
-      status: 'To Do',
-      priority: 'Medium',
-      startDate: '2026-07-12',
-      dueDate: '2026-07-18',
-      assignees: [{ name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' }],
-      subtasks: [
-        { id: 's14', title: 'Google developers workspace credentials', completed: false },
-        { id: 's15', title: 'GitHub OAuth application callback url', completed: false },
-      ],
-      comments: [],
-      attachmentsCount: 0,
-    }
-  ]
-};
-
-const defaultMembers: Member[] = [
-  { name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' },
-  { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' },
-  { name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' },
-  { name: 'Emma Watson', initials: 'EW', bg: 'bg-rose-500' },
-  { name: 'Oliver Twist', initials: 'OT', bg: 'bg-amber-500' },
-];
 
 export function useProjectDetailService() {
   const { user } = useUser();
@@ -307,7 +137,7 @@ export function useProjectDetailService() {
           commentsCount: 0,
           attachmentsCount: 0,
           dueDate: 'No Due Date',
-          members: [defaultMembers[0]],
+          members: user ? [{ name: user.name || '', initials: user.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || '', bg: 'bg-indigo-500' }] : [],
         };
       }
       setProject(currentProj);
@@ -329,7 +159,7 @@ export function useProjectDetailService() {
             console.error(e);
           }
         } else {
-          const seed = initialTasksData[projectId] || [];
+          const seed: Task[] = [];
           setTasks(seed);
         }
       }
@@ -340,16 +170,7 @@ export function useProjectDetailService() {
       if (res.success && res.data) {
         setAvailableMembers(res.data.filter(e => e.role?.toLowerCase() !== 'admin'));
       } else {
-        setAvailableMembers(
-          defaultMembers.map((m, i) => ({
-            id: String(i + 1),
-            name: m.name,
-            initials: m.initials,
-            bg: m.bg,
-            email: '',
-            role: 'Employee'
-          }))
-        );
+        setAvailableMembers([]);
       }
     }
 
@@ -542,9 +363,9 @@ export function useProjectDetailService() {
       } else {
         finalAssignees = [{
           id: availableMembers[0]?.id || '1',
-          name: availableMembers[0]?.name || defaultMembers[0].name,
-          initials: availableMembers[0]?.initials || defaultMembers[0].initials,
-          bg: availableMembers[0]?.bg || defaultMembers[0].bg,
+          name: availableMembers[0]?.name || user?.name || '',
+          initials: availableMembers[0]?.initials || user?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || '',
+          bg: availableMembers[0]?.bg || 'bg-indigo-500',
         }];
       }
     }

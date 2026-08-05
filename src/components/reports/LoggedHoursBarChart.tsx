@@ -1,7 +1,7 @@
 import { MoreHorizontal, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { LoggedHoursBarChartProps } from '@/types/reports.types';
-import { getProjColor } from '@/services/useReportsService';
+import { getProjColor } from '@/helpers/report.helpers';
 
 export function LoggedHoursBarChart({
   user,

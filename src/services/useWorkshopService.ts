@@ -10,82 +10,6 @@ import { getIssuesByProjectAction, updateIssueAction, deleteIssueAction, uploadI
 import type { Issue } from '@/types/issues.types';
 import type { Project, ViewMode, CardDetailItem } from '@/types/workshop.types';
 
-const fallbackTasks: Record<string, Task[]> = {
-  '1': [
-    {
-      id: 't1',
-      title: 'Analyze user drop-off logs',
-      description: 'Review the Mixpanel and Datadog logs to find which step in signup has the highest drop-off rate.',
-      status: 'Done',
-      priority: 'High',
-      startDate: '2026-07-01',
-      dueDate: '2026-07-06',
-      assignees: [{ name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' }],
-      subtasks: [],
-      comments: [],
-    },
-    {
-      id: 't2',
-      title: 'Create wireframes',
-      description: 'Draft initial wireframes focusing on clean, onboarding screens.',
-      status: 'In Progress',
-      priority: 'Medium',
-      startDate: '2026-07-06',
-      dueDate: '2026-07-12',
-      assignees: [{ name: 'Sarah Connor', initials: 'SC', bg: 'bg-indigo-500' }, { name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' }],
-      subtasks: [],
-      comments: [],
-    },
-  ],
-  '2': [
-    {
-      id: 't6',
-      title: 'Review JWT signing algorithm',
-      description: 'Evaluate HMAC vs RS256 signing for API workloads.',
-      status: 'Done',
-      priority: 'High',
-      startDate: '2026-07-01',
-      dueDate: '2026-07-04',
-      assignees: [{ name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' }],
-      subtasks: [],
-      comments: [],
-    },
-  ]
-};
-
-const fallbackIssues: Record<string, Issue[]> = {
-  '1': [
-    {
-      id: 'i1',
-      title: 'Button overlap on Mobile Safari',
-      description: 'The signup button overlaps with input element below 380px widths.',
-      status: 'Open',
-      priority: 'High',
-      type: 'Bug',
-      projectId: '1',
-      projectName: 'SaaS Onboarding Flow',
-      dueDate: '2026-07-20',
-      assignees: [{ name: 'John Doe', initials: 'JD', bg: 'bg-emerald-500' }],
-      commentsCount: 2,
-    }
-  ],
-  '2': [
-    {
-      id: 'i2',
-      title: 'CORS policy missing in auth route',
-      description: 'Cross-origin request blocked when hitting authentication endpoint.',
-      status: 'In Progress',
-      priority: 'Critical',
-      type: 'Security',
-      projectId: '2',
-      projectName: 'API Authentication V2',
-      dueDate: '2026-07-18',
-      assignees: [{ name: 'Alex Mercer', initials: 'AM', bg: 'bg-violet-500' }],
-      commentsCount: 1,
-    }
-  ]
-};
-
 export function getAttachmentUrl(path: string) {
   if (!path) return '';
   if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
@@ -210,10 +134,10 @@ export function useWorkshopService() {
           try {
             tasksData = JSON.parse(stored);
           } catch {
-            tasksData = fallbackTasks[selectedProject.id] || [];
+            tasksData = [];
           }
         } else {
-          tasksData = fallbackTasks[selectedProject.id] || [];
+          tasksData = [];
         }
       }
 
@@ -228,10 +152,10 @@ export function useWorkshopService() {
           try {
             issuesData = JSON.parse(stored);
           } catch {
-            issuesData = fallbackIssues[selectedProject.id] || [];
+            issuesData = [];
           }
         } else {
-          issuesData = fallbackIssues[selectedProject.id] || [];
+          issuesData = [];
         }
       }
 
