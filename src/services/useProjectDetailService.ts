@@ -113,7 +113,7 @@ export function useProjectDetailService() {
     } else {
       const storedProjects = localStorage.getItem('pwt_projects');
       let currentProj: Project | null = null;
-      
+
       if (storedProjects) {
         try {
           const list: Project[] = JSON.parse(storedProjects);
@@ -306,7 +306,7 @@ export function useProjectDetailService() {
       if (selectedTask?.id === taskId) {
         setSelectedTask(res.data as any);
       }
-      
+
       if (project && taskToMove.status !== targetStatus) {
         const wasCompleted = taskToMove.status === 'Done';
         const isNowCompleted = targetStatus === 'Done';
@@ -385,7 +385,7 @@ export function useProjectDetailService() {
     const res = await createTaskAction(newTaskData);
     if (res.success && res.data) {
       setTasks(prev => [res.data as any, ...prev]);
-      
+
       if (project) {
         const newCount = project.tasksCount + 1;
         const newCompleted = project.completedTasks + (newTaskStatus === 'Done' ? 1 : 0);

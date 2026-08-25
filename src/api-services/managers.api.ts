@@ -48,4 +48,20 @@ export const managersApi = {
       return { data: null, error: { message: ERROR_CODES.FAILED_FETCH_TEAM, statusCode: 500 } };
     }
   },
+
+  sendEmployeeReminder: async (employeeId: string, token: string) => {
+    try {
+      const res = await apiClient.post<{ success: boolean; message: string }>(
+        API_ROUTES.MANAGERS_SEND_REMINDER,
+        { employeeId },
+        { token }
+      );
+      return { data: res, error: null };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return { data: null, error: { message: error.message, statusCode: error.statusCode } };
+      }
+      return { data: null, error: { message: 'Failed to send email reminder', statusCode: 500 } };
+    }
+  },
 };

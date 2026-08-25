@@ -1,8 +1,12 @@
 'use client';
 
-import { X, Mail, CheckSquare, Folder, User } from 'lucide-react';
+import { useState } from 'react';
+import { X, Mail, CheckSquare, Folder, User, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { EmployeeDetailModalProps } from '@/types/dashboard.types';
+import { useUser } from '@/contexts/UserContext';
+import { sendEmployeeReminderAction } from '@/actions/managers';
+import { toast } from 'react-toastify';
 
 export function EmployeeDetailModal({
   isOpen,
@@ -11,6 +15,34 @@ export function EmployeeDetailModal({
   assignedItems = [],
   onSelectWorkItem,
 }: EmployeeDetailModalProps) {
+  const { user } = useUser();
+  const [isSendingReminder, setIsSendingReminder] = useState(false);
+
+  const canSendReminder = user && ['admin', 'manager', 'team lead', 'client'].includes(user.role?.toLowerCase() ?? '');
+
+  const handleSendReminder = async () => {
+    if (!employee) return;
+    const employeeId = employee.id || (employee as any)._id;
+    if (!employeeId) {
+      toast.error('Employee ID is not available');
+      return;
+    }
+
+    setIsSendingReminder(true);
+    try {
+      const result = await sendEmployeeReminderAction(employeeId);
+      if (result.success) {
+        toast.success(`Workload reminder email sent successfully to ${employee.name}`);
+      } else {
+        toast.error(result.error || 'Failed to send reminder email');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'An error occurred while sending the email');
+    } finally {
+      setIsSendingReminder(false);
+    }
+  };
+
   if (!isOpen || !employee) return null;
 
   const initials = employee.initials || employee.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'EM';
@@ -199,13 +231,22 @@ export function EmployeeDetailModal({
 
         {/* Footer Actions */}
         <div className="border-t border-slate-100 p-4 bg-white flex items-center justify-between shrink-0">
-          <a
-            href={`mailto:${email}`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black transition-colors"
-          >
-            <Mail className="h-3.5 w-3.5" />
-            Send Email
-          </a>
+          {canSendReminder ? (
+            <button
+              onClick={handleSendReminder}
+              disabled={isSendingReminder}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 disabled:bg-slate-100 text-indigo-700 disabled:text-slate-400 text-xs font-black transition-colors cursor-pointer disabled:cursor-not-allowed"
+            >
+              {isSendingReminder ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Mail className="h-3.5 w-3.5" />
+              )}
+              {isSendingReminder ? 'Sending...' : 'Send Work Reminder'}
+            </button>
+          ) : (
+            <div />
+          )}
 
           <button
             onClick={onClose}

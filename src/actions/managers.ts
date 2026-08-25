@@ -54,3 +54,21 @@ export async function getManagerTeamAction(): Promise<{ success: boolean; data?:
     return { success: false, error: err.message || 'Unauthorized' };
   }
 }
+
+export async function sendEmployeeReminderAction(
+  employeeId: string
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  try {
+    const session = await getValidSession();
+
+    const { data, error } = await managersApi.sendEmployeeReminder(employeeId, session.token);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, message: data!.message };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Unauthorized' };
+  }
+}

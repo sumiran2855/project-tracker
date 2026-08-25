@@ -21,6 +21,7 @@ export const API_ROUTES = {
 
   MANAGERS_BASE: "managers",
   MANAGERS_MY_TEAM: "managers/my-team",
+  MANAGERS_SEND_REMINDER: "managers/send-reminder",
 
   PROJECTS_BASE: "projects",        // Will be appended with /${id} where needed
 
