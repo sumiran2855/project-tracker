@@ -490,12 +490,12 @@ export function useWorkshopService() {
     if (!activeDetailItem) return;
     const task = selectedProjTasks.find(t => t.id === newTaskId);
     const newTitle = task ? task.title : '';
-    
+
     const res = await updateIssueAction(activeDetailItem.id, {
       relatedTaskId: newTaskId || null as any,
       relatedTaskTitle: newTitle || null as any
     });
-    
+
     if (res.success) {
       setActiveDetailItem(prev => prev ? { ...prev, relatedTaskId: newTaskId, relatedTaskTitle: newTitle } : null);
       setSelectedProjIssues(prev => prev.map(i => i.id === activeDetailItem.id ? { ...i, relatedTaskId: newTaskId, relatedTaskTitle: newTitle } : i));
@@ -736,11 +736,11 @@ export function useWorkshopService() {
   useEffect(() => {
     if (projects.length === 0 || typeof window === 'undefined') return;
 
-    const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY;
-    const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'ap2';
+    const pusherKey = process.env.NEXT_PUSHER_KEY;
+    const pusherCluster = process.env.NEXT_PUSHER_CLUSTER || 'ap2';
 
     if (!pusherKey) {
-      console.warn('[Pusher] Client warning: NEXT_PUBLIC_PUSHER_KEY is not defined in .env.');
+      console.warn('[Pusher] Client warning: NEXT_PUSHER_KEY is not defined in .env.');
       return;
     }
 

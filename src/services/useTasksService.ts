@@ -82,7 +82,7 @@ export function useTasksService() {
         const mName = m.name;
         const mId = m.userId || m.id;
         return (mName && user?.name && mName.toLowerCase().trim() === user.name.toLowerCase().trim()) ||
-               (mId && user?.id && String(mId) === String(user.id));
+          (mId && user?.id && String(mId) === String(user.id));
       }))
       .map(p => p.id)
   );
@@ -461,8 +461,8 @@ export function useTasksService() {
   };
 
   const filteredTasks = displayTasks.filter(task => {
-    const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          task.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesProject = projectFilter === 'All' || task.projectId === projectFilter;
     const matchesPriority = priorityFilter === 'All' || task.priority === priorityFilter;
     const matchesStatus = statusFilter === 'All' || task.status === statusFilter;
@@ -479,11 +479,11 @@ export function useTasksService() {
   useEffect(() => {
     if (projects.length === 0 || typeof window === 'undefined') return;
 
-    const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY;
-    const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'ap2';
+    const pusherKey = process.env.NEXT_PUSHER_KEY;
+    const pusherCluster = process.env.NEXT_PUSHER_CLUSTER || 'ap2';
 
     if (!pusherKey) {
-      console.warn('[Pusher] Client warning: NEXT_PUBLIC_PUSHER_KEY is not defined in .env.');
+      console.warn('[Pusher] Client warning: NEXT_PUSHER_KEY is not defined in .env.');
       return;
     }
 
@@ -503,7 +503,7 @@ export function useTasksService() {
         console.log('[Pusher] Global task-created received:', data.task);
         setTasks(prev => {
           if (prev.some(t => t.id === data.task.id)) return prev;
-          
+
           const mappedTask = {
             ...data.task,
             projectId: data.task.projectId || project.id,

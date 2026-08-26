@@ -24,7 +24,7 @@ export function useSprintService() {
   const { user } = useUser();
   const isClient = user?.role?.toLowerCase() === 'client';
   const canEditHours = user?.role?.toLowerCase() === 'team lead' || user?.role?.toLowerCase() === 'employee';
-  
+
   // Data loading states
   const [tasks, setTasks] = useState<Task[]>([]);
   const [issues, setIssues] = useState<Issue[]>([]);
@@ -66,7 +66,7 @@ export function useSprintService() {
       setTasks(allTasks);
       setIssues(allIssues);
       setProjects(allProjs);
-      
+
       const empRes = await getEmployeesAction();
       if (empRes.success && empRes.data && empRes.data.length > 0) {
         setMembers(empRes.data);
@@ -97,14 +97,14 @@ export function useSprintService() {
 
   useEffect(() => {
     loadSprintData();
-    
+
     // Listen for storage updates
     const handleStorageChange = () => {
       loadSprintData();
     };
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('pwt_update', handleStorageChange);
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('pwt_update', handleStorageChange);
@@ -138,7 +138,7 @@ export function useSprintService() {
         const mName = m.name;
         const mId = m.userId || m.id;
         return (mName && user?.name && mName.toLowerCase().trim() === user.name.toLowerCase().trim()) ||
-               (mId && user?.id && String(mId) === String(user.id));
+          (mId && user?.id && String(mId) === String(user.id));
       }))
       .map(p => p.id)
   );
@@ -204,12 +204,12 @@ export function useSprintService() {
   // Apply project, type & search filters
   const filteredSprintItems = sprintItems.filter(item => {
     const matchesProject = filterProject === 'All' || item.projectId === filterProject;
-    const matchesType = filterType === 'All' || 
-                        (filterType === 'Tasks' && item.itemType === 'task') || 
-                        (filterType === 'Issues' && item.itemType === 'issue');
+    const matchesType = filterType === 'All' ||
+      (filterType === 'Tasks' && item.itemType === 'task') ||
+      (filterType === 'Issues' && item.itemType === 'issue');
     const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          item.projectName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          item.description.toLowerCase().includes(searchQuery.toLowerCase());
+      item.projectName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesProject && matchesType && matchesSearch;
   });
 
@@ -217,10 +217,10 @@ export function useSprintService() {
   const totalItems = sprintItems.length;
   const completedItems = sprintItems.filter(item => item.status === 'Done').length;
   const completionPercentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 100;
-  
+
   const totalTasksCount = sprintTasks.length;
   const completedTasksCount = sprintTasks.filter(t => t.status === 'Done').length;
-  
+
   const totalIssuesCount = sprintIssues.length;
   const resolvedIssuesCount = sprintIssues.filter(i => i.status === 'Resolved' || i.status === 'Closed').length;
 
@@ -251,12 +251,12 @@ export function useSprintService() {
     if (!activeDetailItem) return;
     const task = tasks.find(t => t.id === newTaskId);
     const newTitle = task ? task.title : '';
-    
+
     const res = await updateIssueAction(activeDetailItem.id, {
       relatedTaskId: newTaskId || null as any,
       relatedTaskTitle: newTitle || null as any
     });
-    
+
     if (res.success && res.data) {
       setActiveDetailItem((prev: any) => prev ? { ...prev, relatedTaskId: newTaskId, relatedTaskTitle: newTitle } : null);
       dispatchUpdate();
@@ -304,7 +304,7 @@ export function useSprintService() {
   // State update handlers
   const handleUpdateStatus = async (newStatus: any) => {
     if (!activeDetailItem) return;
-    
+
     // Status translation for issue
     let issueStatus = newStatus;
     if (activeDetailItem.itemType === 'issue') {
@@ -582,7 +582,7 @@ export function useSprintService() {
 
   // Members analytics data
   let memberAnalytics = members.map(m => {
-    const assignedItems = sprintItems.filter(item => 
+    const assignedItems = sprintItems.filter(item =>
       item.assignees.some(a => a.name === m.name || a.userId === m.id || a.id === m.id)
     );
     const completed = assignedItems.filter(item => item.status === 'Done' || item.status === 'Closed' || item.status === 'Resolved').length;
@@ -599,7 +599,7 @@ export function useSprintService() {
 
   // Role-based workload distribution visibility
   if (user?.role === 'Employee') {
-    memberAnalytics = memberAnalytics.filter(m => 
+    memberAnalytics = memberAnalytics.filter(m =>
       m.name === user.name || m.email === user.email || m.id === user.id
     );
     if (memberAnalytics.length === 0 && user) {
@@ -638,7 +638,7 @@ export function useSprintService() {
       });
     });
 
-    memberAnalytics = memberAnalytics.filter(m => 
+    memberAnalytics = memberAnalytics.filter(m =>
       clientEmployeeIdentifiers.has(m.name) || clientEmployeeIdentifiers.has(m.id)
     );
   } else if (user?.role === 'Team Lead') {
@@ -668,18 +668,18 @@ export function useSprintService() {
     });
   }
 
-  const selectedEmployeeItems = selectedEmployee ? sprintItems.filter(item => 
+  const selectedEmployeeItems = selectedEmployee ? sprintItems.filter(item =>
     item.assignees.some(a => a.name === selectedEmployee.name || a.userId === selectedEmployee.id || a.id === selectedEmployee.id)
   ) : [];
 
   useEffect(() => {
     if (projects.length === 0 || typeof window === 'undefined') return;
 
-    const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY;
-    const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'ap2';
+    const pusherKey = process.env.NEXT_PUSHER_KEY;
+    const pusherCluster = process.env.NEXT_PUSHER_CLUSTER || 'ap2';
 
     if (!pusherKey) {
-      console.warn('[Pusher] Client warning: NEXT_PUBLIC_PUSHER_KEY is not defined in .env.');
+      console.warn('[Pusher] Client warning: NEXT_PUSHER_KEY is not defined in .env.');
       return;
     }
 

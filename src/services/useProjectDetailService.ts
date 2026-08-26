@@ -22,7 +22,7 @@ export function useProjectDetailService() {
   const [issues, setIssues] = useState<any[]>([]);
   const [availableMembers, setAvailableMembers] = useState<Employee[]>([]);
   const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
-  
+
   const isEmployee = user?.role?.toLowerCase() === 'employee';
   const isClient = user?.role?.toLowerCase() === 'client';
   const canEditHours = user?.role?.toLowerCase() === 'team lead' || user?.role?.toLowerCase() === 'employee';
@@ -602,11 +602,11 @@ export function useProjectDetailService() {
   useEffect(() => {
     if (!projectId || typeof window === 'undefined') return;
 
-    const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY;
-    const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'ap2';
+    const pusherKey = process.env.NEXT_PUSHER_KEY;
+    const pusherCluster = process.env.NEXT_PUSHER_CLUSTER || 'ap2';
 
     if (!pusherKey) {
-      console.warn('[Pusher] Client warning: NEXT_PUBLIC_PUSHER_KEY is not defined in .env.');
+      console.warn('[Pusher] Client warning: NEXT_PUSHER_KEY is not defined in .env.');
       return;
     }
 
@@ -629,7 +629,7 @@ export function useProjectDetailService() {
     channel.bind('task-updated', (data: { taskId: string; task: Task }) => {
       console.log('[Pusher] task-updated received:', data.taskId);
       setTasks(prev => prev.map(t => t.id === data.taskId ? data.task : t));
-      
+
       setSelectedTask(prevSelected => {
         if (prevSelected && prevSelected.id === data.taskId) {
           return data.task;

@@ -60,7 +60,7 @@ export function useIssueService() {
       const res = await getProjectsAction();
       if (res.success && res.data) {
         setProjects(res.data);
-        
+
         // Fetch issues for all loaded projects
         const issuesPromises = res.data.map((p: any) => getIssuesByProjectAction(p.id));
         const results = await Promise.all(issuesPromises);
@@ -166,7 +166,7 @@ export function useIssueService() {
   const handleToggleStatus = async (issue: Issue, e: React.MouseEvent) => {
     e.stopPropagation();
     const nextStatus: Issue['status'] = issue.status === 'Resolved' ? 'Open' : 'Resolved';
-    
+
     // Optimistic UI update
     setIssues(prev => prev.map(iss => iss.id === issue.id ? { ...iss, status: nextStatus } : iss));
 
@@ -236,12 +236,12 @@ export function useIssueService() {
     if (!activeDetailItem) return;
     const task = activeProjectTasks.find(t => t.id === newTaskId);
     const newTitle = task ? task.title : '';
-    
+
     const res = await updateIssueAction(activeDetailItem.id, {
       relatedTaskId: newTaskId || null as any,
       relatedTaskTitle: newTitle || null as any
     });
-    
+
     if (res.success && res.data) {
       setActiveDetailItem((prev: any) => prev ? { ...prev, relatedTaskId: newTaskId, relatedTaskTitle: newTitle } : null);
       setIssues(prev => prev.map(i => i.id === activeDetailItem.id ? { ...i, relatedTaskId: newTaskId, relatedTaskTitle: newTitle } : i));
@@ -437,7 +437,7 @@ export function useIssueService() {
         const mName = m.name;
         const mId = m.userId || m.id;
         return (mName && user?.name && mName.toLowerCase().trim() === user.name.toLowerCase().trim()) ||
-               (mId && user?.id && String(mId) === String(user.id));
+          (mId && user?.id && String(mId) === String(user.id));
       }))
       .map(p => p.id)
   );
@@ -469,11 +469,11 @@ export function useIssueService() {
   useEffect(() => {
     if (projects.length === 0 || typeof window === 'undefined') return;
 
-    const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY;
-    const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'ap2';
+    const pusherKey = process.env.NEXT_PUSHER_KEY;
+    const pusherCluster = process.env.NEXT_PUSHER_CLUSTER || 'ap2';
 
     if (!pusherKey) {
-      console.warn('[Pusher] Client warning: NEXT_PUBLIC_PUSHER_KEY is not defined in .env.');
+      console.warn('[Pusher] Client warning: NEXT_PUSHER_KEY is not defined in .env.');
       return;
     }
 
