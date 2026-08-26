@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Pusher from 'pusher-js';
 import { useUser, usePermission } from '@/contexts/UserContext';
 import { getProjectsAction, getEmployeesAction } from '@/actions/projects';
 import type { Employee } from '@/types/projects.types';
@@ -731,6 +732,143 @@ export function useWorkshopService() {
     setSelectedProject(project);
     setViewMode('kanban');
   };
+
+  useEffect(() => {
+    if (projects.length === 0 || typeof window === 'undefined') return;
+
+    const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY;
+    const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'ap2';
+
+    if (!pusherKey) {
+      console.warn('[Pusher] Client warning: NEXT_PUBLIC_PUSHER_KEY is not defined in .env.');
+      return;
+    }
+
+    const pusher = new Pusher(pusherKey, {
+      cluster: pusherCluster,
+    });
+
+    const activeChannels: any[] = [];
+
+    projects.forEach(project => {
+      const channelName = `project-${project.id}`;
+      console.log(`[Pusher] Subscribing to channel: ${channelName}`);
+      const channel = pusher.subscribe(channelName);
+      activeChannels.push({ name: channelName, channel });
+
+      channel.bind('task-created', (data: { task: any }) => {
+        console.log('[Pusher] Workshop task-created received:', data.task);
+        if (selectedProject && selectedProject.id === project.id) {
+          setSelectedProjTasks(prev => {
+            if (prev.some(t => t.id === data.task.id)) return prev;
+            return [data.task, ...prev];
+          });
+        }
+      });
+
+      channel.bind('task-updated', (data: { taskId: string; task: any }) => {
+        console.log('[Pusher] Workshop task-updated received:', data.taskId);
+        if (selectedProject && selectedProject.id === project.id) {
+          setSelectedProjTasks(prev => prev.map(t => t.id === data.taskId ? data.task : t));
+        }
+
+        setActiveDetailItem((prevActive: any) => {
+          if (prevActive && prevActive.itemType === 'task' && prevActive.id === data.taskId) {
+            return {
+              ...prevActive,
+              title: data.task.title,
+              description: data.task.description || '',
+              status: data.task.status,
+              priority: data.task.priority,
+              dueDate: data.task.dueDate,
+              startDate: data.task.startDate,
+              assignees: data.task.assignees || [],
+              actualHours: data.task.actualHours || 0,
+              workLogs: data.task.workLogs || [],
+              comments: data.task.comments || [],
+              subtasks: data.task.subtasks || []
+            };
+          }
+          return prevActive;
+        });
+      });
+
+      channel.bind('task-deleted', (data: { taskId: string }) => {
+        console.log('[Pusher] Workshop task-deleted received:', data.taskId);
+        if (selectedProject && selectedProject.id === project.id) {
+          setSelectedProjTasks(prev => prev.filter(t => t.id !== data.taskId));
+        }
+        setActiveDetailItem((prevActive: any) => {
+          if (prevActive && prevActive.itemType === 'task' && prevActive.id === data.taskId) {
+            return null;
+          }
+          return prevActive;
+        });
+      });
+
+      channel.bind('issue-created', (data: { issue: any }) => {
+        console.log('[Pusher] Workshop issue-created received:', data.issue);
+        if (selectedProject && selectedProject.id === project.id) {
+          setSelectedProjIssues(prev => {
+            if (prev.some(i => i.id === data.issue.id)) return prev;
+            return [data.issue, ...prev];
+          });
+        }
+      });
+
+      channel.bind('issue-updated', (data: { issueId: string; issue: any }) => {
+        console.log('[Pusher] Workshop issue-updated received:', data.issueId);
+        if (selectedProject && selectedProject.id === project.id) {
+          setSelectedProjIssues(prev => prev.map(i => i.id === data.issueId ? data.issue : i));
+        }
+
+        setActiveDetailItem((prevActive: any) => {
+          if (prevActive && prevActive.itemType === 'issue' && prevActive.id === data.issueId) {
+            return {
+              ...prevActive,
+              title: data.issue.title,
+              description: data.issue.description,
+              status: data.issue.status,
+              priority: data.issue.priority,
+              type: data.issue.type,
+              dueDate: data.issue.dueDate,
+              assignees: data.issue.assignees,
+              actualHours: (data.issue as any).actualHours || 0,
+              workLogs: (data.issue as any).workLogs || [],
+              comments: data.issue.comments || [],
+              relatedTaskId: (data.issue as any).relatedTaskId || '',
+              relatedTaskTitle: (data.issue as any).relatedTaskTitle || '',
+              attachments: (data.issue as any).attachments || [],
+              projectId: data.issue.projectId,
+            };
+          }
+          return prevActive;
+        });
+      });
+
+      channel.bind('issue-deleted', (data: { issueId: string }) => {
+        console.log('[Pusher] Workshop issue-deleted received:', data.issueId);
+        if (selectedProject && selectedProject.id === project.id) {
+          setSelectedProjIssues(prev => prev.filter(i => i.id !== data.issueId));
+        }
+        setActiveDetailItem((prevActive: any) => {
+          if (prevActive && prevActive.itemType === 'issue' && prevActive.id === data.issueId) {
+            return null;
+          }
+          return prevActive;
+        });
+      });
+    });
+
+    return () => {
+      activeChannels.forEach(c => {
+        console.log(`[Pusher] Unsubscribing from channel: ${c.name}`);
+        c.channel.unbind_all();
+        pusher.unsubscribe(c.name);
+      });
+      pusher.disconnect();
+    };
+  }, [projects, selectedProject]);
 
   const totalProjects = projects.length;
   const inProgressCount = projects.filter(p => p.status === 'In Progress').length;

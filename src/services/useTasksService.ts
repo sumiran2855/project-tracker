@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Pusher from 'pusher-js';
 import { useUser, usePermission } from '@/contexts/UserContext';
 import { getProjectsAction, getEmployeesAction } from '@/actions/projects';
 import type { Employee, Project } from '@/types/projects.types';
@@ -474,6 +475,90 @@ export function useTasksService() {
   const inProgressCount = filteredTasks.filter(t => t.status === 'In Progress').length;
   const inReviewCount = filteredTasks.filter(t => t.status === 'In Review').length;
   const doneCount = filteredTasks.filter(t => t.status === 'Done').length;
+
+  useEffect(() => {
+    if (projects.length === 0 || typeof window === 'undefined') return;
+
+    const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY;
+    const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'ap2';
+
+    if (!pusherKey) {
+      console.warn('[Pusher] Client warning: NEXT_PUBLIC_PUSHER_KEY is not defined in .env.');
+      return;
+    }
+
+    const pusher = new Pusher(pusherKey, {
+      cluster: pusherCluster,
+    });
+
+    const activeChannels: any[] = [];
+
+    projects.forEach(project => {
+      const channelName = `project-${project.id}`;
+      console.log(`[Pusher] Subscribing to channel: ${channelName}`);
+      const channel = pusher.subscribe(channelName);
+      activeChannels.push({ name: channelName, channel });
+
+      channel.bind('task-created', (data: { task: any }) => {
+        console.log('[Pusher] Global task-created received:', data.task);
+        setTasks(prev => {
+          if (prev.some(t => t.id === data.task.id)) return prev;
+          
+          const mappedTask = {
+            ...data.task,
+            projectId: data.task.projectId || project.id,
+            projectName: data.task.projectName || project.name
+          };
+          return [mappedTask, ...prev];
+        });
+      });
+
+      channel.bind('task-updated', (data: { taskId: string; task: any }) => {
+        console.log('[Pusher] Global task-updated received:', data.taskId);
+        setTasks(prev => prev.map(t => {
+          if (t.id === data.taskId) {
+            return {
+              ...data.task,
+              projectId: data.task.projectId || project.id,
+              projectName: data.task.projectName || project.name
+            };
+          }
+          return t;
+        }));
+
+        setSelectedTask(prevSelected => {
+          if (prevSelected && prevSelected.id === data.taskId) {
+            return {
+              ...data.task,
+              projectId: data.task.projectId || project.id,
+              projectName: data.task.projectName || project.name
+            };
+          }
+          return prevSelected;
+        });
+      });
+
+      channel.bind('task-deleted', (data: { taskId: string }) => {
+        console.log('[Pusher] Global task-deleted received:', data.taskId);
+        setTasks(prev => prev.filter(t => t.id !== data.taskId));
+        setSelectedTask(prevSelected => {
+          if (prevSelected && prevSelected.id === data.taskId) {
+            return null;
+          }
+          return prevSelected;
+        });
+      });
+    });
+
+    return () => {
+      activeChannels.forEach(c => {
+        console.log(`[Pusher] Unsubscribing from channel: ${c.name}`);
+        c.channel.unbind_all();
+        pusher.unsubscribe(c.name);
+      });
+      pusher.disconnect();
+    };
+  }, [projects]);
 
   return {
     user,

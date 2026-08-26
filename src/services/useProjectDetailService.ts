@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Pusher from 'pusher-js';
 import { useUser, usePermission } from '@/contexts/UserContext';
 import { getProjectByIdAction, updateProjectAction, getEmployeesAction } from '@/actions/projects';
 import { getTasksByProjectAction, createTaskAction, updateTaskAction, deleteTaskAction } from '@/actions/tasks';
@@ -597,6 +598,64 @@ export function useProjectDetailService() {
         return 'bg-indigo-50 text-indigo-700 border border-indigo-250';
     }
   };
+
+  useEffect(() => {
+    if (!projectId || typeof window === 'undefined') return;
+
+    const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY;
+    const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'ap2';
+
+    if (!pusherKey) {
+      console.warn('[Pusher] Client warning: NEXT_PUBLIC_PUSHER_KEY is not defined in .env.');
+      return;
+    }
+
+    const pusher = new Pusher(pusherKey, {
+      cluster: pusherCluster,
+    });
+
+    const channelName = `project-${projectId}`;
+    console.log(`[Pusher] Subscribing to channel: ${channelName}`);
+    const channel = pusher.subscribe(channelName);
+
+    channel.bind('task-created', (data: { task: Task }) => {
+      console.log('[Pusher] task-created received:', data.task);
+      setTasks(prev => {
+        if (prev.some(t => t.id === data.task.id)) return prev;
+        return [data.task, ...prev];
+      });
+    });
+
+    channel.bind('task-updated', (data: { taskId: string; task: Task }) => {
+      console.log('[Pusher] task-updated received:', data.taskId);
+      setTasks(prev => prev.map(t => t.id === data.taskId ? data.task : t));
+      
+      setSelectedTask(prevSelected => {
+        if (prevSelected && prevSelected.id === data.taskId) {
+          return data.task;
+        }
+        return prevSelected;
+      });
+    });
+
+    channel.bind('task-deleted', (data: { taskId: string }) => {
+      console.log('[Pusher] task-deleted received:', data.taskId);
+      setTasks(prev => prev.filter(t => t.id !== data.taskId));
+      setSelectedTask(prevSelected => {
+        if (prevSelected && prevSelected.id === data.taskId) {
+          return null;
+        }
+        return prevSelected;
+      });
+    });
+
+    return () => {
+      console.log(`[Pusher] Unsubscribing from channel: ${channelName}`);
+      channel.unbind_all();
+      channel.unsubscribe();
+      pusher.disconnect();
+    };
+  }, [projectId]);
 
   return {
     user,
