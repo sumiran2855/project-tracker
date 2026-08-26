@@ -11,7 +11,7 @@ export function WorkshopHeader({
       <div>
         <div className="flex items-center gap-2 text-indigo-650 font-bold text-xs uppercase tracking-widest">
           <Sparkles className="h-3.5 w-3.5" />
-          <span>PWT Workshop Dashboard</span>
+          <span>Project Tracker Workshop Dashboard</span>
         </div>
         <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-3 mt-1">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-md shadow-indigo-500/20">

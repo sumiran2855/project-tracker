@@ -3,6 +3,8 @@ import {
   Quote, 
   Zap 
 } from 'lucide-react';
+import { Logo } from '@/components/ui/Logo';
+
 
 /**
  * AuthPanel — shared left-side decorative panel for login & signup pages.
@@ -32,21 +34,7 @@ export function AuthPanel() {
 
       <div className="relative z-10 flex h-full flex-col justify-between px-14 py-12">
         {/* Top Header */}
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-md ring-1 ring-slate-100/50">
-            <span className="text-base font-black tracking-tighter bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-              PWT
-            </span>
-          </div>
-          <div>
-            <p className="text-[13px] font-bold text-slate-800 leading-none">
-              Project Work
-            </p>
-            <p className="text-[13px] font-bold text-indigo-600 leading-none mt-0.5">
-              Tracker
-            </p>
-          </div>
-        </div>
+        <Logo iconSize="h-12 w-12" textSize="text-[22px]" />
 
         {/* Middle content: Workspace Preview */}
         <div className="my-auto py-8">
@@ -141,7 +129,7 @@ export function AuthPanel() {
             <Quote className="h-6 w-6 text-indigo-400/30 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-slate-600 text-xs italic leading-relaxed">
-                &ldquo;Project Work Tracker has completely unified our team. We can manage roadmaps, track bugs, and measure velocity in one beautiful workspace.&rdquo;
+                &ldquo;Project Tracker has completely unified our team. We can manage roadmaps, track bugs, and measure velocity in one beautiful workspace.&rdquo;
               </p>
               <div className="mt-2.5 flex items-center gap-2">
                 <div className="h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-extrabold text-indigo-700" style={{ backgroundColor: '#e0e7ff' }}>ER</div>

@@ -237,43 +237,54 @@ export function HoursLoggedCard({
         <div className="w-full md:w-60 lg:w-68 shrink-0 flex flex-col justify-between gap-5 md:border-l md:border-slate-100 md:pl-6 pt-5 md:pt-0 border-t md:border-t-0 border-slate-100">
           
           {/* Progress summary block */}
-          <div className="bg-slate-50/70 border border-slate-100/80 rounded-2xl p-4 flex flex-col gap-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
-                Weekly Status
-              </span>
-              <span className={cn(
-                "text-xs font-black px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-3xs border",
-                overallPercent >= 80 ? "bg-emerald-50 text-emerald-700 border-emerald-100/50" : 
-                overallPercent >= 40 ? "bg-indigo-50 text-indigo-700 border-indigo-100/50" : 
-                "bg-amber-50 text-amber-700 border-amber-100/50"
-              )}>
-                {overallPercent}%
-              </span>
+          {isEmployeeRole ? (
+            <div className="bg-slate-50/70 border border-slate-100/80 rounded-2xl p-4 flex flex-col gap-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                  Weekly Status
+                </span>
+                <span className={cn(
+                  "text-xs font-black px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-3xs border",
+                  overallPercent >= 80 ? "bg-emerald-50 text-emerald-700 border-emerald-100/50" : 
+                  overallPercent >= 40 ? "bg-indigo-50 text-indigo-700 border-indigo-100/50" : 
+                  "bg-amber-50 text-amber-700 border-amber-100/50"
+                )}>
+                  {overallPercent}%
+                </span>
+              </div>
+              
+              <div className="flex items-baseline justify-between">
+                <span className="text-xl font-black text-slate-800 tracking-tight">
+                  {totalWeeklyHours}h
+                </span>
+                <span className="text-[10px] font-bold text-slate-455">
+                  of {weeklyCapacity}h capacity
+                </span>
+              </div>
+
+              {/* Custom styled overall progress bar */}
+              <div className="w-full bg-slate-200/60 rounded-full h-2 overflow-hidden shadow-inner">
+                <div 
+                  className={cn(
+                    "h-full rounded-full transition-all duration-500",
+                    overallPercent >= 80 ? "bg-gradient-to-r from-emerald-500 to-teal-400" : 
+                    overallPercent >= 45 ? "bg-gradient-to-r from-indigo-500 to-cyan-400" : 
+                    "bg-gradient-to-r from-amber-500 to-orange-400"
+                  )}
+                  style={{ width: `${overallPercent}%` }}
+                />
+              </div>
             </div>
-            
-            <div className="flex items-baseline justify-between">
-              <span className="text-xl font-black text-slate-800 tracking-tight">
+          ) : (
+            <div className="bg-slate-50/70 border border-slate-100/80 rounded-2xl p-4 flex flex-col gap-1.5">
+              <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                Total Hours Logged
+              </span>
+              <span className="text-2xl font-black text-indigo-650 tracking-tight">
                 {totalWeeklyHours}h
               </span>
-              <span className="text-[10px] font-bold text-slate-455">
-                of {weeklyCapacity}h capacity
-              </span>
             </div>
-
-            {/* Custom styled overall progress bar */}
-            <div className="w-full bg-slate-200/60 rounded-full h-2 overflow-hidden shadow-inner">
-              <div 
-                className={cn(
-                  "h-full rounded-full transition-all duration-500",
-                  overallPercent >= 80 ? "bg-gradient-to-r from-emerald-500 to-teal-400" : 
-                  overallPercent >= 45 ? "bg-gradient-to-r from-indigo-500 to-cyan-400" : 
-                  "bg-gradient-to-r from-amber-500 to-orange-400"
-                )}
-                style={{ width: `${overallPercent}%` }}
-              />
-            </div>
-          </div>
+          )}
 
           {/* Breakdown / Legend Section */}
           <div className="flex-1 flex flex-col justify-start">

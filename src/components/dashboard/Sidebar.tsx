@@ -27,6 +27,8 @@ import { getProjectsAction } from '@/actions/projects';
 import { getAllTasksAction } from '@/actions/tasks';
 import type { SidebarProps } from '@/types/dashboard.types';
 
+import { LogoIcon } from '@/components/ui/Logo';
+
 export function Sidebar({ onClose, className, isCollapsed = false, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -126,7 +128,7 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
                   const mName = m.name;
                   const mId = m.userId || m.id;
                   return (mName && user?.name && mName.toLowerCase().trim() === user.name.toLowerCase().trim()) ||
-                         (mId && user?.id && String(mId) === String(user.id));
+                    (mId && user?.id && String(mId) === String(user.id));
                 }))
                 .map((p: any) => p.id)
             );
@@ -153,9 +155,9 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
         
         const completedTasks = filteredTasks.filter((t: any) => t.status === 'Done').length;
         const resolvedIssues = filteredIssues.filter((i: any) => i.status === 'Resolved' || i.status === 'Closed').length;
-        
-        const calculated = Math.round(((completedTasks + resolvedIssues) / totalItems) * 100);
-        setProgress(calculated);
+
+        const calculated = Math.round(((completedTasks + resolvedIssues) / totalItems) * 105);
+        setProgress(Math.min(calculated, 100)); // Clamp progress
       } catch (err) {
         console.error("Error calculating sprint progress", err);
       }
@@ -191,17 +193,16 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
             onClick={() => router.push('/workshop')}
             className={cn(
               'flex items-center rounded-2xl bg-white text-left transition-all hover:shadow-md focus:outline-none cursor-pointer group border border-slate-200/80 w-full',
-              isCollapsed ? 'p-2 justify-center mx-auto' : 'p-3 w-full gap-3'
+              isCollapsed ? 'p-2 justify-center mx-auto' : 'p-3 w-full gap-2'
             )}
           >
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 via-indigo-650 to-violet-650 shadow-md shadow-indigo-500/10 shrink-0">
-              <Building className="h-4.5 w-4.5 text-white" />
-              <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white" />
+            <div className="relative shrink-0">
+              <LogoIcon className="h-10 w-10" />
             </div>
             {!isCollapsed && (
               <>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-bold text-slate-800 leading-tight">PWT Workspace</p>
+                  <p className="truncate text-xs font-bold text-slate-800 leading-tight">pTracker Workspace</p>
                   <p className="truncate text-[10px] text-slate-450 font-semibold mt-0.5 leading-none">Pro Dashboard</p>
                 </div>
                 <ChevronsUpDown className="h-3.5 w-3.5 text-slate-400 shrink-0 group-hover:text-indigo-600 transition-colors" />

@@ -18,6 +18,8 @@ import { fetchLiveNotifications } from '@/lib/sprintLoader';
 import { useUser } from '@/contexts/UserContext';
 import type { NavbarProps } from '@/types/dashboard.types';
 
+import { LogoIcon } from '@/components/ui/Logo';
+
 export function Navbar({ userName, userEmail }: NavbarProps) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -201,10 +203,8 @@ export function Navbar({ userName, userEmail }: NavbarProps) {
             </SheetContent>
           </Sheet>
 
-          {/* Small P Logo on Mobile */}
-          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-650 shadow-md">
-            <span className="text-[9px] font-black text-white">P</span>
-          </div>
+          {/* Small Logo Icon on Mobile */}
+          <LogoIcon className="h-6 w-6" />
         </div>
 
         {/* Segment 2: search pill, grows to fill center */}
