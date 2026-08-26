@@ -602,11 +602,11 @@ export function useProjectDetailService() {
   useEffect(() => {
     if (!projectId || typeof window === 'undefined') return;
 
-    const pusherKey = process.env.NEXT_PUSHER_KEY;
-    const pusherCluster = process.env.NEXT_PUSHER_CLUSTER || 'ap2';
+    const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY;
+    const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'ap2';
 
     if (!pusherKey) {
-      console.warn('[Pusher] Client warning: NEXT_PUSHER_KEY is not defined in .env.');
+      console.warn('[Pusher] Client warning: NEXT_PUBLIC_PUSHER_KEY is not defined in .env.');
       return;
     }
 
