@@ -8,17 +8,17 @@ export function ProjectsHeader({
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
-        <div className="flex items-center gap-2 text-indigo-650 font-bold text-xs uppercase tracking-widest">
+        <div className="flex items-center gap-2 text-indigo-600 font-bold text-xs uppercase tracking-widest">
           <Sparkles className="h-3.5 w-3.5 animate-pulse" />
           <span>Workspace Overview</span>
         </div>
-        <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-3 mt-1.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-655 shadow-xs border border-indigo-100/30">
+        <h1 className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-3 mt-1.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 shadow-xs border border-indigo-100/30 dark:border-indigo-900/30">
             <Folder className="h-5 w-5" />
           </div>
           Project Hub
         </h1>
-        <p className="text-xs text-slate-450 font-medium mt-1">
+        <p className="text-xs text-slate-400 dark:text-slate-400 font-medium mt-1">
           Manage, schedule, and track all ongoing corporate initiative pipelines.
         </p>
       </div>

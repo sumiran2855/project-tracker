@@ -81,17 +81,17 @@ export default function IssuesPage() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-indigo-655 font-bold text-xs uppercase tracking-widest">
+            <div className="flex items-center gap-2 text-indigo-700 font-bold text-xs uppercase tracking-widest">
               <Sparkles className="h-3.5 w-3.5" />
               <span>Workspace Tracking</span>
             </div>
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-3 mt-1.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-650 border border-indigo-100/30 shadow-xs">
+            <h1 className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-3 mt-1.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100/30 dark:border-indigo-900/30 shadow-xs">
                 <Bug className="h-4.5 w-4.5" />
               </div>
               Issues Tracker
             </h1>
-            <p className="text-xs text-slate-450 font-medium mt-1">
+            <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-1">
               Log, assign, and track technical bugs, security findings, and roadmap improvements.
             </p>
           </div>
@@ -101,7 +101,7 @@ export default function IssuesPage() {
               setModalStatus('Open');
               setIsModalOpen(true);
             }}
-            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-755 text-white px-4.5 py-2.5 text-xs font-bold shadow-md shadow-indigo-600/10 transition-all cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-800 text-white px-4.5 py-2.5 text-xs font-bold shadow-md shadow-indigo-600/10 transition-all cursor-pointer"
           >
             <Plus className="h-4.5 w-4.5" />
             <span>New Issue</span>
@@ -120,7 +120,7 @@ export default function IssuesPage() {
             return (
               <div
                 key={i}
-                className="group relative flex flex-col justify-between overflow-hidden rounded-2xl bg-white border border-slate-100 p-5 cursor-default transition-all duration-300 hover:-translate-y-px"
+                className="group relative flex flex-col justify-between overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 cursor-default transition-all duration-300 hover:-translate-y-px"
                 style={{ boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)' }}
                 onMouseEnter={(e) => {
                   (e.currentTarget as HTMLDivElement).style.boxShadow =
@@ -152,12 +152,12 @@ export default function IssuesPage() {
                 {/* Text details */}
                 <div className="relative mt-5">
                   <p
-                    className="text-[28px] font-black leading-none tracking-tight text-slate-800"
+                    className="text-[28px] font-black leading-none tracking-tight text-slate-800 dark:text-slate-100"
                     style={{ fontVariantNumeric: 'tabular-nums' }}
                   >
                     {s.value}
                   </p>
-                  <p className="mt-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <p className="mt-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
                     {s.label}
                   </p>
                   <div
@@ -171,7 +171,7 @@ export default function IssuesPage() {
         </div>
 
         {/* Advanced Filters */}
-        <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-3 bg-white border border-slate-200 p-3 rounded-2xl shadow-xs">
+        <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl shadow-xs">
 
           {/* Search */}
           <div className="relative w-full xl:flex-1">
@@ -181,7 +181,7 @@ export default function IssuesPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search issue title or description..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-10 pr-4 text-xs text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none transition-all"
+              className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 py-2.5 pl-10 pr-4 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all"
             />
             {searchQuery && (
               <button onClick={() => setSearchQuery('')} className="absolute right-3.5 top-3.5 text-slate-400">
@@ -193,49 +193,49 @@ export default function IssuesPage() {
           {/* Filters */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full xl:w-auto">
             {/* Projects */}
-            <div className="relative flex items-center bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-550 shadow-2xs">
+            <div className="relative flex items-center bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-500 dark:text-slate-400 shadow-2xs">
               <span className="shrink-0 mr-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Project:</span>
               <select
                 value={projectFilter}
                 onChange={(e) => setProjectFilter(e.target.value)}
-                className="bg-transparent text-slate-700 outline-none pr-4 py-1.5 cursor-pointer font-bold w-full"
+                className="bg-transparent text-slate-700 dark:text-slate-200 outline-none pr-4 py-1.5 cursor-pointer font-bold w-full"
               >
-                <option value="All">All Projects</option>
+                <option value="All" className="dark:bg-slate-900">All Projects</option>
                 {projects.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
+                  <option key={p.id} value={p.id} className="dark:bg-slate-900">{p.name}</option>
                 ))}
               </select>
             </div>
 
             {/* Priority */}
-            <div className="relative flex items-center bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-550 shadow-2xs">
+            <div className="relative flex items-center bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-500 dark:text-slate-400 shadow-2xs">
               <span className="shrink-0 mr-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Priority:</span>
               <select
                 value={priorityFilter}
                 onChange={(e) => setPriorityFilter(e.target.value)}
-                className="bg-transparent text-slate-700 outline-none pr-4 py-1.5 cursor-pointer font-bold w-full"
+                className="bg-transparent text-slate-700 dark:text-slate-200 outline-none pr-4 py-1.5 cursor-pointer font-bold w-full"
               >
-                <option value="All">All Priorities</option>
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-                <option value="Critical">Critical</option>
+                <option value="All" className="dark:bg-slate-900">All Priorities</option>
+                <option value="Low" className="dark:bg-slate-900">Low</option>
+                <option value="Medium" className="dark:bg-slate-900">Medium</option>
+                <option value="High" className="dark:bg-slate-900">High</option>
+                <option value="Critical" className="dark:bg-slate-900">Critical</option>
               </select>
             </div>
 
             {/* Status */}
-            <div className="relative flex items-center bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-550 shadow-2xs">
+            <div className="relative flex items-center bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-500 dark:text-slate-400 shadow-2xs">
               <span className="shrink-0 mr-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status:</span>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-transparent text-slate-700 outline-none pr-4 py-1.5 cursor-pointer font-bold w-full"
+                className="bg-transparent text-slate-700 dark:text-slate-200 outline-none pr-4 py-1.5 cursor-pointer font-bold w-full"
               >
-                <option value="All">All Statuses</option>
-                <option value="Open">Open</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Resolved">Resolved</option>
-                <option value="Closed">Closed</option>
+                <option value="All" className="dark:bg-slate-900">All Statuses</option>
+                <option value="Open" className="dark:bg-slate-900">Open</option>
+                <option value="In Progress" className="dark:bg-slate-900">In Progress</option>
+                <option value="Resolved" className="dark:bg-slate-900">Resolved</option>
+                <option value="Closed" className="dark:bg-slate-900">Closed</option>
               </select>
             </div>
           </div>
@@ -243,10 +243,10 @@ export default function IssuesPage() {
         </div>
 
         {/* Tab Select & Controls */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white border border-slate-200 p-2 rounded-2xl shadow-xs">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2 rounded-2xl shadow-xs">
           
           {/* Switching Tabs */}
-          <div className="flex bg-slate-50 p-1 rounded-xl w-full sm:w-auto border border-slate-100">
+          <div className="flex bg-slate-50 dark:bg-slate-950 p-1 rounded-xl w-full sm:w-auto border border-slate-100 dark:border-slate-800">
             {[
               { id: 'board', label: 'Kanban Board', icon: Columns },
               { id: 'list', label: 'Detailed List', icon: ListTodo },
@@ -260,8 +260,8 @@ export default function IssuesPage() {
                   className={cn(
                     "flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer",
                     active 
-                      ? "bg-white text-indigo-650 shadow-sm ring-1 ring-slate-200/50" 
-                      : "text-slate-400 hover:text-slate-650"
+                      ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-800/50" 
+                      : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
                   )}
                 >
                   <Icon className="h-4 w-4" />

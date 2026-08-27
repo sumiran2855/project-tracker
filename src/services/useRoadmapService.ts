@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useUser, usePermission } from '@/contexts/UserContext';
-import { getProjectsAction } from '@/actions/projects';
+import { getProjectsAction, updateProjectAction } from '@/actions/projects';
 import type { Project } from '@/types/projects.types';
 import type { MilestoneItem } from '@/types/roadmap.types';
 
@@ -127,7 +127,7 @@ export function useRoadmapService() {
     e.dataTransfer.setData('text/plain', projectId);
   };
 
-  const handleDrop = (e: React.DragEvent, targetQuarter: Project['targetQuarter']) => {
+  const handleDrop = async (e: React.DragEvent, targetQuarter: Project['targetQuarter']) => {
     e.preventDefault();
     const projectId = e.dataTransfer.getData('text/plain');
     if (!projectId) return;
@@ -139,6 +139,12 @@ export function useRoadmapService() {
       return p;
     });
     saveProjects(updated);
+
+    try {
+      await updateProjectAction(projectId, { targetQuarter });
+    } catch (err) {
+      console.error("Failed to update project quarter", err);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -194,7 +200,7 @@ export function useRoadmapService() {
     setIsEditProjectModalOpen(true);
   };
 
-  const handleSaveProjectDates = (e: React.FormEvent) => {
+  const handleSaveProjectDates = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProject) return;
 
@@ -212,7 +218,58 @@ export function useRoadmapService() {
 
     saveProjects(updated);
     setIsEditProjectModalOpen(false);
+    const projId = editingProject.id;
     setEditingProject(null);
+
+    try {
+      await updateProjectAction(projId, {
+        startDate: editStartDate,
+        dueDate: editDueDate,
+        targetQuarter: editQuarter
+      });
+    } catch (err) {
+      console.error("Failed to update project dates", err);
+    }
+  };
+
+  const handleUpdateProjectDates = async (projectId: string, startDate: string, dueDate: string) => {
+    let targetQuarter: Project['targetQuarter'] = 'Future';
+    if (dueDate && dueDate !== 'No Due Date') {
+      try {
+        const date = new Date(dueDate);
+        const month = date.getMonth();
+        const year = date.getFullYear();
+        if (month >= 3 && month <= 5) targetQuarter = `Q2 ${year}` as any;
+        else if (month >= 6 && month <= 8) targetQuarter = `Q3 ${year}` as any;
+        else if (month >= 9 && month <= 11) targetQuarter = `Q4 ${year}` as any;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    const updated = projects.map(p => {
+      if (p.id === projectId) {
+        return {
+          ...p,
+          startDate,
+          dueDate,
+          targetQuarter,
+        };
+      }
+      return p;
+    });
+
+    saveProjects(updated);
+
+    try {
+      await updateProjectAction(projectId, {
+        startDate,
+        dueDate,
+        targetQuarter,
+      });
+    } catch (err) {
+      console.error("Failed to update project dates in database", err);
+    }
   };
 
   // Scoped projects based on user role and filters
@@ -248,13 +305,13 @@ export function useRoadmapService() {
   const getStatusStyles = (status: Project['status']) => {
     switch (status) {
       case 'Completed':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-250';
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
       case 'In Review':
-        return 'bg-amber-50 text-amber-700 border-amber-250';
+        return 'bg-amber-50 text-amber-700 border-amber-200';
       case 'Planning':
-        return 'bg-blue-50 text-blue-700 border-blue-250';
+        return 'bg-blue-50 text-blue-700 border-blue-200';
       default:
-        return 'bg-indigo-50 text-indigo-700 border-indigo-250';
+        return 'bg-indigo-50 text-indigo-700 border-indigo-200';
     }
   };
 
@@ -318,5 +375,6 @@ export function useRoadmapService() {
     handleDeleteMilestone,
     handleOpenEditProjectModal,
     handleSaveProjectDates,
+    handleUpdateProjectDates,
   };
 }

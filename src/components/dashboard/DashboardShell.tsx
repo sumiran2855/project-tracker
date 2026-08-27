@@ -1,18 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { Navbar } from './Navbar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { DashboardShellProps } from '@/types/dashboard.types';
+import { useTheme } from 'next-themes';
 
 export function DashboardShell({ user, children }: DashboardShellProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { setTheme } = useTheme();
+
+  useEffect(() => {
+    if (user?.workspacePrefs?.theme) {
+      setTheme(user.workspacePrefs.theme);
+    }
+  }, [user?.workspacePrefs?.theme, setTheme]);
 
   return (
     <TooltipProvider delayDuration={100}>
-      <div className="flex min-h-screen w-full bg-slate-50">
+      <div className="flex min-h-screen w-full bg-background text-foreground transition-colors duration-300">
         {/* Desktop Collapsible Sidebar */}
         <Sidebar
           user={user}
@@ -35,7 +43,7 @@ export function DashboardShell({ user, children }: DashboardShellProps) {
           <Navbar userName={user?.name} userEmail={user?.email} />
 
           {/* Page body */}
-          <main className="flex-1 bg-slate-50 min-w-0">
+          <main className="flex-1 bg-background min-w-0 transition-colors duration-300">
             {children}
           </main>
         </div>

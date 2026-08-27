@@ -3,6 +3,8 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './globals.css';
 import { rootMetadata } from '@/types/app.metadata';
+import { ThemeProvider } from '@/contexts/ThemeProvider';
+import { QueryProvider } from '@/contexts/QueryProvider';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -25,10 +27,15 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        {children}
-        <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="colored" />
+        <ThemeProvider>
+          <QueryProvider>
+            {children}
+            <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="colored" />
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

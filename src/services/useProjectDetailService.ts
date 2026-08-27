@@ -571,7 +571,7 @@ export function useProjectDetailService() {
   };
 
   const getPriorityColor = (prio: Task['priority'] | Project['priority'] | undefined) => {
-    if (!prio) return 'bg-slate-50 text-slate-655 border-slate-200/50';
+    if (!prio) return 'bg-slate-50 text-slate-700 border-slate-200/50';
     switch (prio) {
       case 'Urgent':
       case 'Critical':
@@ -582,20 +582,20 @@ export function useProjectDetailService() {
         return 'bg-indigo-50 text-indigo-700 border-indigo-200/50';
       case 'Low':
       default:
-        return 'bg-slate-50 text-slate-655 border-slate-200/50';
+        return 'bg-slate-50 text-slate-700 border-slate-200/50';
     }
   };
 
   const getProjectStatusBadge = (status: Project['status']) => {
     switch (status) {
       case 'Completed':
-        return 'bg-emerald-50 text-emerald-700 border border-emerald-250';
+        return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
       case 'In Review':
-        return 'bg-amber-50 text-amber-700 border border-amber-250';
+        return 'bg-amber-50 text-amber-700 border border-amber-200';
       case 'Planning':
-        return 'bg-blue-50 text-blue-700 border border-blue-250';
+        return 'bg-blue-50 text-blue-700 border border-blue-200';
       default:
-        return 'bg-indigo-50 text-indigo-700 border border-indigo-250';
+        return 'bg-indigo-50 text-indigo-700 border border-indigo-200';
     }
   };
 

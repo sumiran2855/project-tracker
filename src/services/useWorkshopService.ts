@@ -8,6 +8,7 @@ import type { Employee } from '@/types/projects.types';
 import { getTasksByProjectAction, updateTaskAction, deleteTaskAction } from '@/actions/tasks';
 import type { Task, Subtask, Comment } from '@/types/tasks.types';
 import { getIssuesByProjectAction, updateIssueAction, deleteIssueAction, uploadIssueAttachmentAction } from '@/actions/issues';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Issue } from '@/types/issues.types';
 import type { Project, ViewMode, CardDetailItem } from '@/types/workshop.types';
 
@@ -23,6 +24,7 @@ export function getAttachmentUrl(path: string) {
 
 export function useWorkshopService() {
   const { user } = useUser();
+  const queryClient = useQueryClient();
   const canCreateProject = usePermission('project:create');
   const isEmployee = user?.role?.toLowerCase() === 'employee';
   const isClient = user?.role?.toLowerCase() === 'client';

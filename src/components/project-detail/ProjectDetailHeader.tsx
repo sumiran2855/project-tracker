@@ -11,7 +11,7 @@ export function ProjectDetailHeader({
   getProjectStatusBadge,
 }: ProjectDetailHeaderProps) {
   return (
-    <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs relative overflow-hidden">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs relative overflow-hidden">
       
       {/* Decorative corner */}
       <span className="absolute -right-24 -top-24 h-48 w-48 rounded-full bg-indigo-500/3 pointer-events-none" />
@@ -24,7 +24,7 @@ export function ProjectDetailHeader({
             {/* Back Button */}
             <button 
               onClick={onBackToHub}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-505 hover:text-indigo-650 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
             >
               <ArrowLeft className="h-4 w-4" />
               <span>Back to Hub</span>
@@ -32,7 +32,7 @@ export function ProjectDetailHeader({
 
             {/* Title & Status */}
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">{project.name}</h1>
+              <h1 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">{project.name}</h1>
               
               <div className="relative group shrink-0">
                 <select 
@@ -56,22 +56,22 @@ export function ProjectDetailHeader({
               {!isEmployee && (
                 <button
                   onClick={onEditDetailsClick}
-                  className="inline-flex h-7 items-center gap-1.5 rounded-full border border-slate-200 bg-white hover:bg-slate-55 px-3 text-[10px] font-black uppercase tracking-wider text-slate-500 transition-all cursor-pointer shadow-3xs hover:border-slate-300"
+                  className="inline-flex h-7 items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 px-3 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-300 transition-all cursor-pointer shadow-3xs hover:border-slate-300 dark:hover:border-slate-700"
                 >
-                  <Pencil className="h-3 w-3 text-indigo-505" />
+                  <Pencil className="h-3 w-3 text-indigo-500" />
                   <span>Edit Details</span>
                 </button>
               )}
             </div>
 
-            <p className="text-xs text-slate-500 font-medium leading-relaxed max-w-2xl">{project.description}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-w-2xl">{project.description}</p>
             
             {/* Tags & Due date */}
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-1 text-slate-650">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-1 text-slate-600">
               <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400">
-                <Calendar className="h-4 w-4 text-indigo-505" />
+                <Calendar className="h-4 w-4 text-indigo-500" />
                 <span>Due Date:</span>
-                <span className="text-slate-700">{project.dueDate}</span>
+                <span className="text-slate-700 dark:text-slate-300">{project.dueDate}</span>
               </div>
 
               {project.tags && project.tags.length > 0 && (
@@ -79,7 +79,7 @@ export function ProjectDetailHeader({
                   <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tags:</span>
                   <div className="flex flex-wrap gap-1.5">
                     {project.tags.map(tag => (
-                      <span key={tag} className="rounded-lg bg-slate-50 border border-slate-200/50 text-slate-505 px-2 py-0.5 text-[9px] font-bold">
+                      <span key={tag} className="rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 text-[9px] font-bold">
                         {tag}
                       </span>
                     ))}
@@ -92,7 +92,7 @@ export function ProjectDetailHeader({
                   <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tech Stack:</span>
                   <div className="flex flex-wrap gap-1.5">
                     {project.techStack.map(tech => (
-                      <span key={tech} className="rounded-lg bg-indigo-50/50 border border-indigo-150/30 text-indigo-750 px-2 py-0.5 text-[9px] font-bold">
+                      <span key={tech} className="rounded-lg bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200/30 dark:border-indigo-900/30 text-indigo-700 dark:text-indigo-400 px-2 py-0.5 text-[9px] font-bold">
                         {tech}
                       </span>
                     ))}

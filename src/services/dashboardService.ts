@@ -213,7 +213,7 @@ export async function getDashboardData() {
                 gatheredActivities.push({
                   text: `Task "${task.title}" completed`,
                   time: getRelativeTimeString(task.updatedAt),
-                  dot: 'bg-emerald-550',
+                  dot: 'bg-emerald-500',
                   rawDate: d
                 });
               }

@@ -74,6 +74,7 @@ export interface RoadmapTimelineProps {
   isEmployee: boolean;
   onOpenEditProjectModal: (project: Project) => void;
   getStatusStyles: (status: Project['status']) => string;
+  onUpdateProjectDates?: (projectId: string, startDate: string, dueDate: string) => void;
 }
 
 export interface RoadmapMilestonesProps {

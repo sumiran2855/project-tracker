@@ -7,7 +7,7 @@ export function ProfileHeaderBanner({
   onEditClick,
 }: ProfileHeaderBannerProps) {
   return (
-    <div className="relative rounded-3xl bg-gradient-to-br from-indigo-500 via-indigo-650 to-violet-650 p-6 sm:p-8 text-white overflow-hidden shadow-md">
+    <div className="relative rounded-3xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-violet-600 p-6 sm:p-8 text-white overflow-hidden shadow-md">
       {/* Background shapes */}
       <div className="absolute top-0 right-0 h-40 w-40 bg-white/10 rounded-full blur-3xl" />
       <div className="absolute -bottom-10 left-10 h-32 w-32 bg-indigo-400/20 rounded-full blur-2xl" />

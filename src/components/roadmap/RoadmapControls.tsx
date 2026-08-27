@@ -22,10 +22,10 @@ export function RoadmapControls({
   );
 
   return (
-    <div className="flex flex-col xl:flex-row items-center gap-4 bg-white border border-slate-200 p-3 rounded-2xl shadow-xs">
+    <div className="flex flex-col xl:flex-row items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl shadow-xs">
 
       {/* Switching Tabs */}
-      <div className="flex bg-slate-50 p-1 rounded-xl w-full xl:w-auto border border-slate-100">
+      <div className="flex bg-slate-50 dark:bg-slate-950 p-1 rounded-xl w-full xl:w-auto border border-slate-100 dark:border-slate-800">
         {[
           { id: 'timeline', label: 'Timeline Gantt', icon: SquareChartGantt },
           { id: 'board', label: 'Quarterly Board', icon: Layers },
@@ -40,8 +40,8 @@ export function RoadmapControls({
               className={cn(
                 "flex-1 xl:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-4 py-2 sm:py-2.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all cursor-pointer",
                 active
-                  ? "bg-white text-indigo-650 shadow-sm ring-1 ring-slate-200/50"
-                  : "text-slate-400 hover:text-slate-655"
+                  ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-800"
+                  : "text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
               )}
             >
               <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
@@ -65,12 +65,12 @@ export function RoadmapControls({
                 ? "Search milestones by title, description..."
                 : "Search projects by title, description..."
             }
-            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-3 pl-10 pr-4 text-xs text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
+            className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800 py-3 pl-10 pr-4 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-indigo-505 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-650"
+              className="absolute right-3.5 top-3.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
             >
               <X className="h-4 w-4" />
             </button>
@@ -79,12 +79,12 @@ export function RoadmapControls({
 
         {/* Conditional Dropdown filters */}
         {activeTab === 'milestones' ? (
-          <div className="relative flex items-center justify-between sm:justify-start w-full sm:w-auto bg-white border border-slate-200 rounded-xl px-3 py-1 text-xs font-bold text-slate-500 shadow-2xs shrink-0">
+          <div className="relative flex items-center justify-between sm:justify-start w-full sm:w-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1 text-xs font-bold text-slate-500 dark:text-slate-400 shadow-2xs shrink-0">
             <span className="shrink-0 mr-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Project:</span>
             <select
               value={projectFilter}
               onChange={(e) => setProjectFilter(e.target.value)}
-              className="flex-1 sm:flex-initial bg-transparent text-slate-700 outline-none pr-4 py-2 cursor-pointer font-bold text-right sm:text-left"
+              className="flex-1 sm:flex-initial bg-transparent text-slate-700 dark:text-slate-300 dark:bg-slate-900 outline-none pr-4 py-2 cursor-pointer font-bold text-right sm:text-left"
             >
               <option value="All">All Projects</option>
               {projects.map(p => (
@@ -93,12 +93,12 @@ export function RoadmapControls({
             </select>
           </div>
         ) : (
-          <div className="relative flex items-center justify-between sm:justify-start w-full sm:w-auto bg-white border border-slate-200 rounded-xl px-3 py-1 text-xs font-bold text-slate-500 shadow-2xs shrink-0">
+          <div className="relative flex items-center justify-between sm:justify-start w-full sm:w-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1 text-xs font-bold text-slate-500 dark:text-slate-400 shadow-2xs shrink-0">
             <span className="shrink-0 mr-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status:</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="flex-1 sm:flex-initial bg-transparent text-slate-700 outline-none pr-4 py-2 cursor-pointer font-bold text-right sm:text-left"
+              className="flex-1 sm:flex-initial bg-transparent text-slate-700 dark:text-slate-300 dark:bg-slate-900 outline-none pr-4 py-2 cursor-pointer font-bold text-right sm:text-left"
             >
               <option value="All">All Statuses</option>
               <option value="Planning">Planning</option>
@@ -110,12 +110,12 @@ export function RoadmapControls({
         )}
 
         {!isEmployee && (
-          <div className="relative flex items-center justify-between sm:justify-start w-full sm:w-auto bg-white border border-slate-200 rounded-xl px-3 py-1 text-xs font-bold text-slate-500 shadow-2xs shrink-0">
+          <div className="relative flex items-center justify-between sm:justify-start w-full sm:w-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1 text-xs font-bold text-slate-500 dark:text-slate-400 shadow-2xs shrink-0">
             <span className="shrink-0 mr-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Employee:</span>
             <select
               value={employeeFilter}
               onChange={(e) => setEmployeeFilter(e.target.value)}
-              className="flex-1 sm:flex-initial bg-transparent text-slate-700 outline-none pr-4 py-2 cursor-pointer font-bold text-right sm:text-left"
+              className="flex-1 sm:flex-initial bg-transparent text-slate-700 dark:text-slate-300 dark:bg-slate-900 outline-none pr-4 py-2 cursor-pointer font-bold text-right sm:text-left"
             >
               <option value="All">All Employees</option>
               {allEmployeeNames.map(empName => (

@@ -13,8 +13,8 @@ export default function ReportsPage() {
 
   if (!service.user || !service.canViewReports) {
     return (
-      <div className="flex h-[80vh] items-center justify-center bg-slate-50/20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-650 border-t-transparent" />
+      <div className="flex h-[80vh] items-center justify-center bg-slate-50/20 dark:bg-slate-900/20">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
       </div>
     );
   }

@@ -46,28 +46,28 @@ export function HoursLoggedCard({
 
   return (
     <div className={cn(
-      "rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-sm flex flex-col justify-between transition-all duration-300 hover:shadow-md",
+      "rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-sm flex flex-col justify-between transition-all duration-300 hover:shadow-md",
       canViewWorkload ? "lg:col-span-2" : "lg:col-span-3"
     )}>
       
       {/* Top Header */}
-      <div className="flex items-center justify-between mb-5 border-b border-slate-50 pb-4">
+      <div className="flex items-center justify-between mb-5 border-b border-slate-50 dark:border-slate-800 pb-4">
         <div>
-          <h2 className="text-base font-bold text-slate-800 tracking-tight flex items-center gap-2">
+          <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight flex items-center gap-2">
             Hours Logged This Week
           </h2>
-          <p className="text-xs text-slate-400 mt-1 font-medium flex items-center gap-1.5">
+          <p className="text-xs text-slate-400 dark:text-slate-550 mt-1 font-medium flex items-center gap-1.5">
             {isEmployeeRole ? (
               <span className="flex items-center gap-1">
-                <span className="font-extrabold text-slate-700">{totalWeeklyHours}h</span>
+                <span className="font-extrabold text-slate-700 dark:text-slate-300">{totalWeeklyHours}h</span>
                 <span>/ {weeklyCapacity}h capacity</span>
-                <span className="inline-flex items-center gap-0.5 rounded bg-indigo-50 px-1 py-0.2 text-[9px] font-bold text-indigo-650 ml-1">
+                <span className="inline-flex items-center gap-0.5 rounded bg-indigo-50 dark:bg-indigo-950/30 px-1 py-0.2 text-[9px] font-bold text-indigo-650 dark:text-indigo-400 ml-1">
                   {overallPercent}%
                 </span>
               </span>
             ) : (
-              <span className="flex items-center gap-1 text-slate-505">
-                <span className="font-extrabold text-slate-750">{totalWeeklyHours}h</span>
+              <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                <span className="font-extrabold text-slate-700 dark:text-slate-300">{totalWeeklyHours}h</span>
                 <span>logged across team</span>
               </span>
             )}
@@ -78,7 +78,7 @@ export function HoursLoggedCard({
         <div className="relative">
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-50 hover:text-slate-600 cursor-pointer transition-all border border-transparent hover:border-slate-100"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-800"
           >
             <MoreHorizontal className="h-4 w-4" />
           </button>
@@ -86,15 +86,15 @@ export function HoursLoggedCard({
           {isMenuOpen && (
             <>
               <div className="fixed inset-0 z-20" onClick={() => setIsMenuOpen(false)} />
-              <div className="absolute right-0 top-full mt-1.5 w-48 rounded-2xl border border-slate-150 bg-white p-1 shadow-lg z-30 animate-scaleUp">
+              <div className="absolute right-0 top-full mt-1.5 w-48 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1 shadow-lg z-30 animate-scaleUp">
                 <button
                   onClick={() => {
                     router.push('/reports/hours');
                     setIsMenuOpen(false);
                   }}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-left text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-left text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 >
-                  <Clock className="h-4 w-4 text-indigo-550 shrink-0" />
+                  <Clock className="h-4 w-4 text-indigo-500 shrink-0" />
                   View Hours Report
                 </button>
               </div>
@@ -142,7 +142,7 @@ export function HoursLoggedCard({
                           );
                         })
                       ) : (
-                        <div className="text-slate-505 italic text-[9px]">No hours logged</div>
+                        <div className="text-slate-500 italic text-[9px]">No hours logged</div>
                       )
                     ) : (
                       (d.employees || []).length > 0 ? (
@@ -159,7 +159,7 @@ export function HoursLoggedCard({
                           );
                         })
                       ) : (
-                        <div className="text-slate-505 italic text-[9px]">No hours logged</div>
+                        <div className="text-slate-500 italic text-[9px]">No hours logged</div>
                       )
                     )}
                   </>
@@ -169,7 +169,7 @@ export function HoursLoggedCard({
           )}
 
           <div className="overflow-x-auto scrollbar-none pb-2">
-            <div className="flex items-end justify-between gap-3 sm:gap-4 h-48 min-w-[460px] md:min-w-0 pb-2 border-b border-slate-100">
+            <div className="flex items-end justify-between gap-3 sm:gap-4 h-48 min-w-[460px] md:min-w-0 pb-2 border-b border-slate-100 dark:border-slate-800">
               {weeklyHoursList.map((d, idx) => (
                 <div 
                   key={d.day} 
@@ -178,7 +178,7 @@ export function HoursLoggedCard({
                   onMouseLeave={() => setHoveredIndex(null)}
                 >
                   {/* Floating badge for logged hours */}
-                  <span className="text-[10px] font-black text-slate-700 bg-slate-100 border border-slate-200/50 px-2 py-0.5 rounded-full shadow-3xs whitespace-nowrap transition-transform duration-200 group-hover:scale-105">
+                  <span className="text-[10px] font-black text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700 px-2 py-0.5 rounded-full shadow-3xs whitespace-nowrap transition-transform duration-200 group-hover:scale-105">
                     {d.hours}h
                   </span>
 
@@ -218,12 +218,12 @@ export function HoursLoggedCard({
                       </div>
                     ) : (
                       /* Subtle placeholder line for 0 hours */
-                      <div className="w-full max-w-[32px] sm:max-w-[36px] h-1.5 rounded bg-slate-200/50 border border-slate-300/20 shadow-3xs" />
+                      <div className="w-full max-w-[32px] sm:max-w-[36px] h-1.5 rounded bg-slate-200/50 dark:bg-slate-800/50 border border-slate-300/20 dark:border-slate-800 shadow-3xs" />
                     )}
                   </div>
 
                   {/* X-Axis day text label */}
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider text-center mt-1">
+                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center mt-1">
                     <span className="inline sm:hidden">{d.day.split(' ')[0]}</span>
                     <span className="hidden sm:inline">{d.day}</span>
                   </span>
@@ -234,13 +234,13 @@ export function HoursLoggedCard({
         </div>
 
         {/* Right Column: Breakdown Sidebar & Overall Progress */}
-        <div className="w-full md:w-60 lg:w-68 shrink-0 flex flex-col justify-between gap-5 md:border-l md:border-slate-100 md:pl-6 pt-5 md:pt-0 border-t md:border-t-0 border-slate-100">
+        <div className="w-full md:w-60 lg:w-68 shrink-0 flex flex-col justify-between gap-5 md:border-l md:border-slate-100 dark:md:border-slate-800 md:pl-6 pt-5 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800">
           
           {/* Progress summary block */}
           {isEmployeeRole ? (
-            <div className="bg-slate-50/70 border border-slate-100/80 rounded-2xl p-4 flex flex-col gap-2.5">
+            <div className="bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100/80 dark:border-slate-800 rounded-2xl p-4 flex flex-col gap-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                <span className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                   Weekly Status
                 </span>
                 <span className={cn(
@@ -254,16 +254,16 @@ export function HoursLoggedCard({
               </div>
               
               <div className="flex items-baseline justify-between">
-                <span className="text-xl font-black text-slate-800 tracking-tight">
+                <span className="text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
                   {totalWeeklyHours}h
                 </span>
-                <span className="text-[10px] font-bold text-slate-455">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">
                   of {weeklyCapacity}h capacity
                 </span>
               </div>
 
               {/* Custom styled overall progress bar */}
-              <div className="w-full bg-slate-200/60 rounded-full h-2 overflow-hidden shadow-inner">
+              <div className="w-full bg-slate-200/60 dark:bg-slate-800 rounded-full h-2 overflow-hidden shadow-inner">
                 <div 
                   className={cn(
                     "h-full rounded-full transition-all duration-500",
@@ -276,11 +276,11 @@ export function HoursLoggedCard({
               </div>
             </div>
           ) : (
-            <div className="bg-slate-50/70 border border-slate-100/80 rounded-2xl p-4 flex flex-col gap-1.5">
-              <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
+            <div className="bg-slate-50/70 dark:bg-slate-950/20 border border-slate-100/80 dark:border-slate-800 rounded-2xl p-4 flex flex-col gap-1.5">
+              <span className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 Total Hours Logged
               </span>
-              <span className="text-2xl font-black text-indigo-650 tracking-tight">
+              <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight">
                 {totalWeeklyHours}h
               </span>
             </div>
@@ -288,7 +288,7 @@ export function HoursLoggedCard({
 
           {/* Breakdown / Legend Section */}
           <div className="flex-1 flex flex-col justify-start">
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-3">
+            <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">
               {isEmployeeRole ? "Project Breakdown" : "Team Breakdown"}
             </h3>
 
@@ -299,18 +299,18 @@ export function HoursLoggedCard({
                   const contributionPercent = totalWeeklyHours > 0 ? Math.round((item.hours / totalWeeklyHours) * 100) : 0;
                   return (
                     <div key={item.name} className="flex flex-col gap-1.5">
-                      <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                      <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
                         <span className="flex items-center gap-2 truncate max-w-[130px] sm:max-w-none">
                           <span className={cn("h-2.5 w-2.5 rounded-full shrink-0 shadow-3xs", color.dotBg)} />
-                          <span className="truncate hover:text-slate-900 transition-colors">{item.name}</span>
+                          <span className="truncate hover:text-slate-900 dark:hover:text-white transition-colors">{item.name}</span>
                         </span>
-                        <span className="text-slate-500 font-extrabold shrink-0 pl-2">
+                        <span className="text-slate-500 dark:text-slate-400 font-extrabold shrink-0 pl-2">
                           {item.hours}h <span className="text-[9px] font-semibold text-slate-400">({contributionPercent}%)</span>
                         </span>
                       </div>
                       
                       {/* Contribution progress bar indicator */}
-                      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
                         <div 
                           className={cn("h-full rounded-full transition-all duration-500", color.barBg)}
                           style={{ width: `${contributionPercent}%` }}
@@ -321,7 +321,7 @@ export function HoursLoggedCard({
                 })}
               </div>
             ) : (
-              <div className="text-slate-400 italic text-[11px] py-4 text-center border border-dashed border-slate-100 rounded-2xl bg-slate-50/20">
+              <div className="text-slate-405 dark:text-slate-500 italic text-[11px] py-4 text-center border border-dashed border-slate-100 dark:border-slate-800 rounded-2xl bg-slate-50/20 dark:bg-slate-900/10">
                 No logs recorded yet this week
               </div>
             )}

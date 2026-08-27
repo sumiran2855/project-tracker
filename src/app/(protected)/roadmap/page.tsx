@@ -65,6 +65,7 @@ export default function RoadmapPage() {
               isEmployee={service.isEmployee}
               onOpenEditProjectModal={service.handleOpenEditProjectModal}
               getStatusStyles={service.getStatusStyles}
+              onUpdateProjectDates={service.handleUpdateProjectDates}
             />
           )}
 

@@ -1,18 +1,18 @@
 import React from 'react';
+import { SafeUser } from './auth.types';
 
 export interface DashboardShellProps {
-  user: {
-    name?: string | null;
-    email?: string | null;
-  } | null;
+  user: SafeUser | null;
   children: React.ReactNode;
 }
 
 export interface SidebarProps {
   user?: {
-    name?: string | null;
-    email?: string | null;
-    role?: string | null;
+    id?: string;
+    name?: string | null | undefined;
+    email?: string | null | undefined;
+    role?: string | null | undefined;
+    workspacePrefs?: any;
   } | null;
   onClose?: () => void;
   className?: string;
@@ -21,8 +21,8 @@ export interface SidebarProps {
 }
 
 export interface NavbarProps {
-  userName?: string | null;
-  userEmail?: string | null;
+  userName?: string | null | undefined;
+  userEmail?: string | null | undefined;
 }
 
 export interface QuickActionsPanelProps {

@@ -11,7 +11,7 @@ export default function EnhancedHoursReportPage() {
   const service = useReportsHoursService();
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-12">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 pb-12">
       
       {/* Hero Header Section */}
       <ReportsHoursHeader

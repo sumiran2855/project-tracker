@@ -9,30 +9,30 @@ export function NotificationsSection({
   return (
     <div className="space-y-5 animate-fadeIn">
       <div>
-        <h3 className="text-sm font-black text-slate-800">Alert triggers & Notifications</h3>
-        <p className="text-[10px] text-slate-400 mt-0.5">Toggle what triggers email digests and real-time alarms.</p>
+        <h3 className="text-sm font-black text-slate-800 dark:text-slate-100">Alert triggers & Notifications</h3>
+        <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Toggle what triggers email digests and real-time alarms.</p>
       </div>
 
       <div className="space-y-4">
         {/* Category Header */}
-        <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+        <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
           <Mail className="h-3.5 w-3.5 text-slate-400" />
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-450">Email Communications</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Email Communications</span>
         </div>
 
         <div className="space-y-3.5">
           {/* Toggle row */}
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-800">Task Assignments</p>
-              <p className="text-[10px] text-slate-400">Receive alert when you are assigned to a new track.</p>
+              <p className="text-xs font-bold text-slate-800 dark:text-slate-100">Task Assignments</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500">Receive alert when you are assigned to a new track.</p>
             </div>
             <button
               type="button"
               onClick={() => toggleNotification('emailTasks')}
               className={cn(
                 'relative inline-flex h-5.5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-                notifications.emailTasks ? 'bg-indigo-600' : 'bg-slate-200'
+                notifications.emailTasks ? 'bg-indigo-600 dark:bg-indigo-500' : 'bg-slate-200 dark:bg-slate-800'
               )}
             >
               <span className={cn(
@@ -44,15 +44,15 @@ export function NotificationsSection({
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-800">Due Date Reminders</p>
-              <p className="text-[10px] text-slate-400">Get warnings of upcoming tasks close to deadlines.</p>
+              <p className="text-xs font-bold text-slate-800 dark:text-slate-100">Due Date Reminders</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500">Get warnings of upcoming tasks close to deadlines.</p>
             </div>
             <button
               type="button"
               onClick={() => toggleNotification('emailDueDates')}
               className={cn(
                 'relative inline-flex h-5.5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-                notifications.emailDueDates ? 'bg-indigo-600' : 'bg-slate-200'
+                notifications.emailDueDates ? 'bg-indigo-600 dark:bg-indigo-500' : 'bg-slate-200 dark:bg-slate-800'
               )}
             >
               <span className={cn(
@@ -64,15 +64,15 @@ export function NotificationsSection({
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-800">Daily Activity Digest</p>
-              <p className="text-[10px] text-slate-400">A clean daily summary of tasks completed and logged bugs.</p>
+              <p className="text-xs font-bold text-slate-800 dark:text-slate-100">Daily Activity Digest</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500">A clean daily summary of tasks completed and logged bugs.</p>
             </div>
             <button
               type="button"
               onClick={() => toggleNotification('emailDigests')}
               className={cn(
                 'relative inline-flex h-5.5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-                notifications.emailDigests ? 'bg-indigo-600' : 'bg-slate-200'
+                notifications.emailDigests ? 'bg-indigo-600 dark:bg-indigo-500' : 'bg-slate-200 dark:bg-slate-800'
               )}
             >
               <span className={cn(
@@ -84,23 +84,23 @@ export function NotificationsSection({
         </div>
 
         {/* Push Notifications */}
-        <div className="flex items-center gap-2 border-b border-slate-100 pb-2 pt-2">
+        <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2 pt-2">
           <Monitor className="h-3.5 w-3.5 text-slate-400" />
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-450">Desktop & Alerts</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Desktop & Alerts</span>
         </div>
 
         <div className="space-y-3.5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-800">Direct Mentions</p>
-              <p className="text-[10px] text-slate-400">Show floating banners immediately on updates.</p>
+              <p className="text-xs font-bold text-slate-800 dark:text-slate-100">Direct Mentions</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500">Show floating banners immediately on updates.</p>
             </div>
             <button
               type="button"
               onClick={() => toggleNotification('pushMentions')}
               className={cn(
                 'relative inline-flex h-5.5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-                notifications.pushMentions ? 'bg-indigo-600' : 'bg-slate-200'
+                notifications.pushMentions ? 'bg-indigo-600 dark:bg-indigo-500' : 'bg-slate-200 dark:bg-slate-800'
               )}
             >
               <span className={cn(
@@ -112,15 +112,15 @@ export function NotificationsSection({
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-slate-800">Sound Alarms</p>
-              <p className="text-[10px] text-slate-400">Play audio ping when changes happen in the board.</p>
+              <p className="text-xs font-bold text-slate-800 dark:text-slate-100">Sound Alarms</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500">Play audio ping when changes happen in the board.</p>
             </div>
             <button
               type="button"
               onClick={() => toggleNotification('soundAlerts')}
               className={cn(
                 'relative inline-flex h-5.5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-                notifications.soundAlerts ? 'bg-indigo-600' : 'bg-slate-200'
+                notifications.soundAlerts ? 'bg-indigo-600 dark:bg-indigo-500' : 'bg-slate-200 dark:bg-slate-800'
               )}
             >
               <span className={cn(

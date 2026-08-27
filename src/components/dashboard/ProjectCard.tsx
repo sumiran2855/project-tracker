@@ -5,16 +5,16 @@ import Link from 'next/link';
 import type { DashboardProject } from '@/types/dashboard.types';
 
 const statusStyles: Record<string, string> = {
-  'In Progress': 'bg-indigo-50 text-indigo-700 border border-indigo-100/60',
-  Review: 'bg-purple-50 text-purple-700 border border-purple-100/60',
-  Planning: 'bg-slate-100 text-slate-650 border border-slate-200/60',
-  Done: 'bg-emerald-50 text-emerald-700 border border-emerald-100/60',
+  'In Progress': 'bg-indigo-50 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-405 border border-indigo-100/60 dark:border-indigo-900/30',
+  Review: 'bg-purple-50 dark:bg-purple-950/20 text-purple-700 dark:text-purple-400 border border-purple-100/60 dark:border-indigo-900/30',
+  Planning: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700',
+  Done: 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border border-emerald-100/60 dark:border-emerald-900/30',
 };
 
 export function ProjectCard({ p }: { p: DashboardProject }) {
   const cardContent = (
     <div
-      className="group relative flex flex-col rounded-2xl bg-white border border-slate-100 overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1.5 h-full"
+      className="group relative flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1.5 h-full"
       style={{
         boxShadow: '0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.04)',
       }}
@@ -40,10 +40,10 @@ export function ProjectCard({ p }: { p: DashboardProject }) {
               <Folder className="h-5 w-5" style={{ color: p.bar }} />
             </div>
             <div className="min-w-0">
-              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 truncate">
+              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 truncate">
                 {p.category}
               </p>
-              <h3 className="text-sm font-black text-slate-800 leading-tight truncate mt-0.5 group-hover:text-slate-900 transition-colors">
+              <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 leading-tight truncate mt-0.5 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
                 {p.name}
               </h3>
             </div>
@@ -89,13 +89,13 @@ export function ProjectCard({ p }: { p: DashboardProject }) {
           {/* Task progress bar */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold text-slate-500">
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
                 {p.tasks.completed} / {p.tasks.total} tasks
               </span>
-              <span className="text-[10px] font-bold text-slate-400">{p.progress}% done</span>
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">{p.progress}% done</span>
             </div>
             {/* Smooth gradient progress bar */}
-            <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+            <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-700"
                 style={{
@@ -120,7 +120,7 @@ export function ProjectCard({ p }: { p: DashboardProject }) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-3.5 border-t border-slate-100 mt-auto">
+        <div className="flex items-center justify-between pt-3.5 border-t border-slate-100 dark:border-slate-800 mt-auto">
           {/* Avatar Stack */}
           <div className="flex -space-x-2">
             {p.team.filter((member: any) => {
@@ -133,18 +133,18 @@ export function ProjectCard({ p }: { p: DashboardProject }) {
               <div
                 key={member.name}
                 title={member.name}
-                className={`flex h-7 w-7 items-center justify-center rounded-full text-[9px] font-black border-2 border-white ring-1 ring-slate-100 transition-transform duration-200 hover:scale-110 hover:z-10 relative ${member.bg}`}
+                className={`flex h-7 w-7 items-center justify-center rounded-full text-[9px] font-black border-2 border-white dark:border-slate-900 ring-1 ring-slate-100 dark:ring-slate-800 transition-transform duration-200 hover:scale-110 hover:z-10 relative ${member.bg}`}
               >
                 {member.initials}
               </div>
             ))}
-            <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-slate-50 ring-1 ring-slate-100 text-[8px] font-black text-slate-400">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white dark:border-slate-900 bg-slate-50 dark:bg-slate-800 ring-1 ring-slate-100 dark:ring-slate-800 text-[8px] font-black text-slate-400 dark:text-slate-500">
               +
             </div>
           </div>
 
           {/* Date & updated */}
-          <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-400">
+          <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-400 dark:text-slate-500">
             <span
               className="flex items-center gap-1 rounded-full px-2 py-0.5"
               style={{ background: `${p.bar}10`, color: p.bar }}
@@ -152,8 +152,8 @@ export function ProjectCard({ p }: { p: DashboardProject }) {
               <Calendar className="h-3 w-3 shrink-0" />
               {p.due === 'Completed' ? '✓ Done' : p.due}
             </span>
-            <span className="text-slate-300">·</span>
-            <span className="text-slate-400">{p.updatedAt}</span>
+            <span className="text-slate-300 dark:text-slate-700">·</span>
+            <span className="text-slate-400 dark:text-slate-500">{p.updatedAt}</span>
           </div>
         </div>
       </div>

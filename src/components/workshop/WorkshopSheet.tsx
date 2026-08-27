@@ -18,33 +18,33 @@ export function WorkshopSheet({
       case 'Planning':
         return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
       default:
-        return 'bg-indigo-500/10 text-indigo-650 border-indigo-500/20';
+        return 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20';
     }
   };
 
   const getPriorityColor = (priority?: Project['priority']) => {
     switch (priority) {
       case 'Critical':
-        return 'bg-red-500/10 text-red-655 border-red-500/20';
+        return 'bg-red-500/10 text-red-700 border-red-500/20';
       case 'High':
-        return 'bg-orange-500/10 text-orange-655 border-orange-500/20';
+        return 'bg-orange-500/10 text-orange-700 border-orange-500/20';
       case 'Medium':
-        return 'bg-indigo-500/10 text-indigo-650 border-indigo-500/20';
+        return 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20';
       default:
         return 'bg-slate-500/10 text-slate-500 border-slate-500/20';
     }
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xs relative">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs relative">
       <div className="overflow-x-auto no-scrollbar">
         <table className="w-full border-collapse text-left text-xs">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-200 text-slate-455 uppercase text-[9px] font-black tracking-wider">
-              <th className="py-3 px-3 text-center text-slate-400 font-extrabold w-10 bg-slate-50/70 border-r border-slate-150">#</th>
+            <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-400 uppercase text-[9px] font-black tracking-wider">
+              <th className="py-3 px-3 text-center text-slate-400 dark:text-slate-500 font-extrabold w-10 bg-slate-50/70 dark:bg-slate-800/70 border-r border-slate-200 dark:border-slate-800">#</th>
               <th
                 onClick={() => handleSort('name')}
-                className="py-3.5 px-4 font-black cursor-pointer hover:bg-slate-100/70 transition-colors border-r border-slate-150 select-none group"
+                className="py-3.5 px-4 font-black cursor-pointer hover:bg-slate-100/70 dark:hover:bg-slate-800/70 transition-colors border-r border-slate-200 dark:border-slate-800 select-none group"
               >
                 <div className="flex items-center gap-1.5">
                   <span>Project Workspace</span>
@@ -55,7 +55,7 @@ export function WorkshopSheet({
               {visibleColumns.quarter && (
                 <th
                   onClick={() => handleSort('dueDate')}
-                  className="py-3.5 px-4 font-black cursor-pointer hover:bg-slate-100/70 transition-colors border-r border-slate-150 select-none group"
+                  className="py-3.5 px-4 font-black cursor-pointer hover:bg-slate-100/70 dark:hover:bg-slate-800/70 transition-colors border-r border-slate-200 dark:border-slate-800 select-none group"
                 >
                   <div className="flex items-center gap-1.5">
                     <span>Target Quarter</span>
@@ -67,7 +67,7 @@ export function WorkshopSheet({
               {visibleColumns.priority && (
                 <th
                   onClick={() => handleSort('priority')}
-                  className="py-3.5 px-4 font-black cursor-pointer hover:bg-slate-100/70 transition-colors border-r border-slate-150 select-none group"
+                  className="py-3.5 px-4 font-black cursor-pointer hover:bg-slate-100/70 dark:hover:bg-slate-800/70 transition-colors border-r border-slate-200 dark:border-slate-800 select-none group"
                 >
                   <div className="flex items-center gap-1.5">
                     <span>Priority</span>
@@ -79,7 +79,7 @@ export function WorkshopSheet({
               {visibleColumns.status && (
                 <th
                   onClick={() => handleSort('status')}
-                  className="py-3.5 px-4 font-black cursor-pointer hover:bg-slate-100/70 transition-colors border-r border-slate-150 select-none group"
+                  className="py-3.5 px-4 font-black cursor-pointer hover:bg-slate-100/70 dark:hover:bg-slate-800/70 transition-colors border-r border-slate-200 dark:border-slate-800 select-none group"
                 >
                   <div className="flex items-center gap-1.5">
                     <span>Status</span>
@@ -91,7 +91,7 @@ export function WorkshopSheet({
               {visibleColumns.progress && (
                 <th
                   onClick={() => handleSort('progress')}
-                  className="py-3.5 px-4 font-black cursor-pointer hover:bg-slate-100/70 transition-colors border-r border-slate-150 select-none group"
+                  className="py-3.5 px-4 font-black cursor-pointer hover:bg-slate-100/70 dark:hover:bg-slate-800/70 transition-colors border-r border-slate-200 dark:border-slate-800 select-none group"
                 >
                   <div className="flex items-center gap-1.5">
                     <span>Completion Progress</span>
@@ -101,24 +101,24 @@ export function WorkshopSheet({
               )}
 
               {visibleColumns.techStack && (
-                <th className="py-3.5 px-4 font-black border-r border-slate-150">Tech Stack</th>
+                <th className="py-3.5 px-4 font-black border-r border-slate-200 dark:border-slate-800">Tech Stack</th>
               )}
 
               {visibleColumns.budget && (
-                <th className="py-3.5 px-4 font-black border-r border-slate-150">Total Budget</th>
+                <th className="py-3.5 px-4 font-black border-r border-slate-200 dark:border-slate-800">Total Budget</th>
               )}
 
               {visibleColumns.team && (
-                <th className="py-3.5 px-4 font-black border-r border-slate-150">Assigned Team</th>
+                <th className="py-3.5 px-4 font-black border-r border-slate-200 dark:border-slate-800">Assigned Team</th>
               )}
 
               <th className="py-3.5 px-4 font-black text-center">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-150">
+          <tbody className="divide-y divide-slate-150 dark:divide-slate-800">
             {filteredProjects.length === 0 ? (
               <tr>
-                <td colSpan={10} className="py-12 text-center text-slate-400 font-bold">
+                <td colSpan={10} className="py-12 text-center text-slate-400 dark:text-slate-500 font-bold">
                   No active initiative worksheets found matching filters.
                 </td>
               </tr>
@@ -127,36 +127,36 @@ export function WorkshopSheet({
                 <tr
                   key={project.id}
                   onClick={() => handleProjectClick(project)}
-                  className="hover:bg-slate-50/70 transition-colors cursor-pointer group"
+                  className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
                 >
                   {/* Row Index */}
-                  <td className="py-4 px-3 text-center text-slate-400 font-black bg-slate-50/30 border-r border-slate-150 select-none">
+                  <td className="py-4 px-3 text-center text-slate-400 dark:text-slate-500 font-black bg-slate-50/30 dark:bg-slate-800/30 border-r border-slate-200 dark:border-slate-800 select-none">
                     {idx + 1}
                   </td>
 
                   {/* Workspace Details */}
-                  <td className="py-4 px-4 font-bold text-slate-800 border-r border-slate-150">
+                  <td className="py-4 px-4 font-bold text-slate-800 dark:text-slate-200 border-r border-slate-200 dark:border-slate-800">
                     <div className="flex items-center gap-3 min-w-[220px]">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 border border-indigo-100/50 text-indigo-650 shrink-0">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 text-indigo-600 dark:text-indigo-400 shrink-0">
                         <Folder className="h-4.5 w-4.5" />
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-xs font-black tracking-tight text-slate-850 group-hover:text-indigo-650 transition-colors">{project.name}</p>
-                        <p className="truncate text-[10px] text-slate-455 font-medium mt-0.5 max-w-[240px]">{project.description}</p>
+                        <p className="truncate text-xs font-black tracking-tight text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{project.name}</p>
+                        <p className="truncate text-[10px] text-slate-400 dark:text-slate-400 font-medium mt-0.5 max-w-[240px]">{project.description}</p>
                       </div>
                     </div>
                   </td>
 
                   {/* Quarter */}
                   {visibleColumns.quarter && (
-                    <td className="py-4 px-4 font-bold text-slate-500 whitespace-nowrap border-r border-slate-150">
+                    <td className="py-4 px-4 font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap border-r border-slate-200 dark:border-slate-800">
                       {project.targetQuarter || 'Future'}
                     </td>
                   )}
 
                   {/* Priority */}
                   {visibleColumns.priority && (
-                    <td className="py-4 px-4 whitespace-nowrap border-r border-slate-150">
+                    <td className="py-4 px-4 whitespace-nowrap border-r border-slate-200 dark:border-slate-800">
                       <span className={cn("px-2 py-0.5 text-[9px] font-black uppercase tracking-wider border rounded-full", getPriorityColor(project.priority))}>
                         {project.priority || 'Medium'}
                       </span>
@@ -165,7 +165,7 @@ export function WorkshopSheet({
 
                   {/* Status */}
                   {visibleColumns.status && (
-                    <td className="py-4 px-4 whitespace-nowrap border-r border-slate-150">
+                    <td className="py-4 px-4 whitespace-nowrap border-r border-slate-200 dark:border-slate-800">
                       <span className={cn("px-2 py-0.5 text-[9px] font-black uppercase tracking-wider border rounded-full", getStatusColor(project.status))}>
                         {project.status}
                       </span>
@@ -174,30 +174,30 @@ export function WorkshopSheet({
 
                   {/* Completion Progress */}
                   {visibleColumns.progress && (
-                    <td className="py-4 px-4 min-w-[150px] border-r border-slate-150">
+                    <td className="py-4 px-4 min-w-[150px] border-r border-slate-200 dark:border-slate-800">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex-1 h-2 bg-slate-100 border border-slate-200/55 rounded-full overflow-hidden relative">
+                        <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-800 border border-slate-200/55 dark:border-slate-700 rounded-full overflow-hidden relative">
                           <div
-                            className="h-full bg-gradient-to-r from-indigo-500 to-indigo-650 rounded-full transition-all duration-350"
+                            className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full transition-all duration-350"
                             style={{ width: `${project.progress}%` }}
                           />
                         </div>
-                        <span className="text-[10px] font-black text-slate-800 w-8 text-right">{project.progress}%</span>
+                        <span className="text-[10px] font-black text-slate-800 dark:text-slate-200 w-8 text-right">{project.progress}%</span>
                       </div>
                     </td>
                   )}
 
                   {/* Tech Stack */}
                   {visibleColumns.techStack && (
-                    <td className="py-4 px-4 border-r border-slate-150">
+                    <td className="py-4 px-4 border-r border-slate-200 dark:border-slate-800">
                       <div className="flex flex-wrap gap-1 max-w-[180px]">
                         {project.techStack?.slice(0, 3).map((stack) => (
-                          <span key={stack} className="px-1.5 py-0.5 text-[9px] font-bold bg-slate-100 border border-slate-200/50 rounded-md text-slate-500">
+                          <span key={stack} className="px-1.5 py-0.5 text-[9px] font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700 rounded-md text-slate-500 dark:text-slate-400">
                             {stack}
                           </span>
                         )) || '-'}
                         {project.techStack && project.techStack.length > 3 && (
-                          <span className="px-1.5 py-0.5 text-[8px] font-black bg-indigo-50 border border-indigo-100 rounded-md text-indigo-600">
+                          <span className="px-1.5 py-0.5 text-[8px] font-black bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900 rounded-md text-indigo-600 dark:text-indigo-400">
                             +{project.techStack.length - 3}
                           </span>
                         )}
@@ -207,14 +207,14 @@ export function WorkshopSheet({
 
                   {/* Budget */}
                   {visibleColumns.budget && (
-                    <td className="py-4 px-4 font-bold text-slate-655 whitespace-nowrap border-r border-slate-150">
+                    <td className="py-4 px-4 font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap border-r border-slate-200 dark:border-slate-800">
                       {project.budget || '40 hours'}
                     </td>
                   )}
 
                   {/* Team Members */}
                   {visibleColumns.team && (
-                    <td className="py-4 px-4 border-r border-slate-150">
+                    <td className="py-4 px-4 border-r border-slate-200 dark:border-slate-800">
                       {(() => {
                         const nonAdminMembers = (project.members || []).filter((m: any) => m.role?.toLowerCase() !== 'admin');
                         return (
@@ -223,13 +223,13 @@ export function WorkshopSheet({
                               <div
                                 key={index}
                                 title={m.name}
-                                className={cn("h-5.5 w-5.5 rounded-full flex items-center justify-center text-[8px] text-white font-extrabold ring-2 ring-white shadow-2xs shrink-0", m.bg)}
+                                className={cn("h-5.5 w-5.5 rounded-full flex items-center justify-center text-[8px] text-white font-extrabold ring-2 ring-white dark:ring-slate-900 shadow-2xs shrink-0", m.bg)}
                               >
                                 {m.initials}
                               </div>
                             ))}
                             {nonAdminMembers.length > 4 && (
-                              <div className="h-5.5 w-5.5 rounded-full flex items-center justify-center text-[7px] text-slate-400 font-extrabold bg-slate-50 ring-2 ring-white border border-slate-200">
+                              <div className="h-5.5 w-5.5 rounded-full flex items-center justify-center text-[7px] text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800 ring-2 ring-white dark:ring-slate-900 border border-slate-200 dark:border-slate-700">
                                 +{nonAdminMembers.length - 4}
                               </div>
                             )}
@@ -242,7 +242,7 @@ export function WorkshopSheet({
                   {/* Action Arrow */}
                   <td className="py-4 px-4 text-center">
                     <button
-                      className="inline-flex h-6.5 w-6.5 items-center justify-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 hover:text-indigo-650 shadow-3xs group-hover:border-indigo-200 group-hover:shadow-2xs transition-all cursor-pointer"
+                      className="inline-flex h-6.5 w-6.5 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-3xs group-hover:border-indigo-200 dark:group-hover:border-indigo-900/50 group-hover:shadow-2xs transition-all cursor-pointer"
                     >
                       <ChevronRight className="h-3.5 w-3.5" />
                     </button>

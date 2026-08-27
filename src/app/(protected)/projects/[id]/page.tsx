@@ -79,9 +79,9 @@ export default function ProjectDetailPage() {
 
   if (!project) {
     return (
-      <div className="flex h-[80vh] items-center justify-center bg-slate-50 text-slate-500">
+      <div className="flex h-[80vh] items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">
         <div className="text-center space-y-3">
-          <div className="animate-spin rounded-full h-8 w-8 border-4 border-indigo-650 border-t-transparent mx-auto" />
+          <div className="animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent mx-auto" />
           <p className="text-xs font-bold">Synchronizing workspace...</p>
         </div>
       </div>

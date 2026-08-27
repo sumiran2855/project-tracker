@@ -33,10 +33,10 @@ export default function MyTeamPage() {
         />
       ) : loading ? (
         <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-650 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
         </div>
       ) : error ? (
-        <div className="flex items-center gap-2 rounded-xl bg-red-55 px-4 py-3 text-xs font-bold text-red-650 border border-red-100 max-w-xl">
+        <div className="flex items-center gap-2 rounded-xl bg-red-50 px-4 py-3 text-xs font-bold text-red-600 border border-red-100 max-w-xl">
           <AlertCircle className="h-4 w-4" />
           {error}
         </div>

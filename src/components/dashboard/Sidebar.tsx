@@ -182,7 +182,7 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
   return (
     <aside
       className={cn(
-        'flex h-full flex-col bg-[#f8fafc]/90 backdrop-blur-md border-r border-slate-200/80 text-slate-700 select-none justify-between transition-all duration-300 ease-in-out',
+        'flex h-full flex-col bg-[#f8fafc]/90 dark:bg-slate-950/90 backdrop-blur-md border-r border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 select-none justify-between transition-all duration-300 ease-in-out',
         className
       )}
     >
@@ -192,7 +192,7 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
           <button
             onClick={() => router.push('/workshop')}
             className={cn(
-              'flex items-center rounded-2xl bg-white text-left transition-all hover:shadow-md focus:outline-none cursor-pointer group border border-slate-200/80 w-full',
+              'flex items-center rounded-2xl bg-white dark:bg-slate-900 text-left transition-all hover:shadow-md focus:outline-none cursor-pointer group border border-slate-200/80 dark:border-slate-800 w-full',
               isCollapsed ? 'p-2 justify-center mx-auto' : 'p-3 w-full gap-2'
             )}
           >
@@ -202,8 +202,8 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
             {!isCollapsed && (
               <>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-bold text-slate-800 leading-tight">pTracker Workspace</p>
-                  <p className="truncate text-[10px] text-slate-450 font-semibold mt-0.5 leading-none">Pro Dashboard</p>
+                  <p className="truncate text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight">pTracker Workspace</p>
+                  <p className="truncate text-[10px] text-slate-400 dark:text-slate-400 font-semibold mt-0.5 leading-none">Pro Dashboard</p>
                 </div>
                 <ChevronsUpDown className="h-3.5 w-3.5 text-slate-400 shrink-0 group-hover:text-indigo-600 transition-colors" />
               </>
@@ -221,7 +221,7 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
                 </p>
               )}
               <div className={cn(
-                'rounded-2xl bg-white border border-slate-200 overflow-hidden',
+                'rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden',
                 isCollapsed && 'bg-transparent border-none'
               )}>
                 {group.items.map((item: any, idx) => {
@@ -236,13 +236,13 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
                         isCollapsed
                           ? 'h-10 w-10 justify-center rounded-full mx-auto mb-1.5'
                           : 'gap-3 px-3 py-2.5 text-xs font-bold',
-                        idx !== 0 && !isCollapsed && 'border-t border-slate-100',
+                        idx !== 0 && !isCollapsed && 'border-t border-slate-100 dark:border-slate-800',
                         item.active
-                          ? isCollapsed ? 'bg-indigo-600 text-white shadow-md' : 'bg-indigo-50/50 text-indigo-650'
-                          : isCollapsed ? 'text-slate-500 hover:bg-white' : 'text-slate-500 hover:bg-slate-100/60 hover:text-slate-900'
+                          ? isCollapsed ? 'bg-indigo-600 text-white shadow-md' : 'bg-indigo-50/50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400'
+                          : isCollapsed ? 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100/60 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100'
                       )}
                     >
-                      <Icon className={cn('h-4 w-4 shrink-0', !isCollapsed && (item.active ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-650'))} />
+                      <Icon className={cn('h-4 w-4 shrink-0', !isCollapsed && (item.active ? 'text-indigo-600' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300'))} />
                       {!isCollapsed && (
                         <>
                           <span className="flex-1">{item.label}</span>
@@ -250,7 +250,7 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
                             <span
                               className={cn(
                                 'rounded-full px-1.5 py-0.5 text-[9px] font-bold leading-none',
-                                item.active ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'
+                                item.active ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                               )}
                             >
                               {item.badge}
@@ -294,7 +294,7 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
             <TooltipTrigger asChild>
               <button 
                 onClick={() => router.push('/sprint')}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white border border-slate-200 mx-auto cursor-pointer text-indigo-600 hover:bg-slate-50 transition-colors"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 mx-auto cursor-pointer text-indigo-600 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
               >
                 <Sparkles className="h-4 w-4" />
               </button>
@@ -304,10 +304,10 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
             </TooltipContent>
           </Tooltip>
         ) : (
-          <div className="rounded-2xl bg-white border border-slate-200 p-3.5 flex items-center gap-3">
+          <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3.5 flex items-center gap-3">
             <div className="relative flex h-14 w-14 items-center justify-center shrink-0">
               <svg className="h-14 w-14 -rotate-90" viewBox="0 0 48 48">
-                <circle cx="24" cy="24" r={radius} fill="none" stroke="#f1f5f9" strokeWidth="4" />
+                <circle cx="24" cy="24" r={radius} fill="none" stroke="#f1f5f9" className="stroke-[#f1f5f9] dark:stroke-slate-800" strokeWidth="4" />
                 <circle
                   cx="24"
                   cy="24"
@@ -320,11 +320,11 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
                   strokeDashoffset={offset}
                 />
               </svg>
-              <span className="absolute text-[11px] font-black text-slate-800">{progress}%</span>
+              <span className="absolute text-[11px] font-black text-slate-800 dark:text-slate-200">{progress}%</span>
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Weekly Sprint</p>
-              <p className="text-xs font-bold text-slate-800">Almost there</p>
+              <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Almost there</p>
               <button 
                 onClick={() => router.push('/sprint')}
                 className="mt-1.5 text-[10px] font-bold text-indigo-600 hover:underline cursor-pointer"
@@ -339,8 +339,8 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
           <button
             onClick={onToggleCollapse}
             className={cn(
-              'group flex items-center rounded-2xl transition-all duration-200 text-slate-500 hover:bg-white hover:text-slate-800 cursor-pointer',
-              isCollapsed ? 'h-10 w-10 justify-center mx-auto' : 'px-3 py-2.5 text-xs font-bold gap-3 w-full border border-slate-200 bg-white'
+              'group flex items-center rounded-2xl transition-all duration-200 text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-900 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer',
+              isCollapsed ? 'h-10 w-10 justify-center mx-auto' : 'px-3 py-2.5 text-xs font-bold gap-3 w-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'
             )}
           >
             {isCollapsed ? <PanelLeftOpen className="h-4.5 w-4.5" /> : <PanelLeftClose className="h-4 w-4" />}

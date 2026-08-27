@@ -3,16 +3,16 @@ import type { TaskPrioritiesChartProps } from '@/types/reports.types';
 
 export function TaskPrioritiesChart({ tasksCount, priorityStatsList }: TaskPrioritiesChartProps) {
   return (
-    <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs flex flex-col justify-between">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs flex flex-col justify-between">
       <div>
-        <h3 className="text-sm font-black text-slate-800">Task Priorities</h3>
-        <p className="text-[10px] text-slate-400 font-bold mt-0.5">Breakdown of operational tasks by priority level</p>
+        <h3 className="text-sm font-black text-slate-800 dark:text-slate-100">Task Priorities</h3>
+        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold mt-0.5">Breakdown of operational tasks by priority level</p>
       </div>
 
       <div className="flex flex-col items-center justify-center my-6 relative">
         {/* SVG Donut */}
         <svg width="150" height="150" viewBox="0 0 150 150" className="rotate-270">
-          <circle cx="75" cy="75" r="50" fill="transparent" stroke="#f1f5f9" strokeWidth="18" />
+          <circle cx="75" cy="75" r="50" fill="transparent" stroke="#f1f5f9" className="stroke-slate-100 dark:stroke-slate-800" strokeWidth="18" />
           {(() => {
             let accumulatedPercent = 0;
             return priorityStatsList.map((stat, idx) => {
@@ -43,18 +43,18 @@ export function TaskPrioritiesChart({ tasksCount, priorityStatsList }: TaskPrior
         
         {/* Center Label */}
         <div className="absolute flex flex-col items-center justify-center">
-          <span className="text-lg font-black text-slate-800">{tasksCount}</span>
-          <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Total Tasks</span>
+          <span className="text-lg font-black text-slate-800 dark:text-slate-100">{tasksCount}</span>
+          <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Total Tasks</span>
         </div>
       </div>
 
       {/* Donut Legend */}
-      <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 text-[10px] font-bold">
+      <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 text-[10px] font-bold">
         {priorityStatsList.map((stat, idx) => (
           <div key={idx} className="flex items-center gap-2">
             <span className={cn("h-2.5 w-2.5 rounded-full shrink-0", stat.color.split(' ')[1])} />
-            <span className="text-slate-505">{stat.name}:</span>
-            <span className="text-slate-800 font-black ml-auto">{stat.value} ({stat.percentage}%)</span>
+            <span className="text-slate-505 dark:text-slate-400">{stat.name}:</span>
+            <span className="text-slate-800 dark:text-slate-100 font-black ml-auto">{stat.value} ({stat.percentage}%)</span>
           </div>
         ))}
       </div>

@@ -14,7 +14,7 @@ export function SettingsNavigation({
   ];
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-2.5 shadow-2xs space-y-1">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-2.5 shadow-2xs space-y-1">
       {tabs.map(tab => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
@@ -25,11 +25,11 @@ export function SettingsNavigation({
             className={cn(
               'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer',
               isActive 
-                ? 'bg-indigo-50/70 text-indigo-650' 
-                : 'text-slate-505 hover:bg-slate-50 hover:text-slate-805'
+                ? 'bg-indigo-50/70 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400' 
+                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40 hover:text-slate-800 dark:hover:text-slate-200'
             )}
           >
-            <Icon className={cn('h-4 w-4', isActive ? 'text-indigo-600' : 'text-slate-400')} />
+            <Icon className={cn('h-4 w-4', isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500')} />
             <span>{tab.label}</span>
           </button>
         );

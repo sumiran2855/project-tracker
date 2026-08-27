@@ -23,10 +23,10 @@ export function TasksKanbanView({
             key={status}
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => onDrop(e, status)}
-            className="bg-[#f8fafc] border border-slate-200 rounded-3xl p-4.5 flex flex-col min-h-[300px] shadow-2xs"
+            className="bg-[#f8fafc] dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-4.5 flex flex-col min-h-[300px] shadow-2xs"
           >
             {/* Column Header */}
-            <div className="flex items-center justify-between mb-4 border-b border-slate-200 pb-2.5">
+            <div className="flex items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-800 pb-2.5">
               <div className="flex items-center gap-2">
                 <span className={cn(
                   "h-2 w-2 rounded-full",
@@ -34,8 +34,8 @@ export function TasksKanbanView({
                   status === 'In Progress' ? 'bg-indigo-500' :
                   status === 'In Review' ? 'bg-amber-500' : 'bg-emerald-500'
                 )} />
-                <span className="text-xs font-black text-slate-800 uppercase tracking-wider">{status}</span>
-                <span className="rounded-full bg-white border border-slate-200 text-slate-505 text-[10px] font-bold px-2 py-0.5 shadow-2xs">
+                <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider">{status}</span>
+                <span className="rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-bold px-2 py-0.5 shadow-2xs">
                   {columnTasks.length}
                 </span>
               </div>
@@ -43,7 +43,7 @@ export function TasksKanbanView({
               {canCreateTask && (
                 <button 
                   onClick={() => onAddTaskClick(status)}
-                  className="text-slate-400 hover:text-indigo-650 p-1 hover:bg-white rounded-lg transition-colors cursor-pointer"
+                  className="text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                   title="Add task to column"
                 >
                   <Plus className="h-4 w-4" />
@@ -54,7 +54,7 @@ export function TasksKanbanView({
             {/* Task list inside column */}
             <div className="space-y-3.5 flex-1 pr-1.5">
               {columnTasks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200/80 rounded-2xl text-slate-350 text-[10px] font-bold text-center h-28 select-none">
+                <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200/80 dark:border-slate-800/80 rounded-2xl text-slate-300 dark:text-slate-600 text-[10px] font-bold text-center h-28 select-none">
                   Drop Tasks Here
                 </div>
               ) : (
@@ -69,7 +69,7 @@ export function TasksKanbanView({
                       onDragStart={(e) => onDragStart(e, task.id)}
                       onClick={() => onSelectTask(task)}
                       className={cn(
-                        "group flex flex-col justify-between bg-white border border-slate-200/85 hover:border-slate-355 rounded-2xl p-4 shadow-3xs hover:shadow-md transition-all duration-200 relative overflow-hidden",
+                        "group flex flex-col justify-between bg-white dark:bg-slate-900 border border-slate-200/85 dark:border-slate-800/80 hover:border-slate-400 dark:hover:border-slate-600 rounded-2xl p-4 shadow-3xs hover:shadow-md transition-all duration-200 relative overflow-hidden",
                         isClient ? "cursor-pointer" : "cursor-grab active:cursor-grabbing"
                       )}
                     >
@@ -87,20 +87,20 @@ export function TasksKanbanView({
                         </div>
 
                         {/* Task Title */}
-                        <h4 className="text-xs font-black text-slate-800 leading-snug group-hover:text-indigo-650 transition-colors">
+                        <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                           {task.title}
                         </h4>
 
                         {/* Description snippet */}
                         {task.description && (
-                          <p className="text-[10px] text-slate-450 line-clamp-2 leading-relaxed">
+                          <p className="text-[10px] text-slate-400 dark:text-slate-500 line-clamp-2 leading-relaxed">
                             {task.description}
                           </p>
                         )}
                       </div>
 
                       {/* Task metrics & Footer */}
-                      <div className="border-t border-slate-100 pt-3 mt-3 flex items-center justify-between">
+                      <div className="border-t border-slate-100 dark:border-slate-800 pt-3 mt-3 flex items-center justify-between">
                         {/* Left indicators */}
                         <div className="flex items-center gap-2.5 text-slate-400">
                           {totalSubs > 0 && (
@@ -123,7 +123,7 @@ export function TasksKanbanView({
                         {/* Member initials */}
                         <div className="flex -space-x-1 overflow-hidden">
                           {task.assignees?.map((assignee, i) => (
-                            <div key={i} className={cn("h-5 w-5 rounded-md text-[7px] font-bold text-white flex items-center justify-center ring-2 ring-white shadow-2xs", assignee.bg)} title={assignee.name}>
+                            <div key={i} className={cn("h-5 w-5 rounded-md text-[7px] font-bold text-white flex items-center justify-center ring-2 ring-white dark:ring-slate-900 shadow-2xs", assignee.bg)} title={assignee.name}>
                               {assignee.initials}
                             </div>
                           ))}

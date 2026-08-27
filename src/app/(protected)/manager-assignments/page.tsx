@@ -43,7 +43,7 @@ export default function ManagerAssignmentsPage() {
   } = useManagerAssignmentsService();
 
   return (
-    <div className="min-h-full bg-slate-50/50 p-4 sm:p-6 md:p-8 lg:p-10">
+    <div className="min-h-full bg-slate-50/50 dark:bg-slate-950 p-4 sm:p-6 md:p-8 lg:p-10">
 
       {/* Top Banner */}
       <div className="relative mb-6 overflow-hidden rounded-3xl bg-[#1F4D3E] px-7 py-7 md:px-9 md:py-8 shadow-md">
@@ -66,7 +66,7 @@ export default function ManagerAssignmentsPage() {
 
       {loading ? (
         <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-650 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
@@ -90,13 +90,13 @@ export default function ManagerAssignmentsPage() {
 
             {/* Alerts */}
             {error && (
-              <div className="flex items-center gap-2.5 rounded-2xl bg-red-50 border border-red-200/50 px-4 py-3.5 text-xs font-bold text-red-700 shadow-3xs">
+              <div className="flex items-center gap-2.5 rounded-2xl bg-red-50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-900/30 px-4 py-3.5 text-xs font-bold text-red-700 dark:text-red-400 shadow-3xs">
                 <AlertCircle className="h-4.5 w-4.5 text-red-500" />
                 {error}
               </div>
             )}
             {successMsg && (
-              <div className="flex items-center gap-2.5 rounded-2xl bg-emerald-50 border border-emerald-200/50 px-4 py-3.5 text-xs font-bold text-emerald-700 shadow-3xs">
+              <div className="flex items-center gap-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/50 dark:border-emerald-900/30 px-4 py-3.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 shadow-3xs">
                 <Check className="h-4.5 w-4.5 text-emerald-500" />
                 {successMsg}
               </div>

@@ -27,7 +27,7 @@ export default function SettingsPage() {
         />
 
         {/* Content Box */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden flex flex-col min-h-[420px]">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden flex flex-col min-h-[420px]">
           
           {/* Main Area */}
           <div className="p-6 sm:p-8 flex-1 space-y-6">

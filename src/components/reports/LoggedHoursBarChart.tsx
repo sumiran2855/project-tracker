@@ -18,11 +18,11 @@ export function LoggedHoursBarChart({
   const totalWeeklyHours = weeklyTimeLogs.reduce((acc, d) => acc + d.hours, 0);
 
   return (
-    <div className="lg:col-span-2 bg-white border border-slate-200 rounded-3xl p-6 shadow-xs flex flex-col justify-between relative">
+    <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs flex flex-col justify-between relative">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h3 className="text-sm font-black text-slate-800">Logged Hours</h3>
-          <p className="text-[10px] text-slate-400 font-bold mt-0.5">
+          <h3 className="text-sm font-black text-slate-800 dark:text-slate-100">Logged Hours</h3>
+          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold mt-0.5">
             {isEmployeeRole ? (
               <>Workspace activity log ({totalWeeklyHours}h / {weeklyCapacity}h weekly capacity - {Math.round((totalWeeklyHours / (weeklyCapacity || 1)) * 100)}%)</>
             ) : (
@@ -35,7 +35,7 @@ export function LoggedHoursBarChart({
         <div className="relative shrink-0">
           <button
             onClick={() => setIsHoursMenuOpen(!isHoursMenuOpen)}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-455 hover:bg-slate-50 cursor-pointer transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer transition-colors"
           >
             <MoreHorizontal className="h-4 w-4" />
           </button>
@@ -43,15 +43,15 @@ export function LoggedHoursBarChart({
           {isHoursMenuOpen && (
             <>
               <div className="fixed inset-0 z-20" onClick={() => setIsHoursMenuOpen(false)} />
-              <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-slate-150 bg-white p-1 shadow-lg z-30 animate-scaleUp">
+              <div className="absolute right-0 top-full mt-1 w-48 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-1 shadow-lg z-30 animate-scaleUp">
                 <button
                   onClick={() => {
                     router.push('/reports/hours');
                     setIsHoursMenuOpen(false);
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-bold text-slate-755 hover:bg-slate-50 transition-colors cursor-pointer"
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer"
                 >
-                  <Clock className="h-4 w-4 text-indigo-555" />
+                  <Clock className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                   View Hours Report
                 </button>
               </div>
@@ -122,7 +122,7 @@ export function LoggedHoursBarChart({
       )}
 
       <div className="overflow-x-auto scrollbar-none pb-2">
-        <div className="flex items-end justify-between gap-3 sm:gap-4 h-48 min-w-[460px] md:min-w-0 pb-2 border-b border-slate-100">
+        <div className="flex items-end justify-between gap-3 sm:gap-4 h-48 min-w-[460px] md:min-w-0 pb-2 border-b border-slate-100 dark:border-slate-800">
           {weeklyTimeLogs.map((d, idx) => {
             const maxHours = Math.max(isEmployeeRole ? dailyCapacity : 1, ...weeklyTimeLogs.map(t => t.hours));
             const uniqueLoggedProjects = Array.from(new Set(weeklyTimeLogs.flatMap(item => item.projects.map(p => p.projectName))));
@@ -136,7 +136,7 @@ export function LoggedHoursBarChart({
                 onMouseLeave={() => setHoveredHoursIndex(null)}
               >
                 {/* Floating badge for logged hours */}
-                <span className="text-[10px] font-black text-slate-700 bg-slate-100 border border-slate-200/50 px-2 py-0.5 rounded-full shadow-3xs whitespace-nowrap transition-transform duration-200 group-hover:scale-105">
+                <span className="text-[10px] font-black text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/80 px-2 py-0.5 rounded-full shadow-3xs whitespace-nowrap transition-transform duration-200 group-hover:scale-105">
                   {d.hours}h
                 </span>
 
@@ -176,12 +176,12 @@ export function LoggedHoursBarChart({
                     </div>
                   ) : (
                     /* Subtle placeholder line for 0 hours */
-                    <div className="w-full max-w-[32px] sm:max-w-[36px] h-1.5 rounded bg-slate-200/50 border border-slate-300/20 shadow-3xs" />
+                    <div className="w-full max-w-[32px] sm:max-w-[36px] h-1.5 rounded bg-slate-200/50 dark:bg-slate-800/50 border border-slate-300/20 dark:border-slate-700/20 shadow-3xs" />
                   )}
                 </div>
 
                 {/* X-Axis day text label */}
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider text-center mt-1">
+                <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider text-center mt-1">
                   {d.day}
                 </span>
               </div>
@@ -196,12 +196,12 @@ export function LoggedHoursBarChart({
           const uniqueLoggedProjects = Array.from(new Set(weeklyTimeLogs.flatMap(item => item.projects.map(p => p.projectName))));
           if (uniqueLoggedProjects.length === 0) return null;
           return (
-            <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-slate-100 text-[10px]">
-              <span className="font-bold text-slate-400 uppercase tracking-wider text-[9px]">Projects:</span>
+            <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-[10px]">
+              <span className="font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-[9px]">Projects:</span>
               {uniqueLoggedProjects.map((pName) => {
                 const color = getProjColor(pName, uniqueLoggedProjects);
                 return (
-                  <div key={pName} className="flex items-center gap-1.5 font-bold text-slate-705">
+                  <div key={pName} className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
                     <span className={cn("h-2.5 w-2.5 rounded-full", color.dotBg)} />
                     <span>{pName}</span>
                   </div>
@@ -213,12 +213,12 @@ export function LoggedHoursBarChart({
           const uniqueLoggedEmployees = Array.from(new Set(weeklyTimeLogs.flatMap(item => (item.employees || []).map(e => e.employeeName))));
           if (uniqueLoggedEmployees.length === 0) return null;
           return (
-            <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-slate-100 text-[10px]">
-              <span className="font-bold text-slate-400 uppercase tracking-wider text-[9px]">Employees:</span>
+            <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-[10px]">
+              <span className="font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider text-[9px]">Employees:</span>
               {uniqueLoggedEmployees.map((eName) => {
                 const color = getProjColor(eName, uniqueLoggedEmployees);
                 return (
-                  <div key={eName} className="flex items-center gap-1.5 font-bold text-slate-705">
+                  <div key={eName} className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
                     <span className={cn("h-2.5 w-2.5 rounded-full", color.dotBg)} />
                     <span>{eName}</span>
                   </div>

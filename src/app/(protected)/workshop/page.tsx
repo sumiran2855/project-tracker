@@ -73,62 +73,62 @@ export default function WorkshopDashboard() {
           />
 
           {/* Project Details Panel Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white border border-slate-200 p-5 rounded-2xl shadow-xs text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xs text-xs">
             <div className="space-y-1">
-              <span className="block text-slate-400 font-bold uppercase tracking-wider text-[9px]">Completion Progress</span>
+              <span className="block text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[9px]">Completion Progress</span>
               <div className="flex items-center gap-2">
-                <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
-                  <div className="h-full bg-indigo-650 rounded-full" style={{ width: `${service.selectedProject.progress}%` }} />
+                <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200/50 dark:border-slate-700">
+                  <div className="h-full bg-indigo-600 rounded-full" style={{ width: `${service.selectedProject.progress}%` }} />
                 </div>
-                <span className="font-extrabold text-slate-800">{service.selectedProject.progress}%</span>
+                <span className="font-extrabold text-slate-800 dark:text-slate-200">{service.selectedProject.progress}%</span>
               </div>
             </div>
 
             <div className="space-y-1">
-              <span className="block text-slate-400 font-bold uppercase tracking-wider text-[9px]">Target Quarter / Timeline</span>
-              <span className="block font-extrabold text-slate-700">
+              <span className="block text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[9px]">Target Quarter / Timeline</span>
+              <span className="block font-extrabold text-slate-700 dark:text-slate-300">
                 {service.selectedProject.targetQuarter || 'Q3 2026'} ({service.selectedProject.dueDate ? new Date(service.selectedProject.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No Due Date'})
               </span>
             </div>
 
             <div className="space-y-1">
-              <span className="block text-slate-400 font-bold uppercase tracking-wider text-[9px]">Workload Budget / Slack</span>
-              <span className="block font-extrabold text-slate-700">
-                {service.selectedProject.budget || '120 hours'} — <span className="text-indigo-650">{service.selectedProject.slackChannel || '#proj-dev'}</span>
+              <span className="block text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[9px]">Workload Budget / Slack</span>
+              <span className="block font-extrabold text-slate-700 dark:text-slate-300">
+                {service.selectedProject.budget || '120 hours'} — <span className="text-indigo-600 dark:text-indigo-400">{service.selectedProject.slackChannel || '#proj-dev'}</span>
               </span>
             </div>
 
             <div className="space-y-1">
-              <span className="block text-slate-400 font-bold uppercase tracking-wider text-[9px]">Assigned Team Members</span>
+              <span className="block text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider text-[9px]">Assigned Team Members</span>
               <div className="flex items-center gap-2.5 mt-0.5">
                 <div className="flex -space-x-1.5 overflow-hidden">
                   {service.selectedProject.members.map((m, i) => (
                     <div
                       key={i}
                       title={m.name}
-                      className={`h-6 w-6 rounded-full flex items-center justify-center text-[8px] text-white font-extrabold ring-2 ring-white shadow-2xs shrink-0 ${m.bg}`}
+                      className={`h-6 w-6 rounded-full flex items-center justify-center text-[8px] text-white font-extrabold ring-2 ring-white dark:ring-slate-900 shadow-2xs shrink-0 ${m.bg}`}
                     >
                       {m.initials}
                     </div>
                   ))}
                 </div>
-                <span className="font-bold text-slate-505 text-[10px]">{service.selectedProject.members.length} members</span>
+                <span className="font-bold text-slate-500 dark:text-slate-400 text-[10px]">{service.selectedProject.members.length} members</span>
               </div>
             </div>
           </div>
 
           {/* Kanban Search Filters */}
-          <div className="flex items-center bg-white border border-slate-200 p-2.5 rounded-xl shadow-3xs max-w-md">
+          <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2.5 rounded-xl shadow-3xs max-w-md">
             <span className="text-slate-400 mr-2 shrink-0">🔍</span>
             <input
               type="text"
               value={service.kanbanSearch}
               onChange={(e) => service.setKanbanSearch(e.target.value)}
               placeholder="Search tasks and issues on the board..."
-              className="w-full bg-transparent border-none text-xs text-slate-808 placeholder-slate-400 outline-none font-semibold"
+              className="w-full bg-transparent border-none text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 outline-none font-semibold"
             />
             {service.kanbanSearch && (
-              <button onClick={() => service.setKanbanSearch('')} className="text-slate-400 hover:text-slate-655 ml-1 cursor-pointer">
+              <button onClick={() => service.setKanbanSearch('')} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 ml-1 cursor-pointer">
                 ✕
               </button>
             )}

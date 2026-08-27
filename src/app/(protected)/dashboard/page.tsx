@@ -32,7 +32,7 @@ export default async function DashboardPage() {
   } = await getDashboardData();
 
   return (
-    <div className="min-h-full bg-slate-50 p-4 sm:p-6 md:p-8 lg:p-10">
+    <div className="min-h-full bg-slate-50 dark:bg-slate-950 p-4 sm:p-6 md:p-8 lg:p-10">
       {/* Hero banner */}
       <div className="relative mb-6 overflow-hidden rounded-3xl bg-[#1F4D3E] px-7 py-7 md:px-9 md:py-8">
         <div className="absolute -right-10 -top-16 h-56 w-56 rounded-full bg-[#F4A340]/10 blur-3xl" />
@@ -86,17 +86,17 @@ export default async function DashboardPage() {
         )}
 
         {/* Recent projects — spans 2 or 3 */}
-        <div className={cn("rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs flex flex-col", canViewQuickActions ? "lg:col-span-2" : "lg:col-span-3")}>
-          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+        <div className={cn("rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs flex flex-col", canViewQuickActions ? "lg:col-span-2" : "lg:col-span-3")}>
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-6 py-5">
             <div>
-              <h2 className="text-base font-bold text-slate-800">Recent Projects</h2>
-              <p className="text-xs text-slate-450 mt-0.5">Your most active development tracks</p>
+              <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">Recent Projects</h2>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Your most active development tracks</p>
             </div>
-            <a href="/projects" className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-bold text-indigo-650 hover:bg-slate-50 transition-all shadow-xs whitespace-nowrap shrink-0">
+            <a href="/projects" className="inline-flex items-center gap-1 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-xs whitespace-nowrap shrink-0">
               View all
             </a>
           </div>
-          <div className="max-h-[580px] overflow-y-auto p-6 bg-slate-50/30 flex-1 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+          <div className="max-h-[580px] overflow-y-auto p-6 bg-slate-50/30 dark:bg-slate-950/20 flex-1 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 scrollbar-track-transparent">
             {projectsToRender.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {projectsToRender.map((p) => (
@@ -105,8 +105,8 @@ export default async function DashboardPage() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-48 text-center">
-                <FolderOpen className="h-8 w-8 text-slate-350 mb-2" />
-                <p className="text-xs text-slate-450 italic font-medium">No projects found. Create a project to get started!</p>
+                <FolderOpen className="h-8 w-8 text-slate-300 dark:text-slate-700 mb-2" />
+                <p className="text-xs text-slate-400 dark:text-slate-500 italic font-medium">No projects found. Create a project to get started!</p>
               </div>
             )}
           </div>
@@ -114,18 +114,18 @@ export default async function DashboardPage() {
 
         {/* Right rail: Deadlines + Activity + Quick actions */}
         <div className={cn("space-y-5", !canViewQuickActions && "lg:col-span-3 lg:grid lg:grid-cols-2 lg:gap-5 lg:space-y-0")}>
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
             <div className="flex items-center gap-2 mb-4">
-              <CalendarDays className="h-4 w-4 text-indigo-600" />
-              <h2 className="text-sm font-bold text-slate-800">Upcoming Deadlines</h2>
+              <CalendarDays className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+              <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100">Upcoming Deadlines</h2>
             </div>
             <div className="space-y-3">
               {deadlines.map((d) => (
                 <div key={d.title} className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold text-slate-650 leading-snug">{d.title}</p>
+                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 leading-snug">{d.title}</p>
                   <span
                     className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                      d.urgent ? 'bg-red-50 text-red-650 border border-red-150/30' : 'bg-slate-100 text-slate-500'
+                      d.urgent ? 'bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border border-red-200/30 dark:border-red-900/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                     }`}
                   >
                     {d.date}
@@ -135,14 +135,14 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
-            <h2 className="text-sm font-bold text-slate-800 mb-4">Recent Activity</h2>
-            <div className="relative border-l-2 border-slate-100 pl-5 space-y-5">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+            <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-4">Recent Activity</h2>
+            <div className="relative border-l-2 border-slate-100 dark:border-slate-800 pl-5 space-y-5">
               {recentActivity.map((a, i) => (
                 <div key={i} className="relative">
-                  <span className={`absolute -left-[26px] top-1 h-3 w-3 rounded-full border-2 border-white ${a.dot}`} />
-                  <p className="text-xs font-semibold text-slate-650 leading-snug">{a.text}</p>
-                  <p className="mt-0.5 text-[10px] text-slate-400 font-medium">{a.time}</p>
+                  <span className={`absolute -left-[26px] top-1 h-3 w-3 rounded-full border-2 border-white dark:border-slate-900 ${a.dot}`} />
+                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 leading-snug">{a.text}</p>
+                  <p className="mt-0.5 text-[10px] text-slate-405 dark:text-slate-500 font-medium">{a.time}</p>
                 </div>
               ))}
             </div>

@@ -60,8 +60,8 @@ export default function SprintPage() {
           <div className="h-12 w-12 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mx-auto text-slate-400 mb-4">
             <CheckSquare className="h-5 w-5" />
           </div>
-          <h3 className="text-sm font-black text-slate-805 tracking-tight">No active sprint items</h3>
-          <p className="text-xs text-slate-455 font-semibold mt-1 max-w-sm mx-auto">
+          <h3 className="text-sm font-black text-slate-800 tracking-tight">No active sprint items</h3>
+          <p className="text-xs text-slate-400 font-semibold mt-1 max-w-sm mx-auto">
             Try resetting your search query or filters. Tasks or issues must have a due date in the current calendar week or be overdue to appear in the weekly sprint.
           </p>
         </div>

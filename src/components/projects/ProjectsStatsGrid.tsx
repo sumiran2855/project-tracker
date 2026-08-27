@@ -25,7 +25,7 @@ export function ProjectsStatsGrid({
           <div
             key={idx}
             className={cn(
-              "group relative flex flex-col justify-between overflow-hidden rounded-2xl bg-white border border-slate-100 p-5 cursor-default transition-all duration-300 hover:-translate-y-px",
+              "group relative flex flex-col justify-between overflow-hidden rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 cursor-default transition-all duration-300 hover:-translate-y-px",
               idx === 4 && "col-span-2 lg:col-span-1"
             )}
             style={{ boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)' }}
@@ -59,12 +59,12 @@ export function ProjectsStatsGrid({
             {/* Value + label + accent */}
             <div className="relative mt-5">
               <p
-                className="text-[28px] font-black leading-none tracking-tight text-slate-800"
+                className="text-[28px] font-black leading-none tracking-tight text-slate-800 dark:text-slate-100"
                 style={{ fontVariantNumeric: 'tabular-nums' }}
               >
                 {stat.value}
               </p>
-              <p className="mt-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <p className="mt-1.5 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
                 {stat.label}
               </p>
               <div

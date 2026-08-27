@@ -182,7 +182,7 @@ export function useManagerAssignmentsService() {
 
   const getGradient = (name: string) => {
     const gradients = [
-      'from-indigo-500 to-indigo-650',
+      'from-indigo-500 to-indigo-600',
       'from-emerald-500 to-teal-600',
       'from-violet-500 to-fuchsia-600',
       'from-rose-500 to-orange-500',

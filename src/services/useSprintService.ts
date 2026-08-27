@@ -9,6 +9,7 @@ import { getCurrentWeekBounds, isItemInSprint } from '@/lib/utils';
 import type { Task, Subtask } from '@/types/tasks.types';
 import type { Issue } from '@/types/issues.types';
 import type { SprintItem } from '@/types/sprint.types';
+import { useQueryClient } from '@tanstack/react-query';
 
 export function getAttachmentUrl(path: string) {
   if (!path) return '';
@@ -22,6 +23,7 @@ export function getAttachmentUrl(path: string) {
 
 export function useSprintService() {
   const { user } = useUser();
+  const queryClient = useQueryClient();
   const isClient = user?.role?.toLowerCase() === 'client';
   const canEditHours = user?.role?.toLowerCase() === 'team lead' || user?.role?.toLowerCase() === 'employee';
 
@@ -240,6 +242,9 @@ export function useSprintService() {
 
   // Dispatch update event
   const dispatchUpdate = () => {
+    queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    queryClient.invalidateQueries({ queryKey: ['issues'] });
+    queryClient.invalidateQueries({ queryKey: ['projects'] });
     clearSprintDataCache();
     window.dispatchEvent(new Event('storage'));
     window.dispatchEvent(new Event('pwt_update'));
