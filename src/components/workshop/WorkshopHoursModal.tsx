@@ -1,5 +1,6 @@
 import { Clock3 } from 'lucide-react';
 import type { WorkshopHoursModalProps } from '@/types/workshop.types';
+import { Portal } from '@/components/ui/portal';
 
 export function WorkshopHoursModal({
   showHoursModal,
@@ -13,7 +14,8 @@ export function WorkshopHoursModal({
   if (!showHoursModal || !hoursModalTarget) return null;
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 animate-fadeIn">
+    <Portal>
+      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 animate-fadeIn">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl max-w-sm w-full mx-4 space-y-4 animate-scaleIn">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-full bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
@@ -56,5 +58,6 @@ export function WorkshopHoursModal({
         </div>
       </div>
     </div>
+    </Portal>
   );
 }

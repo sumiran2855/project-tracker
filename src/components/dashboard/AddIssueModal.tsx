@@ -7,6 +7,7 @@ import { createIssueAction, uploadIssueAttachmentAction } from '@/actions/issues
 import { getTasksByProjectAction } from '@/actions/tasks';
 import { useUser } from '@/contexts/UserContext';
 import { Issue, AddIssueModalProps } from '@/types/issues.types';
+import { Portal } from '@/components/ui/portal';
 
 function getAttachmentUrl(path: string) {
   if (!path) return '';
@@ -230,289 +231,291 @@ export function AddIssueModal({ isOpen, onClose, projects, availableMembers, onS
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto bg-slate-950/40 backdrop-blur-md animate-fadeIn">
-      <style dangerouslySetInnerHTML={{__html: `
-        .no-scrollbar::-webkit-scrollbar {
-          display: none !important;
-        }
-        .no-scrollbar {
-          -ms-overflow-style: none !important;
-          scrollbar-width: none !important;
-        }
-      `}} />
-      <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.12)] dark:shadow-none p-6 sm:p-8 space-y-6 animate-scaleIn max-h-[90vh] flex flex-col mt-12 sm:mt-16 mb-8">
+    <Portal>
+      <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto bg-slate-950/40 backdrop-blur-md animate-fadeIn">
+        <style dangerouslySetInnerHTML={{__html: `
+          .no-scrollbar::-webkit-scrollbar {
+            display: none !important;
+          }
+          .no-scrollbar {
+            -ms-overflow-style: none !important;
+            scrollbar-width: none !important;
+          }
+        `}} />
+        <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.12)] dark:shadow-none p-6 sm:p-8 space-y-6 animate-scaleIn max-h-[90vh] flex flex-col mt-12 sm:mt-16 mb-8">
 
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-100/30 dark:border-indigo-900/30">
-              <Bug className="h-4.5 w-4.5" />
-            </div>
-            <h3 className="text-base font-black text-slate-800 dark:text-slate-100 tracking-tight">Add New Issue</h3>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="h-7 w-7 rounded-full bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 cursor-pointer transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleCreateIssue} className="flex-1 flex flex-col min-h-0">
-          {/* Scrollable Container */}
-          <div className="flex-1 overflow-y-auto no-scrollbar space-y-5 pr-2 -mr-2 min-h-0">
-            
-            {errorMsg && (
-              <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-xs font-bold text-red-600 dark:text-red-400">
-                {errorMsg}
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-955/30 text-indigo-600 dark:text-indigo-400 border border-indigo-100/30 dark:border-indigo-900/30">
+                <Bug className="h-4.5 w-4.5" />
               </div>
-            )}
-
-            {/* Project Selection */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Destination Project</label>
-              <div className="relative">
-                <select
-                  required
-                  value={newProject}
-                  onChange={(e) => handleProjectChange(e.target.value)}
-                  className="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 hover:bg-slate-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
-                >
-                  <option value="" disabled>Select project...</option>
-                  {projects.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-              </div>
+              <h3 className="text-base font-black text-slate-800 dark:text-slate-100 tracking-tight">Add New Issue</h3>
             </div>
-
-            {/* Related Task Selection */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Related Task (Optional)</label>
-              <div className="relative">
-                <select
-                  value={selectedTaskId}
-                  onChange={(e) => setSelectedTaskId(e.target.value)}
-                  className="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 hover:bg-slate-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
-                >
-                  <option value="">Not related to any task</option>
-                  {tasks.map(t => (
-                    <option key={t.id} value={t.id}>{t.title}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Title */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Issue Title</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Signature mismatch in custom auth endpoint"
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 hover:bg-slate-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-semibold placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all"
-              />
-            </div>
-
-            {/* Description */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Description / Details</label>
-              <textarea
-                rows={3}
-                placeholder="Describe logs, environment, and replication steps..."
-                value={newDesc}
-                onChange={(e) => setNewDesc(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 hover:bg-slate-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-semibold placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all resize-none"
-              />
-            </div>
-
-            {/* Type, Priority & Status */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Type</label>
-                <div className="relative">
-                  <select
-                    value={newType}
-                    onChange={(e) => setNewType(e.target.value as any)}
-                    className="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 hover:bg-slate-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
-                  >
-                    <option value="Bug">Bug</option>
-                    <option value="Security">Security</option>
-                    <option value="Improvement">Improvement</option>
-                    <option value="Task">Task</option>
-                  </select>
-                  <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Priority</label>
-                <div className="relative">
-                  <select
-                    value={newPriority}
-                    onChange={(e) => setNewPriority(e.target.value as any)}
-                    className="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 hover:bg-slate-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
-                  >
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                    <option value="Critical">Critical</option>
-                  </select>
-                  <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Status</label>
-                <div className="relative">
-                  <select
-                    value={newStatus}
-                    onChange={(e) => setNewStatus(e.target.value as any)}
-                    className="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 hover:bg-slate-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
-                  >
-                    <option value="Open">Open</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Resolved">Resolved</option>
-                    <option value="Closed">Closed</option>
-                  </select>
-                  <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                </div>
-              </div>
-            </div>
-
-            {/* Target Date */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Target Date / Due Date</label>
-              <input
-                type="date"
-                required
-                value={newDueDate}
-                onChange={(e) => setNewDueDate(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 hover:bg-slate-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer"
-              />
-            </div>
-
-            {/* Assignees */}
-            <div className="space-y-2.5 mb-4">
-              <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Assign Team Members</label>
-              <div className="flex flex-wrap gap-2.5">
-                {isEmployee && user && user.name ? (
-                  <div className="flex items-center gap-2 bg-indigo-50/80 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400 px-3.5 py-2 rounded-xl text-xs font-bold w-fit">
-                    <div className="h-5.5 w-5.5 rounded-full bg-indigo-500 flex items-center justify-center text-[8px] text-white font-black shrink-0">
-                      {user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
-                    </div>
-                    <span>Assigned to you ({user.name})</span>
-                  </div>
-                ) : assignableMembers.length > 0 ? (
-                  assignableMembers.map((member) => {
-                    const isSelected = newAssignees.includes(member.name);
-                    return (
-                      <button
-                        key={member.name}
-                        type="button"
-                        onClick={() => {
-                          if (isSelected) {
-                            setNewAssignees(newAssignees.filter(m => m !== member.name));
-                          } else {
-                            setNewAssignees([...newAssignees, member.name]);
-                          }
-                        }}
-                        className={cn(
-                          "flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border text-[11px] font-bold transition-all duration-200 cursor-pointer",
-                          isSelected
-                            ? "bg-indigo-50/80 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400 shadow-3xs ring-1 ring-indigo-200/50"
-                            : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 shadow-3xs"
-                        )}
-                      >
-                        <div className={cn("h-5.5 w-5.5 rounded-full flex items-center justify-center text-[8px] text-white font-black shadow-3xs shrink-0", member.bg || 'bg-indigo-500')}>
-                          {member.initials || member.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
-                        </div>
-                        <span>{member.name}</span>
-                      </button>
-                    );
-                  })
-                ) : (
-                  <p className="text-xs text-slate-400 font-medium italic">No team members assigned to this project.</p>
-                )}
-              </div>
-            </div>
-
-            {/* Screenshots / Attachments */}
-            <div className="space-y-2 mb-4">
-              <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Screenshots / Attachments (Optional)</label>
-              
-              {/* Attachment Preview Grid */}
-              {attachments.length > 0 && (
-                <div className="grid grid-cols-4 gap-2 mb-2">
-                  {attachments.map((url, idx) => (
-                    <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 cursor-pointer">
-                      <img
-                        src={getAttachmentUrl(url)}
-                        alt={`Attachment ${idx + 1}`}
-                        onClick={() => window.open(getAttachmentUrl(url), '_blank')}
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveAttachment(url);
-                        }}
-                        className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/60 hover:bg-red-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-white cursor-pointer shadow-sm"
-                        title="Delete screenshot"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Upload Dropzone */}
-              <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl hover:bg-slate-50/50 dark:hover:bg-slate-800 hover:border-indigo-300 dark:hover:border-indigo-500 transition-all cursor-pointer gap-1.5 p-4">
-                <UploadCloud className="h-5 w-5 text-slate-400 group-hover:text-indigo-500" />
-                <span className="text-[10px] font-bold text-slate-500">
-                  {uploadingImage ? 'Uploading image...' : 'Click to upload screenshot(s)'}
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={handleImageUpload}
-                  disabled={uploadingImage}
-                />
-              </label>
-            </div>
-          </div>
-
-          {/* Form Buttons */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all cursor-pointer active:scale-98"
+              className="h-7 w-7 rounded-full bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 cursor-pointer transition-colors"
             >
-              Cancel
-            </button>
-            <button
-              disabled={loading}
-              type="submit"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-650/10 transition-all cursor-pointer active:scale-98 disabled:opacity-50"
-            >
-              {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              Create Issue
+              <X className="h-4 w-4" />
             </button>
           </div>
 
-        </form>
+          {/* Form */}
+          <form onSubmit={handleCreateIssue} className="flex-1 flex flex-col min-h-0">
+            {/* Scrollable Container */}
+            <div className="flex-1 overflow-y-auto no-scrollbar space-y-5 pr-2 -mr-2 min-h-0">
+              
+              {errorMsg && (
+                <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-955/20 border border-red-200 dark:border-red-900/30 text-xs font-bold text-red-600 dark:text-red-400">
+                  {errorMsg}
+                </div>
+              )}
+
+              {/* Project Selection */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-505">Destination Project</label>
+                <div className="relative">
+                  <select
+                    required
+                    value={newProject}
+                    onChange={(e) => handleProjectChange(e.target.value)}
+                    className="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 hover:bg-slate-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
+                  >
+                    <option value="" disabled>Select project...</option>
+                    {projects.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Related Task Selection */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-505">Related Task (Optional)</label>
+                <div className="relative">
+                  <select
+                    value={selectedTaskId}
+                    onChange={(e) => setSelectedTaskId(e.target.value)}
+                    className="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-955/30 hover:bg-slate-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
+                  >
+                    <option value="">Not related to any task</option>
+                    {tasks.map(t => (
+                      <option key={t.id} value={t.id}>{t.title}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Title */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-505">Issue Title</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Signature mismatch in custom auth endpoint"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 hover:bg-slate-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-semibold placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all"
+                />
+              </div>
+
+              {/* Description */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-505">Description / Details</label>
+                <textarea
+                  rows={3}
+                  placeholder="Describe logs, environment, and replication steps..."
+                  value={newDesc}
+                  onChange={(e) => setNewDesc(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 hover:bg-slate-50 dark:hover:bg-slate-805 focus:bg-white dark:focus:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-semibold placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all resize-none"
+                />
+              </div>
+
+              {/* Type, Priority & Status */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Type</label>
+                  <div className="relative">
+                    <select
+                      value={newType}
+                      onChange={(e) => setNewType(e.target.value as any)}
+                      className="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 hover:bg-slate-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
+                    >
+                      <option value="Bug">Bug</option>
+                      <option value="Security">Security</option>
+                      <option value="Improvement">Improvement</option>
+                      <option value="Task">Task</option>
+                    </select>
+                    <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Priority</label>
+                  <div className="relative">
+                    <select
+                      value={newPriority}
+                      onChange={(e) => setNewPriority(e.target.value as any)}
+                      className="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 hover:bg-slate-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
+                    >
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                      <option value="Critical">Critical</option>
+                    </select>
+                    <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Status</label>
+                  <div className="relative">
+                    <select
+                      value={newStatus}
+                      onChange={(e) => setNewStatus(e.target.value as any)}
+                      className="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-955/30 hover:bg-slate-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
+                    >
+                      <option value="Open">Open</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Resolved">Resolved</option>
+                      <option value="Closed">Closed</option>
+                    </select>
+                    <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Target Date */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-505">Target Date / Due Date</label>
+                <input
+                  type="date"
+                  required
+                  value={newDueDate}
+                  onChange={(e) => setNewDueDate(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30 hover:bg-slate-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer"
+                />
+              </div>
+
+              {/* Assignees */}
+              <div className="space-y-2.5 mb-4">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-550">Assign Team Members</label>
+                <div className="flex flex-wrap gap-2.5">
+                  {isEmployee && user && user.name ? (
+                    <div className="flex items-center gap-2 bg-indigo-50/80 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/35 text-indigo-700 dark:text-indigo-400 px-3.5 py-2 rounded-xl text-xs font-bold w-fit">
+                      <div className="h-5.5 w-5.5 rounded-full bg-indigo-500 flex items-center justify-center text-[8px] text-white font-black shrink-0">
+                        {user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                      </div>
+                      <span>Assigned to you ({user.name})</span>
+                    </div>
+                  ) : assignableMembers.length > 0 ? (
+                    assignableMembers.map((member) => {
+                      const isSelected = newAssignees.includes(member.name);
+                      return (
+                        <button
+                          key={member.name}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setNewAssignees(newAssignees.filter(m => m !== member.name));
+                            } else {
+                              setNewAssignees([...newAssignees, member.name]);
+                            }
+                          }}
+                          className={cn(
+                            "flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border text-[11px] font-bold transition-all duration-200 cursor-pointer",
+                            isSelected
+                              ? "bg-indigo-50/80 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400 shadow-3xs ring-1 ring-indigo-200/50"
+                              : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-750 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 shadow-3xs"
+                          )}
+                        >
+                          <div className={cn("h-5.5 w-5.5 rounded-full flex items-center justify-center text-[8px] text-white font-black shadow-3xs shrink-0", member.bg || 'bg-indigo-500')}>
+                            {member.initials || member.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                          </div>
+                          <span>{member.name}</span>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <p className="text-xs text-slate-400 font-medium italic">No team members assigned to this project.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Screenshots / Attachments */}
+              <div className="space-y-2 mb-4">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-505">Screenshots / Attachments (Optional)</label>
+                
+                {/* Attachment Preview Grid */}
+                {attachments.length > 0 && (
+                  <div className="grid grid-cols-4 gap-2 mb-2">
+                    {attachments.map((url, idx) => (
+                      <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 cursor-pointer">
+                        <img
+                          src={getAttachmentUrl(url)}
+                          alt={`Attachment ${idx + 1}`}
+                          onClick={() => window.open(getAttachmentUrl(url), '_blank')}
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveAttachment(url);
+                          }}
+                          className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/60 hover:bg-red-650 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-white cursor-pointer shadow-sm"
+                          title="Delete screenshot"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Upload Dropzone */}
+                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl hover:bg-slate-50/50 dark:hover:bg-slate-800 hover:border-indigo-300 dark:hover:border-indigo-500 transition-all cursor-pointer gap-1.5 p-4">
+                  <UploadCloud className="h-5 w-5 text-slate-400 group-hover:text-indigo-500" />
+                  <span className="text-[10px] font-bold text-slate-550">
+                    {uploadingImage ? 'Uploading image...' : 'Click to upload screenshot(s)'}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleImageUpload}
+                    disabled={uploadingImage}
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Form Buttons */}
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 shrink-0">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all cursor-pointer active:scale-98"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={loading}
+                type="submit"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-650/10 transition-all cursor-pointer active:scale-98 disabled:opacity-50"
+              >
+                {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                Create Issue
+              </button>
+            </div>
+
+          </form>
+        </div>
       </div>
-    </div>
+    </Portal>
   );
 }

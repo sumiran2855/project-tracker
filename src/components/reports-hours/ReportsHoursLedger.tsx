@@ -46,7 +46,7 @@ export function ReportsHoursLedger({
       </div>
 
       {/* Table wrapper */}
-      <div className="overflow-x-auto border border-slate-202 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 shadow-3xs">
+      <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 shadow-3xs">
         <table className="w-full text-left border-collapse min-w-[700px]">
           <thead>
             <tr className="bg-slate-50/80 dark:bg-slate-950/40 border-b border-slate-200 dark:border-slate-800 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-505">
@@ -90,7 +90,7 @@ export function ReportsHoursLedger({
                     {/* Employee User */}
                     <td className="px-5 py-4 font-bold text-slate-800 dark:text-slate-100">
                       <div className="flex items-center gap-2.5">
-                        <div className="h-6.5 w-6.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-202 dark:border-slate-700 flex items-center justify-center text-[9px] font-black text-slate-500 dark:text-slate-400 shrink-0 uppercase shadow-3xs">
+                        <div className="h-6.5 w-6.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-[9px] font-black text-slate-500 dark:text-slate-400 shrink-0 uppercase shadow-3xs">
                           {log.userName.split(' ').map((n: string) => n[0]).join('').substring(0, 2)}
                         </div>
                         <span className="truncate max-w-[150px]">{log.userName}</span>
@@ -153,14 +153,14 @@ export function ReportsHoursLedger({
           <button
             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
             disabled={currentPage === 1 || loading}
-            className="p-2 border border-slate-202 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-3xs"
+            className="p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-3xs"
           >
             <ChevronLeft className="h-4 w-4 text-slate-600" />
           </button>
           <button
             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
             disabled={currentPage === totalPages || loading}
-            className="p-2 border border-slate-202 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-3xs"
+            className="p-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-3xs"
           >
             <ChevronRight className="h-4 w-4 text-slate-700" />
           </button>

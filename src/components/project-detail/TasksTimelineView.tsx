@@ -23,7 +23,7 @@ export function TasksTimelineView({
               <span>Jul 14</span>
               <span>Jul 21</span>
               <span>Jul 28</span>
-              <span className="absolute inset-y-0 left-0 right-0 border-l border-r border-dashed border-slate-202/50 dark:border-slate-800/80" />
+              <span className="absolute inset-y-0 left-0 right-0 border-l border-r border-dashed border-slate-200/50 dark:border-slate-800/80" />
             </div>
           </div>
 

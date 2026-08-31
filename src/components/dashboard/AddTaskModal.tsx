@@ -7,6 +7,8 @@ import { createTaskAction } from '@/actions/tasks';
 import { useUser } from '@/contexts/UserContext';
 import type { AddTaskModalProps } from '@/types/tasks.types';
 
+import { Portal } from '@/components/ui/portal';
+
 export function AddTaskModal({
   isOpen,
   onClose,
@@ -38,12 +40,12 @@ export function AddTaskModal({
       setNewDesc('');
       setNewStatus('To Do');
       setNewPriority('Medium');
-      
+
       const today = new Date().toISOString().split('T')[0];
       const inOneWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       setNewStartDate(today);
       setNewDueDate(inOneWeek);
-      
+
       if (user && user.name && isEmployee) {
         setNewAssignees([user.name]);
       } else {
@@ -176,8 +178,10 @@ export function AddTaskModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md animate-fadeIn">
-      <style dangerouslySetInnerHTML={{__html: `
+    <Portal>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md animate-fadeIn">
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .no-scrollbar::-webkit-scrollbar {
           display: none !important;
         }
@@ -209,7 +213,7 @@ export function AddTaskModal({
         <form onSubmit={handleCreateTask} className="flex-1 flex flex-col min-h-0">
           {/* Scrollable Container */}
           <div className="flex-1 overflow-y-auto no-scrollbar space-y-5 pr-2 -mr-2 min-h-0">
-            
+
             {errorMsg && (
               <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-xs font-bold text-red-600 dark:text-red-400">
                 {errorMsg}
@@ -390,5 +394,6 @@ export function AddTaskModal({
         </form>
       </div>
     </div>
+    </Portal>
   );
 }

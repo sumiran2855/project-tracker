@@ -1,6 +1,7 @@
 import { X, Users, Plus, Check, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ManageCollaboratorsModalProps, bgOptions } from '@/types/profile.types';
+import { Portal } from '@/components/ui/portal';
 
 export function ManageCollaboratorsModal({
   isOpen,
@@ -22,7 +23,8 @@ export function ManageCollaboratorsModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-fadeIn">
+    <Portal>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-fadeIn">
       <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-8 space-y-6 my-8 animate-scaleIn">
 
         {/* Header */}
@@ -195,5 +197,6 @@ export function ManageCollaboratorsModal({
 
       </div>
     </div>
+    </Portal>
   );
 }

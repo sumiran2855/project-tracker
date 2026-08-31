@@ -1,5 +1,6 @@
 import { X, Trash2 } from 'lucide-react';
 import type { DeleteConfirmModalProps } from '@/types/issues.types';
+import { Portal } from '@/components/ui/portal';
 
 
 export function DeleteConfirmModal({
@@ -10,7 +11,8 @@ export function DeleteConfirmModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md animate-fadeIn">
+    <Portal>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md animate-fadeIn">
       <div className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.12)] dark:shadow-none p-6 sm:p-7 space-y-5 animate-scaleIn">
         
         {/* Modal Header */}
@@ -54,5 +56,6 @@ export function DeleteConfirmModal({
 
       </div>
     </div>
+    </Portal>
   );
 }

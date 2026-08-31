@@ -83,7 +83,7 @@ export function TasksBoard({
                       onDragStart={(e) => handleDragStart(e, task.id)}
                       onClick={() => setSelectedTask(task)}
                       className={cn(
-                        "group flex flex-col justify-between bg-white dark:bg-slate-950 border border-slate-202/85 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 rounded-2xl p-4 shadow-3xs hover:shadow-md transition-all duration-200 relative overflow-hidden",
+                        "group flex flex-col justify-between bg-white dark:bg-slate-950 border border-slate-200/85 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 rounded-2xl p-4 shadow-3xs hover:shadow-md transition-all duration-200 relative overflow-hidden",
                         isClient ? "cursor-pointer" : "cursor-grab active:cursor-grabbing"
                       )}
                     >

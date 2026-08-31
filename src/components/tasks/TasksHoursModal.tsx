@@ -1,5 +1,6 @@
 import { Clock, X } from 'lucide-react';
 import type { TasksHoursModalProps } from '@/types/tasks.types';
+import { Portal } from '@/components/ui/portal';
 
 export function TasksHoursModal({
   isOpen,
@@ -12,7 +13,8 @@ export function TasksHoursModal({
   if (!isOpen || !promptTask) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-fadeIn">
+    <Portal>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-fadeIn">
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-800 space-y-5 animate-scaleUp">
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
           <div className="flex items-center gap-2 text-indigo-600 font-black text-xs uppercase tracking-widest">
@@ -77,5 +79,6 @@ export function TasksHoursModal({
         </form>
       </div>
     </div>
+    </Portal>
   );
 }

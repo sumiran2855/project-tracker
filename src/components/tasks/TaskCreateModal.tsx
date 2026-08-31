@@ -2,6 +2,7 @@ import { CheckSquare, X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Employee } from '@/types/projects.types';
 import type { Task, TaskCreateModalProps } from '@/types/tasks.types';
+import { Portal } from '@/components/ui/portal';
 
 export function TaskCreateModal({
   isOpen,
@@ -31,7 +32,8 @@ export function TaskCreateModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto bg-slate-950/40 backdrop-blur-md animate-fadeIn">
+    <Portal>
+      <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto bg-slate-950/40 backdrop-blur-md animate-fadeIn">
       <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.12)] dark:shadow-none p-6 sm:p-8 space-y-4 animate-scaleIn max-h-[90vh] flex flex-col mt-12 sm:mt-16 mb-8">
         
         {/* Header */}
@@ -301,5 +303,6 @@ export function TaskCreateModal({
         </form>
       </div>
     </div>
+    </Portal>
   );
 }

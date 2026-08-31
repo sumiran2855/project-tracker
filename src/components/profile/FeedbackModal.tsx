@@ -1,6 +1,7 @@
 import { AlertCircle, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { FeedbackModalProps } from '@/types/profile.types';
+import { Portal } from '@/components/ui/portal';
 
 export function FeedbackModal({
   isOpen,
@@ -12,7 +13,8 @@ export function FeedbackModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-fadeIn">
+    <Portal>
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-fadeIn">
       <div className="relative w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-8 space-y-6 text-center animate-scaleIn">
         <div className="flex flex-col items-center space-y-4">
           {type === 'success' ? (
@@ -41,5 +43,6 @@ export function FeedbackModal({
         </div>
       </div>
     </div>
+    </Portal>
   );
 }

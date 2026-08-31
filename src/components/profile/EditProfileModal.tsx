@@ -1,5 +1,6 @@
 import { X, Sliders, Check } from 'lucide-react';
 import type { EditProfileModalProps } from '@/types/profile.types';
+import { Portal } from '@/components/ui/portal';
 
 export function EditProfileModal({
   isOpen,
@@ -24,7 +25,8 @@ export function EditProfileModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-fadeIn">
+    <Portal>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-fadeIn">
       <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 sm:p-8 space-y-6 my-8 animate-scaleIn">
 
         {/* Header */}
@@ -157,5 +159,6 @@ export function EditProfileModal({
 
       </div>
     </div>
+    </Portal>
   );
 }

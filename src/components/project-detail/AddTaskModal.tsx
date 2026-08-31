@@ -1,6 +1,7 @@
 import { X, CheckSquare, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Task, ProjectDetailAddTaskModalProps } from '@/types/tasks.types';
+import { Portal } from '@/components/ui/portal';
 
 export function AddTaskModal({
   onClose,
@@ -25,9 +26,10 @@ export function AddTaskModal({
   onCreateTask,
 }: ProjectDetailAddTaskModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md animate-fadeIn">
+    <Portal>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md animate-fadeIn">
       <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.12)] dark:shadow-none p-6 sm:p-8 space-y-6 animate-scaleIn">
-        
+
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
           <div className="flex items-center gap-2.5">
@@ -36,7 +38,7 @@ export function AddTaskModal({
             </div>
             <h3 className="text-base font-black text-slate-800 dark:text-slate-100 tracking-tight">Add New Task</h3>
           </div>
-          <button 
+          <button
             type="button"
             onClick={onClose}
             className="h-7 w-7 rounded-full bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 cursor-pointer transition-colors"
@@ -47,7 +49,7 @@ export function AddTaskModal({
 
         {/* Modal Form */}
         <form onSubmit={onCreateTask} className="space-y-5">
-          
+
           {/* Task Title */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Task Title</label>
@@ -185,8 +187,8 @@ export function AddTaskModal({
                     }}
                     className={cn(
                       "flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full border text-[11px] font-bold transition-all duration-200 cursor-pointer",
-                      isSelected 
-                        ? "bg-indigo-50/80 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-900/30 text-indigo-700 dark:text-indigo-400 shadow-3xs ring-1 ring-indigo-200/50" 
+                      isSelected
+                        ? "bg-indigo-50/80 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-900/30 text-indigo-700 dark:text-indigo-400 shadow-3xs ring-1 ring-indigo-200/50"
                         : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-3xs"
                     )}
                   >
@@ -220,5 +222,6 @@ export function AddTaskModal({
         </form>
       </div>
     </div>
+    </Portal>
   );
 }

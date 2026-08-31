@@ -2,6 +2,7 @@ import { X, Bookmark, ChevronDown, Clock, CalendarDays, CheckSquare, CheckCircle
 import { cn, formatCommentTime, getCommentTimestamp } from '@/lib/utils';
 import { updateTaskAction } from '@/actions/tasks';
 import type { Task, ProjectDetailTaskDetailDrawerProps } from '@/types/tasks.types';
+import { Portal } from '@/components/ui/portal';
 
 export function TaskDetailDrawer({
   selectedTask,
@@ -27,205 +28,206 @@ export function TaskDetailDrawer({
   const initials = user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2) : 'DU';
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/40 backdrop-blur-md animate-fadeIn">
-      {/* Backdrop close area */}
-      <div className="absolute inset-0 cursor-pointer" onClick={onClose} />
-      
-      <div className="relative w-full max-w-xl h-full bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col justify-between animate-slideIn">
+    <Portal>
+      <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/40 backdrop-blur-md animate-fadeIn">
+        {/* Backdrop close area */}
+        <div className="absolute inset-0 cursor-pointer" onClick={onClose} />
         
-        {/* Drawer Body Content */}
-        <div className="flex-1 overflow-y-auto no-scrollbar p-6 sm:p-8 space-y-6">
+        <div className="relative w-full max-w-xl h-full bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col justify-between animate-slideIn">
           
-          {/* Header section */}
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
-            <div className="flex items-center gap-2 text-indigo-600 font-black text-[10px] uppercase tracking-widest">
-              <Bookmark className="h-4 w-4 text-indigo-500" />
-              <span>Task Workspace Details</span>
-            </div>
-            <button 
-              onClick={onClose}
-              className="h-8 w-8 rounded-full bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 cursor-pointer"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
-          {/* Title & Description */}
-          <div className="space-y-2">
-            <h2 className="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-tight">{selectedTask.title}</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
-              {selectedTask.description || "No description provided for this task."}
-            </p>
-          </div>
-
-          {/* Task configuration options */}
-          <div className="grid grid-cols-2 gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-3xs">
+          {/* Drawer Body Content */}
+          <div className="flex-1 overflow-y-auto no-scrollbar p-6 sm:p-8 space-y-6">
             
-            {/* Status Column */}
-            <div className="space-y-1.5">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Status</span>
-              <div className="relative">
-                <select
-                  value={selectedTask.status}
-                  disabled={isClient}
-                  onChange={(e) => onMoveTask(selectedTask.id, e.target.value as Task['status'])}
-                  className="w-full text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 appearance-none"
-                >
-                  <option value="To Do">To Do</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="In Review">In Review</option>
-                  <option value="Done">Done</option>
-                </select>
-                <ChevronDown className="h-3.5 w-3.5 absolute right-2.5 top-2 text-slate-400 pointer-events-none" />
+            {/* Header section */}
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div className="flex items-center gap-2 text-indigo-600 font-black text-[10px] uppercase tracking-widest">
+                <Bookmark className="h-4 w-4 text-indigo-500" />
+                <span>Task Workspace Details</span>
               </div>
+              <button 
+                onClick={onClose}
+                className="h-8 w-8 rounded-full bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
 
-            {/* Priority Column */}
-            <div className="space-y-1.5">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Priority</span>
-              <div className="relative">
-                <select
-                  value={selectedTask.priority}
-                  disabled={isClient}
-                  onChange={(e) => {
-                    const updated = tasks.map(t => t.id === selectedTask.id ? { ...t, priority: e.target.value as Task['priority'] } : t);
-                    saveTasks(updated);
-                    setSelectedTask({ ...selectedTask, priority: e.target.value as Task['priority'] });
-                  }}
-                  className="w-full text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 appearance-none"
-                >
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                  <option value="Urgent">Urgent</option>
-                </select>
-                <ChevronDown className="h-3.5 w-3.5 absolute right-2.5 top-2 text-slate-400 pointer-events-none" />
-              </div>
+            {/* Title & Description */}
+            <div className="space-y-2">
+              <h2 className="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight leading-tight">{selectedTask.title}</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+                {selectedTask.description || "No description provided for this task."}
+              </p>
             </div>
 
-            {/* Hours Spent Column */}
-            <div className="col-span-2 border-t border-slate-100 dark:border-slate-800 pt-3.5 space-y-2 animate-fadeIn">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Hours Spent (Actual)</span>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 shadow-2xs">
-                  <Clock className="h-4 w-4 text-slate-400 shrink-0" />
-                  <span>{selectedTask.actualHours || 0} hours total</span>
+            {/* Task configuration options */}
+            <div className="grid grid-cols-2 gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-3xs">
+              
+              {/* Status Column */}
+              <div className="space-y-1.5">
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Status</span>
+                <div className="relative">
+                  <select
+                    value={selectedTask.status}
+                    disabled={isClient}
+                    onChange={(e) => onMoveTask(selectedTask.id, e.target.value as Task['status'])}
+                    className="w-full text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 bg-white dark:bg-slate-955 text-slate-800 dark:text-slate-100 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 appearance-none"
+                  >
+                    <option value="To Do">To Do</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="In Review">In Review</option>
+                    <option value="Done">Done</option>
+                  </select>
+                  <ChevronDown className="h-3.5 w-3.5 absolute right-2.5 top-2 text-slate-400 pointer-events-none" />
                 </div>
-                {canEditHours && (
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="number"
-                      min="0.1"
-                      step="0.1"
-                      placeholder="Log hours..."
-                      id="project-task-log-hours-input"
-                      className="w-24 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 bg-white dark:bg-slate-955 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                    />
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const input = document.getElementById('project-task-log-hours-input') as HTMLInputElement;
-                        const val = parseFloat(input?.value || '0');
-                        if (val > 0) {
-                          const res = await updateTaskAction(selectedTask.id, { newWorkLog: { hours: val } } as any);
-                          if (res.success && res.data) {
-                            const updatedTask = {
-                              ...res.data,
-                              projectId: selectedTask.projectId,
-                              projectName: selectedTask.projectName
-                            };
-                            setSelectedTask(updatedTask);
-                            saveTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
-                            if (input) input.value = '';
+              </div>
+
+              {/* Priority Column */}
+              <div className="space-y-1.5">
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Priority</span>
+                <div className="relative">
+                  <select
+                    value={selectedTask.priority}
+                    disabled={isClient}
+                    onChange={(e) => {
+                      const updated = tasks.map(t => t.id === selectedTask.id ? { ...t, priority: e.target.value as Task['priority'] } : t);
+                      saveTasks(updated);
+                      setSelectedTask({ ...selectedTask, priority: e.target.value as Task['priority'] });
+                    }}
+                    className="w-full text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 bg-white dark:bg-slate-955 text-slate-800 dark:text-slate-100 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer pr-8 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 appearance-none"
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Urgent">Urgent</option>
+                  </select>
+                  <ChevronDown className="h-3.5 w-3.5 absolute right-2.5 top-2 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Hours Spent Column */}
+              <div className="col-span-2 border-t border-slate-100 dark:border-slate-800 pt-3.5 space-y-2 animate-fadeIn">
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Hours Spent (Actual)</span>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 bg-slate-50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 shadow-2xs">
+                    <Clock className="h-4 w-4 text-slate-400 shrink-0" />
+                    <span>{selectedTask.actualHours || 0} hours total</span>
+                  </div>
+                  {canEditHours && (
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        placeholder="Log hours..."
+                        id="project-task-log-hours-input"
+                        className="w-24 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 bg-white dark:bg-slate-955 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                      />
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const input = document.getElementById('project-task-log-hours-input') as HTMLInputElement;
+                          const val = parseFloat(input?.value || '0');
+                          if (val > 0) {
+                            const res = await updateTaskAction(selectedTask.id, { newWorkLog: { hours: val } } as any);
+                            if (res.success && res.data) {
+                              const updatedTask = {
+                                ...res.data,
+                                projectId: selectedTask.projectId,
+                                projectName: selectedTask.projectName
+                              };
+                              setSelectedTask(updatedTask);
+                              saveTasks(tasks.map(t => t.id === selectedTask.id ? updatedTask : t));
+                              if (input) input.value = '';
+                            }
                           }
-                        }
-                      }}
-                      className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-800 text-white text-xs font-bold shadow-3xs transition-all cursor-pointer shrink-0"
-                    >
-                      Log
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Dates */}
-            <div className="col-span-2 grid grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-800 pt-3.5">
-              <div>
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Start Date</span>
-                <span className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 mt-1">
-                  <CalendarDays className="h-4 w-4 text-indigo-500" />
-                  {selectedTask.startDate}
-                </span>
-              </div>
-              <div>
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Due Date</span>
-                <span className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 mt-1">
-                  <Clock className="h-4 w-4 text-indigo-500" />
-                  {selectedTask.dueDate}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Assignees */}
-          <div className="space-y-2">
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Assignees</span>
-            <div className="flex flex-wrap gap-2.5">
-              {selectedTask.assignees?.map((assignee, idx) => (
-                <div key={idx} className="flex items-center gap-1.8 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5">
-                  <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center text-[9px] text-white font-black shadow-3xs", assignee.bg)}>
-                    {assignee.initials}
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">{assignee.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Checklist Section */}
-          <div className="space-y-3 pt-2">
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <CheckSquare className="h-4 w-4 text-indigo-600" />
-              <span>Subtask Checklist</span>
-            </span>
-            
-            {/* Checklist loop */}
-            <div className="space-y-2 bg-slate-50/50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
-              {selectedTask.subtasks?.length === 0 ? (
-                <p className="text-[10px] text-slate-400 font-bold text-center py-4">No subtasks defined yet.</p>
-              ) : (
-                selectedTask.subtasks?.map(sub => (
-                  <div key={sub.id} className="flex items-center justify-between group/sub">
-                    <button
-                      disabled={isClient}
-                      onClick={() => onToggleSubtask(sub.id)}
-                      className={cn("flex items-center gap-2.5 flex-1 text-left", isClient ? "cursor-not-allowed" : "cursor-pointer")}
-                    >
-                      <div className={cn(
-                        "h-4.5 w-4.5 rounded-md border flex items-center justify-center transition-colors",
-                        sub.completed ? "bg-indigo-600 border-indigo-600 text-white" : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
-                      )}>
-                        {sub.completed && <CheckCircle2 className="h-3 w-3 text-white" />}
-                      </div>
-                      <span className={cn("text-xs font-bold transition-all", sub.completed ? "line-through text-slate-400 dark:text-slate-500" : "text-slate-700 dark:text-slate-300")}>
-                        {sub.title}
-                      </span>
-                    </button>
-                    
-                    {!isClient && (
-                      <button 
-                        onClick={() => onDeleteSubtask(sub.id)}
-                        className="text-slate-400 dark:text-slate-500 opacity-0 group-hover/sub:opacity-100 hover:text-red-500 transition-opacity p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer"
+                        }}
+                        className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-800 text-white text-xs font-bold shadow-3xs transition-all cursor-pointer shrink-0"
                       >
-                        <X className="h-3.5 w-3.5" />
+                        Log
                       </button>
-                    )}
-                  </div>
-                ))
-              )}
+                    </div>
+                  )}
+                </div>
+              </div>
 
-              {/* Add subtask Form */}
+              {/* Dates */}
+              <div className="col-span-2 grid grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-800 pt-3.5">
+                <div>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Start Date</span>
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 mt-1">
+                    <CalendarDays className="h-4 w-4 text-indigo-500" />
+                    {selectedTask.startDate}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Due Date</span>
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 mt-1">
+                    <Clock className="h-4 w-4 text-indigo-500" />
+                    {selectedTask.dueDate}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Assignees */}
+            <div className="space-y-2">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Assignees</span>
+              <div className="flex flex-wrap gap-2.5">
+                {selectedTask.assignees?.map((assignee, idx) => (
+                  <div key={idx} className="flex items-center gap-1.8 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5">
+                    <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center text-[9px] text-white font-black shadow-3xs", assignee.bg)}>
+                      {assignee.initials}
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">{assignee.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Checklist Section */}
+            <div className="space-y-3 pt-2">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <CheckSquare className="h-4 w-4 text-indigo-600" />
+                <span>Subtask Checklist</span>
+              </span>
+              
+              {/* Checklist loop */}
+              <div className="space-y-2 bg-slate-50/50 dark:bg-slate-955 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+                {selectedTask.subtasks?.length === 0 ? (
+                  <p className="text-[10px] text-slate-400 font-bold text-center py-4">No subtasks defined yet.</p>
+                ) : (
+                  selectedTask.subtasks?.map(sub => (
+                    <div key={sub.id} className="flex items-center justify-between group/sub">
+                      <button
+                        disabled={isClient}
+                        onClick={() => onToggleSubtask(sub.id)}
+                        className={cn("flex items-center gap-2.5 flex-1 text-left", isClient ? "cursor-not-allowed" : "cursor-pointer")}
+                      >
+                        <div className={cn(
+                          "h-4.5 w-4.5 rounded-md border flex items-center justify-center transition-colors",
+                          sub.completed ? "bg-indigo-600 border-indigo-600 text-white" : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+                        )}>
+                          {sub.completed && <CheckCircle2 className="h-3 w-3 text-white" />}
+                        </div>
+                        <span className={cn("text-xs font-bold transition-all", sub.completed ? "line-through text-slate-400 dark:text-slate-500" : "text-slate-700 dark:text-slate-300")}>
+                          {sub.title}
+                        </span>
+                      </button>
+                      
+                      {!isClient && (
+                        <button 
+                          onClick={() => onDeleteSubtask(sub.id)}
+                          className="text-slate-400 dark:text-slate-500 opacity-0 group-hover/sub:opacity-100 hover:text-red-500 transition-opacity p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+
+                {/* Add subtask Form */}
                 <form onSubmit={onAddSubtask} className="flex gap-2 border-t border-slate-200/80 dark:border-slate-800 pt-3.5 mt-3.5">
                   <input
                     type="text"
@@ -242,17 +244,17 @@ export function TaskDetailDrawer({
                     Add
                   </button>
                 </form>
+              </div>
             </div>
-          </div>
 
-          {/* Comments Section */}
-          <div className="space-y-4 pt-2">
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <MessageSquare className="h-4 w-4 text-indigo-600" />
-              <span>Discussion ({selectedTask.comments?.length || 0})</span>
-            </span>
+            {/* Comments Section */}
+            <div className="space-y-4 pt-2">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <MessageSquare className="h-4 w-4 text-indigo-600" />
+                <span>Discussion ({selectedTask.comments?.length || 0})</span>
+              </span>
 
-            {/* Add Comment input */}
+              {/* Add Comment input */}
               <form onSubmit={onAddComment} className="flex gap-3">
                 <div className="h-7 w-7 rounded-lg bg-indigo-600 text-[9px] font-bold text-white flex items-center justify-center shrink-0">
                   {initials}
@@ -276,53 +278,54 @@ export function TaskDetailDrawer({
                 </div>
               </form>
 
-            {/* Comment loops */}
-            <div className="space-y-3.5 pt-2">
-              {[...(selectedTask.comments || [])]
-                .sort((a, b) => getCommentTimestamp(b) - getCommentTimestamp(a))
-                .map(comment => (
-                  <div key={comment.id} className="flex gap-3 bg-slate-50/50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 p-3 rounded-2xl">
-                    <div className={cn("h-7 w-7 rounded-lg text-[9px] font-black text-white flex items-center justify-center shrink-0 shadow-3xs bg-indigo-600")}>
-                      {comment.initials}
-                    </div>
-                    <div className="space-y-1 flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-slate-800 dark:text-slate-100">{comment.author}</span>
-                        <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold">{formatCommentTime(comment.time)}</span>
+              {/* Comment loops */}
+              <div className="space-y-3.5 pt-2">
+                {[...(selectedTask.comments || [])]
+                  .sort((a, b) => getCommentTimestamp(b) - getCommentTimestamp(a))
+                  .map(comment => (
+                    <div key={comment.id} className="flex gap-3 bg-slate-50/50 dark:bg-slate-955 border border-slate-100 dark:border-slate-800 p-3 rounded-2xl">
+                      <div className={cn("h-7 w-7 rounded-lg text-[9px] font-black text-white flex items-center justify-center shrink-0 shadow-3xs bg-indigo-600")}>
+                        {comment.initials}
                       </div>
-                      <p className="text-xs text-slate-700 dark:text-slate-300 font-medium leading-relaxed break-words">{comment.text}</p>
+                      <div className="space-y-1 flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-slate-800 dark:text-slate-100">{comment.author}</span>
+                          <span className="text-[9px] text-slate-400 dark:text-slate-505 font-bold">{formatCommentTime(comment.time)}</span>
+                        </div>
+                        <p className="text-xs text-slate-707 dark:text-slate-300 font-medium leading-relaxed break-words">{comment.text}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+              </div>
+
             </div>
 
           </div>
 
-        </div>
+          {/* Footer options */}
+          <div className="bg-slate-50 dark:bg-slate-955 border-t border-slate-200 dark:border-slate-800 px-6 py-4.5 flex justify-between items-center">
+            {canDeleteTask ? (
+              <button
+                onClick={() => onDeleteTask(selectedTask.id)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-bold transition-colors cursor-pointer"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>Delete Task</span>
+              </button>
+            ) : (
+              <div />
+            )}
 
-        {/* Footer options */}
-        <div className="bg-slate-50 dark:bg-slate-955 border-t border-slate-200 dark:border-slate-800 px-6 py-4.5 flex justify-between items-center">
-          {canDeleteTask ? (
             <button
-              onClick={() => onDeleteTask(selectedTask.id)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-bold transition-colors cursor-pointer"
+              onClick={onClose}
+              className="px-4.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold shadow-3xs cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
             >
-              <Trash2 className="h-4 w-4" />
-              <span>Delete Task</span>
+              Close Drawer
             </button>
-          ) : (
-            <div />
-          )}
+          </div>
 
-          <button
-            onClick={onClose}
-            className="px-4.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold shadow-3xs cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-          >
-            Close Drawer
-          </button>
         </div>
-
       </div>
-    </div>
+    </Portal>
   );
 }
