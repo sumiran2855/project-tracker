@@ -17,7 +17,8 @@ import {
   Map,
   Settings,
   AlertCircle,
-  Users
+  Users,
+  ClipboardList
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -43,6 +44,7 @@ export function Sidebar({ onClose, className, isCollapsed = false, onToggleColla
       items: [
         { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, active: pathname === '/dashboard' },
         { label: 'Projects', href: '/projects', icon: Folder, active: pathname === '/projects', badge: projectsCount !== null ? String(projectsCount) : undefined },
+        { label: 'Daily Updates', href: '/daily-updates', icon: ClipboardList, active: pathname === '/daily-updates' },
         { label: 'My Team', href: '/my-team', icon: Users, active: pathname === '/my-team', permission: 'team:view' },
       ],
     },

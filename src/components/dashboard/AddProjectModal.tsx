@@ -31,6 +31,8 @@ export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  const selectedManagerId = newProjManagerId || (userRole.toLowerCase() === 'manager' ? user?.id : '');
+
   // Reset state when modal closes/opens or projectToEdit changes
   useEffect(() => {
     if (isOpen) {
@@ -275,9 +277,22 @@ export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, 
                       <div className="relative">
                         <select
                           value={newProjManagerId}
-                          onChange={(e) => setNewProjManagerId(e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setNewProjManagerId(val);
+                            setNewProjTeamLeadId('');
+                            
+                            if (val) {
+                              setNewProjMembers((prev) => 
+                                prev.filter((nameOrId) => {
+                                  const member = availableMembers.find((m) => m.name === nameOrId || m.id === nameOrId);
+                                  return member && member.manager === val;
+                                })
+                              );
+                            }
+                          }}
                           required={userRole.toLowerCase() === 'team lead'}
-                          className="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-955/30 hover:bg-slate-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
+                          className="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-955/30 hover:bg-slate-50 dark:hover:bg-slate-850 focus:bg-white dark:focus:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
                         >
                           <option value="">Select a Manager...</option>
                           {availableMembers
@@ -304,11 +319,12 @@ export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, 
                           value={newProjTeamLeadId}
                           onChange={(e) => setNewProjTeamLeadId(e.target.value)}
                           required={userRole.toLowerCase() === 'manager'}
-                          className="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-955/30 hover:bg-slate-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
+                          className="w-full appearance-none rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-955/30 hover:bg-slate-50 dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 px-3.5 py-2.5 text-xs text-slate-800 dark:text-slate-100 font-bold focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/8 transition-all cursor-pointer pr-10"
                         >
                           <option value="">Select a Team Lead...</option>
                           {availableMembers
                             .filter((m) => m.role?.toLowerCase() === 'team lead')
+                            .filter((m) => !selectedManagerId || m.manager === selectedManagerId)
                             .map((lead) => (
                               <option key={lead.id} value={lead.id}>
                                 {lead.name}
@@ -484,6 +500,7 @@ export function AddProjectModal({ isOpen, onClose, availableMembers, onSuccess, 
                       if (role === 'admin' || role === 'client') return false;
                       if (role === 'manager' && newProjManagerId) return false;
                       if (role === 'team lead' && newProjTeamLeadId) return false;
+                      if (selectedManagerId && m.manager !== selectedManagerId) return false;
                       return true;
                     }).map((member) => {
                       const isSelected = newProjMembers.some((nameOrId) => nameOrId === member.name || nameOrId === member.id);

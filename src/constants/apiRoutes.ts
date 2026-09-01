@@ -27,4 +27,6 @@ export const API_ROUTES = {
 
   TASKS_PROJECT: "tasks/project",   // Will be appended with /${projectId}
   TASKS_BASE: "tasks",              // Will be appended with /${id} where needed
+
+  DAILY_UPDATES_BASE: "daily-updates",
 };
