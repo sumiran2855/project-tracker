@@ -316,7 +316,7 @@ export function TaskDetailDrawer({
             {canDeleteTask ? (
               <button
                 onClick={() => handleDeleteTask(selectedTask.id)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-55 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-bold transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-4.5 py-2.5 rounded-xl bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-black transition-all cursor-pointer shadow-3xs border border-red-100 dark:border-red-900/20"
               >
                 <Trash2 className="h-4 w-4" />
                 <span>Delete Task</span>

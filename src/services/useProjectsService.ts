@@ -69,18 +69,29 @@ export function useProjectsService() {
     }
   };
 
+  const [projectToDeleteId, setProjectToDeleteId] = useState<string | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+
   const handleDeleteProject = async (id: string, e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigating to detail page when clicking delete
     e.stopPropagation();
-    if (confirm('Are you sure you want to delete this project?')) {
-      const res = await deleteProjectAction(id);
-      if (res.success) {
-        setProjects(prev => prev.filter(p => p.id !== id));
-      } else {
-        console.error('Failed to delete project on backend, reverting to local:', res.error);
-        const updated = projects.filter(p => p.id !== id);
-        saveProjects(updated);
-      }
+    setProjectToDeleteId(id);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteProject = async () => {
+    if (!projectToDeleteId) return;
+    const id = projectToDeleteId;
+    setIsDeleteConfirmOpen(false);
+    setProjectToDeleteId(null);
+
+    const res = await deleteProjectAction(id);
+    if (res.success) {
+      setProjects(prev => prev.filter(p => p.id !== id));
+    } else {
+      console.error('Failed to delete project on backend, reverting to local:', res.error);
+      const updated = projects.filter(p => p.id !== id);
+      saveProjects(updated);
     }
   };
 
@@ -163,6 +174,9 @@ export function useProjectsService() {
     planningCount,
     handleProjectSuccess,
     handleDeleteProject,
+    confirmDeleteProject,
+    isDeleteConfirmOpen,
+    setIsDeleteConfirmOpen,
     filteredProjects,
     getStatusStyles,
     getPriorityStyles,

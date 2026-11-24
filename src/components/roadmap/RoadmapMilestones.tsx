@@ -97,7 +97,7 @@ export function RoadmapMilestones({
                 {canManageRoadmap && (
                   <button
                     onClick={() => handleDeleteMilestone(milestone.id)}
-                    className="text-slate-400 dark:text-slate-500 hover:text-red-500 p-1.5 hover:bg-red-55 dark:hover:bg-red-950/20 rounded-lg transition-colors cursor-pointer ml-3 shrink-0"
+                    className="text-slate-400 dark:text-slate-500 hover:text-red-500 p-1.5 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors cursor-pointer ml-3 shrink-0"
                     title="Delete Milestone"
                   >
                     <Trash2 className="h-3.5 w-3.5" />

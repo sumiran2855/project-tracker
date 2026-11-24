@@ -11,6 +11,7 @@ import {
 import { useNotificationsService } from '@/services/useNotificationsService';
 import { NotificationFilterRibbon } from '@/components/notifications/NotificationFilterRibbon';
 import { NotificationItemCard } from '@/components/notifications/NotificationItemCard';
+import { ClearAllConfirmModal } from '@/components/notifications/ClearAllConfirmModal';
 
 export default function NotificationsPage() {
   const {
@@ -27,7 +28,11 @@ export default function NotificationsPage() {
     handleMarkAsRead,
     handleDelete,
     handleMarkAllRead,
-    handleClearAll
+    handleClearAll,
+    handleConfirmClearAll,
+    isClearModalOpen,
+    setIsClearModalOpen,
+    isClearing
   } = useNotificationsService();
 
   return (
@@ -117,6 +122,14 @@ export default function NotificationsPage() {
           ))
         )}
       </div>
+
+      {/* Confirmation Modal */}
+      <ClearAllConfirmModal
+        isOpen={isClearModalOpen}
+        onClose={() => setIsClearModalOpen(false)}
+        onConfirm={handleConfirmClearAll}
+        isClearing={isClearing}
+      />
     </div>
   );
 }

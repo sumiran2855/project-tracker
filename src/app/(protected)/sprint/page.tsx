@@ -10,6 +10,7 @@ import { SprintWorkload } from '@/components/sprint/SprintWorkload';
 import { SprintHoursModal } from '@/components/sprint/SprintHoursModal';
 import { SprintDetailDrawer } from '@/components/sprint/SprintDetailDrawer';
 import { EmployeeDetailModal } from '@/components/dashboard/EmployeeDetailModal';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { CheckSquare } from 'lucide-react';
 
 export default function SprintPage() {
@@ -140,6 +141,17 @@ export default function SprintPage() {
         employee={service.selectedEmployee}
         assignedItems={service.selectedEmployeeItems}
         onSelectWorkItem={(item) => service.handleItemClick(item)}
+      />
+
+      {/* Delete Item Confirmation Modal */}
+      <ConfirmModal
+        isOpen={service.isDeleteConfirmOpen}
+        onClose={() => service.setIsDeleteConfirmOpen(false)}
+        onConfirm={service.confirmDeleteActiveItem}
+        title={`Delete ${service.activeDetailItem?.itemType === 'task' ? 'Task' : 'Issue'}`}
+        description={`Are you sure you want to delete this ${service.activeDetailItem?.itemType || 'item'}? This action is permanent and cannot be undone.`}
+        confirmText="Delete"
+        variant="danger"
       />
 
     </div>

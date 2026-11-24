@@ -9,6 +9,7 @@ import { RoadmapQuarterlyBoard } from '@/components/roadmap/RoadmapQuarterlyBoar
 import { RoadmapMilestones } from '@/components/roadmap/RoadmapMilestones';
 import { MilestoneModal } from '@/components/roadmap/MilestoneModal';
 import { EditProjectModal } from '@/components/roadmap/EditProjectModal';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 export default function RoadmapPage() {
   const service = useRoadmapService();
@@ -132,6 +133,17 @@ export default function RoadmapPage() {
         editQuarter={service.editQuarter}
         setEditQuarter={service.setEditQuarter}
         handleSaveProjectDates={service.handleSaveProjectDates}
+      />
+
+      {/* MODAL 3: DELETE MILESTONE CONFIRMATION */}
+      <ConfirmModal
+        isOpen={service.isDeleteMilestoneModalOpen}
+        onClose={() => service.setIsDeleteMilestoneModalOpen(false)}
+        onConfirm={service.confirmDeleteMilestone}
+        title="Delete Milestone"
+        description="Are you sure you want to delete this milestone? This action cannot be undone."
+        confirmText="Delete"
+        variant="danger"
       />
     </>
   );

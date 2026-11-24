@@ -130,31 +130,42 @@ export function useNotificationsService() {
     }
   };
 
-  const handleClearAll = async () => {
-    if (confirm('Are you sure you want to clear all notifications?')) {
-      try {
-        const stored = localStorage.getItem('pwt_deleted_notifications');
-        let deletedIds: string[] = stored ? JSON.parse(stored) : [];
-        notifications.forEach(n => {
-          if (!deletedIds.includes(n.id)) {
-            deletedIds.push(n.id);
-          }
-        });
-        localStorage.setItem('pwt_deleted_notifications', JSON.stringify(deletedIds));
+  const [isClearModalOpen, setIsClearModalOpen] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
 
-        // Update database
-        const readStored = localStorage.getItem('pwt_read_notifications');
-        const readIds: string[] = readStored ? JSON.parse(readStored) : [];
-        const res = await updateNotificationStateAction(readIds, deletedIds);
-        if (res.success && res.data) {
-          setUser(res.data);
+  const handleClearAll = () => {
+    if (notifications.length > 0) {
+      setIsClearModalOpen(true);
+    }
+  };
+
+  const handleConfirmClearAll = async () => {
+    try {
+      setIsClearing(true);
+      const stored = localStorage.getItem('pwt_deleted_notifications');
+      let deletedIds: string[] = stored ? JSON.parse(stored) : [];
+      notifications.forEach(n => {
+        if (!deletedIds.includes(n.id)) {
+          deletedIds.push(n.id);
         }
+      });
+      localStorage.setItem('pwt_deleted_notifications', JSON.stringify(deletedIds));
 
-        window.dispatchEvent(new Event('pwt_notifications_update'));
-        window.dispatchEvent(new Event('storage'));
-      } catch (e) {
-        console.error(e);
+      // Update database
+      const readStored = localStorage.getItem('pwt_read_notifications');
+      const readIds: string[] = readStored ? JSON.parse(readStored) : [];
+      const res = await updateNotificationStateAction(readIds, deletedIds);
+      if (res.success && res.data) {
+        setUser(res.data);
       }
+
+      window.dispatchEvent(new Event('pwt_notifications_update'));
+      window.dispatchEvent(new Event('storage'));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsClearing(false);
+      setIsClearModalOpen(false);
     }
   };
 
@@ -192,7 +203,11 @@ export function useNotificationsService() {
     handleMarkAsRead,
     handleDelete,
     handleMarkAllRead,
-    handleClearAll
+    handleClearAll,
+    handleConfirmClearAll,
+    isClearModalOpen,
+    setIsClearModalOpen,
+    isClearing
   };
 }
 

@@ -7,6 +7,7 @@ import { ProjectsFilterRow } from '@/components/projects/ProjectsFilterRow';
 import { ProjectsListGrid } from '@/components/projects/ProjectsListGrid';
 import { NoProjectsState } from '@/components/projects/NoProjectsState';
 import { AddProjectModal } from '@/components/dashboard/AddProjectModal';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 export default function ProjectsPage() {
   const {
@@ -28,6 +29,9 @@ export default function ProjectsPage() {
     planningCount,
     handleProjectSuccess,
     handleDeleteProject,
+    confirmDeleteProject,
+    isDeleteConfirmOpen,
+    setIsDeleteConfirmOpen,
     filteredProjects,
     getStatusStyles,
     getPriorityStyles,
@@ -84,6 +88,17 @@ export default function ProjectsPage() {
         onClose={() => setIsModalOpen(false)}
         availableMembers={availableMembers}
         onSuccess={handleProjectSuccess}
+      />
+
+      {/* Modal - Delete Confirmation */}
+      <ConfirmModal
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={confirmDeleteProject}
+        title="Delete Project"
+        description="Are you sure you want to delete this project? All associated tasks, issues, and data will be removed."
+        confirmText="Delete"
+        variant="danger"
       />
     </>
   );

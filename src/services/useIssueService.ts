@@ -152,6 +152,9 @@ export function useIssueService() {
     const id = issueToDeleteId;
     setIsDeleteConfirmOpen(false);
     setIssueToDeleteId(null);
+    if (activeDetailItem?.id === id) {
+      setActiveDetailItem(null);
+    }
 
     const res = await deleteIssueAction(id);
     if (res.success) {
@@ -395,20 +398,11 @@ export function useIssueService() {
     }
   };
 
-  const handleDeleteActiveItem = async () => {
+  const handleDeleteActiveItem = () => {
     if (!activeDetailItem) return;
-    if (confirm(`Are you sure you want to delete this issue?`)) {
-      const res = await deleteIssueAction(activeDetailItem.id);
-      if (res.success) {
-        setIssues(prev => prev.filter(i => i.id !== activeDetailItem.id));
-        setActiveDetailItem(null);
-      } else {
-        const updated = issues.filter(i => i.id !== activeDetailItem.id);
-        setIssues(updated);
-        localStorage.setItem('pwt_issues', JSON.stringify(updated));
-        setActiveDetailItem(null);
-      }
-    }
+    setIssueToDeleteId(activeDetailItem.id);
+    setActiveDetailItem(null);
+    setIsDeleteConfirmOpen(true);
   };
 
   const isEmployeeRole = user?.role === 'Employee';

@@ -184,11 +184,20 @@ export function useRoadmapService() {
   };
 
   // Delete Milestone
+  const [milestoneToDeleteId, setMilestoneToDeleteId] = useState<string | null>(null);
+  const [isDeleteMilestoneModalOpen, setIsDeleteMilestoneModalOpen] = useState(false);
+
   const handleDeleteMilestone = (id: string) => {
-    if (confirm('Are you sure you want to delete this milestone?')) {
-      const updated = milestones.filter(m => m.id !== id);
-      saveMilestones(updated);
-    }
+    setMilestoneToDeleteId(id);
+    setIsDeleteMilestoneModalOpen(true);
+  };
+
+  const confirmDeleteMilestone = () => {
+    if (!milestoneToDeleteId) return;
+    const updated = milestones.filter(m => m.id !== milestoneToDeleteId);
+    saveMilestones(updated);
+    setIsDeleteMilestoneModalOpen(false);
+    setMilestoneToDeleteId(null);
   };
 
   // Edit Project Dates
@@ -373,6 +382,9 @@ export function useRoadmapService() {
     handleCreateMilestone,
     handleToggleMilestone,
     handleDeleteMilestone,
+    confirmDeleteMilestone,
+    isDeleteMilestoneModalOpen,
+    setIsDeleteMilestoneModalOpen,
     handleOpenEditProjectModal,
     handleSaveProjectDates,
     handleUpdateProjectDates,

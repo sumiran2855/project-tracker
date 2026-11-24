@@ -285,36 +285,48 @@ export function useTasksService() {
     }
   };
 
-  const handleDeleteTask = async (taskId: string) => {
-    if (confirm('Are you sure you want to delete this task?')) {
-      const taskToDelete = tasks.find(t => t.id === taskId);
-      if (!taskToDelete) return;
+  const [taskToDeleteId, setTaskToDeleteId] = useState<string | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
-      const res = await deleteTaskAction(taskId);
-      if (res.success) {
-        setTasks(prev => prev.filter(t => t.id !== taskId));
-        setSelectedTask(null);
+  const handleDeleteTask = (taskId: string) => {
+    setTaskToDeleteId(taskId);
+    setSelectedTask(null);
+    setIsDeleteConfirmOpen(true);
+  };
 
-        // Update projects counters locally
-        setProjects(prevProjs => prevProjs.map(p => {
-          if (p.id === taskToDelete.projectId) {
-            const newCount = p.tasksCount - 1;
-            const newCompleted = p.completedTasks - (taskToDelete.status === 'Done' ? 1 : 0);
-            return {
-              ...p,
-              tasksCount: newCount,
-              completedTasks: newCompleted,
-              progress: newCount > 0 ? Math.round((newCompleted / newCount) * 100) : 0
-            };
-          }
-          return p;
-        }));
-      } else {
-        console.error('Failed to delete task on backend:', res.error);
-        const updated = tasks.filter(t => t.id !== taskId);
-        saveAllTasks(updated);
-        setSelectedTask(null);
-      }
+  const confirmDeleteTask = async () => {
+    if (!taskToDeleteId) return;
+    const taskId = taskToDeleteId;
+    setIsDeleteConfirmOpen(false);
+    setTaskToDeleteId(null);
+
+    const taskToDelete = tasks.find(t => t.id === taskId);
+    if (!taskToDelete) return;
+
+    const res = await deleteTaskAction(taskId);
+    if (res.success) {
+      setTasks(prev => prev.filter(t => t.id !== taskId));
+      setSelectedTask(null);
+
+      // Update projects counters locally
+      setProjects(prevProjs => prevProjs.map(p => {
+        if (p.id === taskToDelete.projectId) {
+          const newCount = p.tasksCount - 1;
+          const newCompleted = p.completedTasks - (taskToDelete.status === 'Done' ? 1 : 0);
+          return {
+            ...p,
+            tasksCount: newCount,
+            completedTasks: newCompleted,
+            progress: newCount > 0 ? Math.round((newCompleted / newCount) * 100) : 0
+          };
+        }
+        return p;
+      }));
+    } else {
+      console.error('Failed to delete task on backend:', res.error);
+      const updated = tasks.filter(t => t.id !== taskId);
+      saveAllTasks(updated);
+      setSelectedTask(null);
     }
   };
 
@@ -621,6 +633,9 @@ export function useTasksService() {
     handleUpdateTask,
     submitUpdateTask,
     handleDeleteTask,
+    confirmDeleteTask,
+    isDeleteConfirmOpen,
+    setIsDeleteConfirmOpen,
     handleCreateTask,
     handleDragStart,
     handleDrop,

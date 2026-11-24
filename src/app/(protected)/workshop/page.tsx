@@ -12,6 +12,7 @@ import { WorkshopDetailDrawer } from '@/components/workshop/WorkshopDetailDrawer
 import { AddProjectModal } from '@/components/dashboard/AddProjectModal';
 import { AddIssueModal } from '@/components/dashboard/AddIssueModal';
 import { AddTaskModal } from '@/components/dashboard/AddTaskModal';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 export default function WorkshopDashboard() {
   const service = useWorkshopService();
@@ -218,6 +219,17 @@ export default function WorkshopDashboard() {
           onSuccess={service.handleRefreshKanban}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={service.isDeleteConfirmOpen}
+        onClose={() => service.setIsDeleteConfirmOpen(false)}
+        onConfirm={service.confirmDeleteActiveItem}
+        title={`Delete ${service.activeDetailItem?.itemType === 'task' ? 'Task' : 'Issue'}`}
+        description={`Are you sure you want to delete this ${service.activeDetailItem?.itemType || 'item'}? This action is permanent and cannot be undone.`}
+        confirmText="Delete"
+        variant="danger"
+      />
     </div>
   );
 }

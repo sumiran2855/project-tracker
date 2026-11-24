@@ -460,21 +460,33 @@ export function useSprintService() {
     }
   };
 
-  const handleDeleteActiveItem = async () => {
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<any | null>(null);
+
+  const handleDeleteActiveItem = () => {
     if (!activeDetailItem) return;
-    if (confirm(`Are you sure you want to delete this ${activeDetailItem.itemType}?`)) {
-      if (activeDetailItem.itemType === 'task') {
-        const res = await deleteTaskAction(activeDetailItem.id);
-        if (res.success) {
-          setActiveDetailItem(null);
-          dispatchUpdate();
-        }
-      } else {
-        const res = await deleteIssueAction(activeDetailItem.id);
-        if (res.success) {
-          setActiveDetailItem(null);
-          dispatchUpdate();
-        }
+    setItemToDelete(activeDetailItem);
+    setActiveDetailItem(null);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteActiveItem = async () => {
+    const item = itemToDelete || activeDetailItem;
+    if (!item) return;
+    setIsDeleteConfirmOpen(false);
+    if (item.itemType === 'task') {
+      const res = await deleteTaskAction(item.id);
+      if (res.success) {
+        setActiveDetailItem(null);
+        setItemToDelete(null);
+        dispatchUpdate();
+      }
+    } else {
+      const res = await deleteIssueAction(item.id);
+      if (res.success) {
+        setActiveDetailItem(null);
+        setItemToDelete(null);
+        dispatchUpdate();
       }
     }
   };
@@ -867,6 +879,9 @@ export function useSprintService() {
     handleToggleSubtask,
     handleAddSubtask,
     handleDeleteActiveItem,
+    confirmDeleteActiveItem,
+    isDeleteConfirmOpen,
+    setIsDeleteConfirmOpen,
     handleDragStart,
     handleDragOver,
     handleDragLeave,

@@ -98,12 +98,17 @@ export function useSettingsService() {
     setTimeout(() => setSaveSuccess(false), 3000);
   };
 
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+
   const handleResetData = () => {
-    if (confirm('Are you sure you want to reset all workspace data? This will clear all projects, tasks, issues, and reset to defaults.')) {
-      localStorage.clear();
-      // Reload page to re-trigger default datasets
-      window.location.reload();
-    }
+    setIsResetConfirmOpen(true);
+  };
+
+  const confirmResetData = () => {
+    setIsResetConfirmOpen(false);
+    localStorage.clear();
+    // Reload page to re-trigger default datasets
+    window.location.reload();
   };
 
   const toggleNotification = (key: keyof NotificationPrefs) => {
@@ -134,6 +139,9 @@ export function useSettingsService() {
     handleSaveProfile,
     handleSave,
     handleResetData,
+    confirmResetData,
+    isResetConfirmOpen,
+    setIsResetConfirmOpen,
     toggleNotification,
   };
 }

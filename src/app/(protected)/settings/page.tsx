@@ -8,6 +8,7 @@ import { NotificationsSection } from '@/components/settings/NotificationsSection
 import { WorkspaceSection } from '@/components/settings/WorkspaceSection';
 import { DataSection } from '@/components/settings/DataSection';
 import { SettingsFooter } from '@/components/settings/SettingsFooter';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 export default function SettingsPage() {
   const service = useSettingsService();
@@ -84,6 +85,17 @@ export default function SettingsPage() {
 
         </div>
       </div>
+
+      {/* Reset Data Confirmation Modal */}
+      <ConfirmModal
+        isOpen={service.isResetConfirmOpen}
+        onClose={() => service.setIsResetConfirmOpen(false)}
+        onConfirm={service.confirmResetData}
+        title="Reset Workspace Data"
+        description="Are you sure you want to reset all workspace data? This will clear all projects, tasks, issues, and reset to defaults."
+        confirmText="Reset All Data"
+        variant="danger"
+      />
     </div>
   );
 }

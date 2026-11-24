@@ -11,6 +11,7 @@ import { HoursPromptModal } from '@/components/project-detail/HoursPromptModal';
 import { AddTaskModal } from '@/components/project-detail/AddTaskModal';
 import { TaskDetailDrawer } from '@/components/project-detail/TaskDetailDrawer';
 import { AddProjectModal } from '@/components/dashboard/AddProjectModal';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 export default function ProjectDetailPage() {
   const {
@@ -69,6 +70,9 @@ export default function ProjectDetailPage() {
     submitMoveTask,
     handleCreateTask,
     handleDeleteTask,
+    confirmDeleteTask,
+    isDeleteConfirmOpen,
+    setIsDeleteConfirmOpen,
     handleAddSubtask,
     handleToggleSubtask,
     handleDeleteSubtask,
@@ -241,6 +245,17 @@ export default function ProjectDetailPage() {
         onSuccess={async () => {
           await loadProject();
         }}
+      />
+
+      {/* Delete Task Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={confirmDeleteTask}
+        title="Delete Task"
+        description="Are you sure you want to delete this task? This action is permanent and cannot be undone."
+        confirmText="Delete"
+        variant="danger"
       />
 
       <style dangerouslySetInnerHTML={{__html: `

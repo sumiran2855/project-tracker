@@ -11,6 +11,7 @@ import { TasksCalendar } from '@/components/tasks/TasksCalendar';
 import { TasksHoursModal } from '@/components/tasks/TasksHoursModal';
 import { TaskCreateModal } from '@/components/tasks/TaskCreateModal';
 import { TaskDetailDrawer } from '@/components/tasks/TaskDetailDrawer';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 export default function GlobalTasksPage() {
   const service = useTasksService();
@@ -153,6 +154,17 @@ export default function GlobalTasksPage() {
         handleUpdateTask={service.handleUpdateTask}
         handleDeleteTask={service.handleDeleteTask}
         submitUpdateTask={service.submitUpdateTask}
+      />
+
+      {/* Delete Task Confirmation Modal */}
+      <ConfirmModal
+        isOpen={service.isDeleteConfirmOpen}
+        onClose={() => service.setIsDeleteConfirmOpen(false)}
+        onConfirm={service.confirmDeleteTask}
+        title="Delete Task"
+        description="Are you sure you want to delete this task? This action is permanent and cannot be undone."
+        confirmText="Delete"
+        variant="danger"
       />
 
     </div>

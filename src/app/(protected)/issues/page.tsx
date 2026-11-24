@@ -311,13 +311,6 @@ export default function IssuesPage() {
         defaultStatus={modalStatus}
       />
 
-      {/* modal - Delete Confirmation Modal */}
-      <DeleteConfirmModal
-        isOpen={isDeleteConfirmOpen}
-        onClose={() => setIsDeleteConfirmOpen(false)}
-        onConfirm={confirmDeleteIssue}
-      />
-
       {/* SLIDE-IN SIDE PANEL: CARD DETAILED DRAWER */}
       <IssueDetailDrawer
         activeDetailItem={activeDetailItem}
@@ -339,6 +332,13 @@ export default function IssuesPage() {
         handleLogHours={handleLogHours}
         handleAddComment={handleAddComment}
         handleDeleteActiveItem={handleDeleteActiveItem}
+      />
+
+      {/* modal - Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={confirmDeleteIssue}
       />
     </>
   );

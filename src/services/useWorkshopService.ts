@@ -8,7 +8,6 @@ import type { Employee } from '@/types/projects.types';
 import { getTasksByProjectAction, updateTaskAction, deleteTaskAction } from '@/actions/tasks';
 import type { Task, Subtask, Comment } from '@/types/tasks.types';
 import { getIssuesByProjectAction, updateIssueAction, deleteIssueAction, uploadIssueAttachmentAction } from '@/actions/issues';
-import { useQueryClient } from '@tanstack/react-query';
 import type { Issue } from '@/types/issues.types';
 import type { Project, ViewMode, CardDetailItem } from '@/types/workshop.types';
 
@@ -24,7 +23,6 @@ export function getAttachmentUrl(path: string) {
 
 export function useWorkshopService() {
   const { user } = useUser();
-  const queryClient = useQueryClient();
   const canCreateProject = usePermission('project:create');
   const isEmployee = user?.role?.toLowerCase() === 'employee';
   const isClient = user?.role?.toLowerCase() === 'client';
@@ -126,7 +124,6 @@ export function useWorkshopService() {
 
     const fetchDetails = async () => {
       setKanbanLoading(true);
-      // Tasks
       const tasksRes = await getTasksByProjectAction(selectedProject.id);
       let tasksData: Task[] = [];
       if (tasksRes.success && tasksRes.data) {
@@ -144,7 +141,6 @@ export function useWorkshopService() {
         }
       }
 
-      // Issues
       const issuesRes = await getIssuesByProjectAction(selectedProject.id);
       let issuesData: Issue[] = [];
       if (issuesRes.success && issuesRes.data) {
@@ -594,32 +590,39 @@ export function useWorkshopService() {
     }
   };
 
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<any | null>(null);
+
   const handleDeleteActiveItem = async () => {
     if (!activeDetailItem) return false;
-    if (confirm(`Are you sure you want to delete this ${activeDetailItem.itemType === 'task' ? 'task' : 'issue'}?`)) {
-      if (activeDetailItem.itemType === 'task') {
-        const res = await deleteTaskAction(activeDetailItem.id);
-        if (res.success) {
-          setSelectedProjTasks(prev => prev.filter(t => t.id !== activeDetailItem.id));
-          setActiveDetailItem(null);
-          return true;
-        } else {
-          alert(res.error || 'Failed to delete task');
-        }
-      } else {
-        const res = await deleteIssueAction(activeDetailItem.id);
-        if (res.success) {
-          setSelectedProjIssues(prev => prev.filter(i => i.id !== activeDetailItem.id));
-          const nextList = selectedProjIssues.filter(i => i.id !== activeDetailItem.id);
-          localStorage.setItem(`pwt_issues_project_${selectedProject?.id}`, JSON.stringify(nextList));
-          setActiveDetailItem(null);
-          return true;
-        } else {
-          alert(res.error || 'Failed to delete issue');
-        }
+    setItemToDelete(activeDetailItem);
+    setActiveDetailItem(null);
+    setIsDeleteConfirmOpen(true);
+    return true;
+  };
+
+  const confirmDeleteActiveItem = async () => {
+    const item = itemToDelete || activeDetailItem;
+    if (!item) return;
+    setIsDeleteConfirmOpen(false);
+
+    if (item.itemType === 'task') {
+      const res = await deleteTaskAction(item.id);
+      if (res.success) {
+        setSelectedProjTasks(prev => prev.filter(t => t.id !== item.id));
+        setActiveDetailItem(null);
+        setItemToDelete(null);
+      }
+    } else {
+      const res = await deleteIssueAction(item.id);
+      if (res.success) {
+        setSelectedProjIssues(prev => prev.filter(i => i.id !== item.id));
+        const nextList = selectedProjIssues.filter(i => i.id !== item.id);
+        localStorage.setItem(`pwt_issues_project_${selectedProject?.id}`, JSON.stringify(nextList));
+        setActiveDetailItem(null);
+        setItemToDelete(null);
       }
     }
-    return false;
   };
 
   const handleSort = (field: typeof sortField) => {
@@ -953,6 +956,9 @@ export function useWorkshopService() {
     handleUpdatePriority,
     handleUpdateStartDate,
     handleDeleteActiveItem,
+    confirmDeleteActiveItem,
+    isDeleteConfirmOpen,
+    setIsDeleteConfirmOpen,
     handleSort,
     exportToCSV,
     filteredProjects,

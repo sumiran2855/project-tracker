@@ -25,3 +25,11 @@ export interface NotificationItemCardProps {
   onMarkAsRead: (id: string) => Promise<void>;
   onDelete: (id: string, e: React.MouseEvent) => Promise<void>;
 }
+
+export interface ClearAllConfirmModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void | Promise<void>;
+  isClearing?: boolean;
+}
+
